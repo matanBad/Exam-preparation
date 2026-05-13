@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Exam Preparation System (EPS) API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: courses
+  - name: topics
+  - name: questions
+  - name: exams
+  - name: users
+  - name: admin
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +29,831 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Current authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List all courses (lecturer/admin) or current user's enrolled courses (student)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createCourse
+      tags: [courses]
+      summary: Create a course (lecturer/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateCourse
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /courses/{id}/topics:
+    get:
+      operationId: listCourseTopics
+      tags: [topics]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Topic"
+    post:
+      operationId: createTopic
+      tags: [topics]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTopicRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /topics/{id}:
+    put:
+      operationId: updateTopic
+      tags: [topics]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTopicRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{id}/courses:
+    get:
+      operationId: getUserCourses
+      tags: [users]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+  /questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      parameters:
+        - in: query
+          name: courseId
+          schema:
+            type: integer
+        - in: query
+          name: topicId
+          schema:
+            type: integer
+        - in: query
+          name: difficulty
+          schema:
+            $ref: "#/components/schemas/Difficulty"
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/QuestionStatus"
+        - in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createQuestion
+      tags: [questions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestionRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /questions/search:
+    get:
+      operationId: searchQuestions
+      tags: [questions]
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: courseId
+          schema:
+            type: integer
+        - in: query
+          name: topicId
+          schema:
+            type: integer
+        - in: query
+          name: difficulty
+          schema:
+            $ref: "#/components/schemas/Difficulty"
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/QuestionStatus"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+
+  /questions/{id}:
+    get:
+      operationId: getQuestion
+      tags: [questions]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateQuestion
+      tags: [questions]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuestionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /questions/{id}/archive:
+    patch:
+      operationId: archiveQuestion
+      tags: [questions]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /exams/generate:
+    post:
+      operationId: generateExam
+      tags: [exams]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateExamRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamWithQuestions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /exams/{id}:
+    get:
+      operationId: getExam
+      tags: [exams]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamWithQuestions"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /exams/{id}/start:
+    post:
+      operationId: startExam
+      tags: [exams]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamWithQuestions"
+
+  /exams/{id}/submit:
+    post:
+      operationId: submitExam
+      tags: [exams]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitExamRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /exams/{id}/review:
+    get:
+      operationId: getExamReview
+      tags: [exams]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamReview"
+
+  /users/{id}/exams:
+    get:
+      operationId: getUserExams
+      tags: [users]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exam"
+
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      parameters:
+        - in: query
+          name: role
+          schema:
+            $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: System overview totals (users, courses, topics, questions, exams)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
+  parameters:
+    IdPath:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    Role:
+      type: string
+      enum: [student, lecturer, admin]
+
+    Difficulty:
+      type: string
+      enum: [Easy, Medium, Hard]
+
+    QuestionStatus:
+      type: string
+      enum: [draft, approved, archived]
+
+    QuestionType:
+      type: string
+      enum: [single_choice, multiple_choice]
+
+    ExamStatus:
+      type: string
+      enum: [generated, in_progress, submitted]
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        fullName: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        accountStatus: { type: string }
+      required: [id, fullName, email, role, accountStatus]
+
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+      required: [email, password]
+
+    AuthLoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+      required: [token, user]
+
+    Course:
+      type: object
+      properties:
+        id: { type: integer }
+        courseCode: { type: string }
+        courseName: { type: string }
+        semester: { type: string, nullable: true }
+        academicYear: { type: string, nullable: true }
+        status: { type: string }
+      required: [id, courseCode, courseName, status]
+
+    CreateCourseRequest:
+      type: object
+      properties:
+        courseCode: { type: string }
+        courseName: { type: string }
+        semester: { type: string, nullable: true }
+        academicYear: { type: string, nullable: true }
+      required: [courseCode, courseName]
+
+    UpdateCourseRequest:
+      type: object
+      properties:
+        courseCode: { type: string }
+        courseName: { type: string }
+        semester: { type: string, nullable: true }
+        academicYear: { type: string, nullable: true }
+        status: { type: string }
+
+    Topic:
+      type: object
+      properties:
+        id: { type: integer }
+        courseId: { type: integer }
+        topicName: { type: string }
+        parentTopicId: { type: integer, nullable: true }
+        weight: { type: number, nullable: true }
+        status: { type: string }
+      required: [id, courseId, topicName, status]
+
+    CreateTopicRequest:
+      type: object
+      properties:
+        topicName: { type: string }
+        parentTopicId: { type: integer, nullable: true }
+        weight: { type: number, nullable: true }
+      required: [topicName]
+
+    UpdateTopicRequest:
+      type: object
+      properties:
+        topicName: { type: string }
+        parentTopicId: { type: integer, nullable: true }
+        weight: { type: number, nullable: true }
+        status: { type: string }
+
+    AnswerOption:
+      type: object
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        answerText: { type: string }
+        isCorrect: { type: boolean }
+        displayOrder: { type: integer }
+      required: [id, questionId, answerText, isCorrect, displayOrder]
+
+    AnswerOptionInput:
+      type: object
+      properties:
+        answerText: { type: string }
+        isCorrect: { type: boolean }
+      required: [answerText, isCorrect]
+
+    Question:
+      type: object
+      properties:
+        id: { type: integer }
+        courseId: { type: integer }
+        topicId: { type: integer, nullable: true }
+        subtopicId: { type: integer, nullable: true }
+        title: { type: string }
+        questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        explanationText: { type: string, nullable: true }
+        sourceReference: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/QuestionStatus" }
+        createdBy: { type: integer, nullable: true }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/AnswerOption" }
+        courseName: { type: string, nullable: true }
+        topicName: { type: string, nullable: true }
+      required:
+        [id, courseId, title, questionText, questionType, difficultyLevel, status, options]
+
+    CreateQuestionRequest:
+      type: object
+      properties:
+        courseId: { type: integer }
+        topicId: { type: integer, nullable: true }
+        subtopicId: { type: integer, nullable: true }
+        title: { type: string }
+        questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        explanationText: { type: string, nullable: true }
+        sourceReference: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/QuestionStatus" }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/AnswerOptionInput" }
+          minItems: 2
+      required:
+        [courseId, title, questionText, questionType, difficultyLevel, options]
+
+    UpdateQuestionRequest:
+      type: object
+      properties:
+        courseId: { type: integer }
+        topicId: { type: integer, nullable: true }
+        subtopicId: { type: integer, nullable: true }
+        title: { type: string }
+        questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        explanationText: { type: string, nullable: true }
+        sourceReference: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/QuestionStatus" }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/AnswerOptionInput" }
+
+    GenerateExamRequest:
+      type: object
+      properties:
+        courseId: { type: integer }
+        topicIds:
+          type: array
+          items: { type: integer }
+        totalQuestions: { type: integer, minimum: 1, maximum: 100 }
+        durationMinutes: { type: integer, nullable: true }
+      required: [courseId, totalQuestions]
+
+    ExamQuestionOption:
+      type: object
+      properties:
+        id: { type: integer }
+        answerText: { type: string }
+      required: [id, answerText]
+
+    ExamQuestion:
+      type: object
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        title: { type: string }
+        questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        topicName: { type: string, nullable: true }
+        randomizedOrder: { type: integer }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ExamQuestionOption" }
+        selectedAnswerOptionId: { type: integer, nullable: true }
+      required:
+        [id, questionId, title, questionText, questionType, difficultyLevel, randomizedOrder, options]
+
+    Exam:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        courseId: { type: integer }
+        courseName: { type: string, nullable: true }
+        examMode: { type: string }
+        totalQuestions: { type: integer }
+        durationMinutes: { type: integer, nullable: true }
+        startedAt: { type: string, format: date-time, nullable: true }
+        submittedAt: { type: string, format: date-time, nullable: true }
+        score: { type: number, nullable: true }
+        status: { $ref: "#/components/schemas/ExamStatus" }
+        createdAt: { type: string, format: date-time }
+      required: [id, userId, courseId, examMode, totalQuestions, status, createdAt]
+
+    ExamWithQuestions:
+      allOf:
+        - $ref: "#/components/schemas/Exam"
+        - type: object
+          properties:
+            questions:
+              type: array
+              items: { $ref: "#/components/schemas/ExamQuestion" }
+          required: [questions]
+
+    SubmitAnswer:
+      type: object
+      properties:
+        examQuestionId: { type: integer }
+        selectedAnswerOptionId: { type: integer, nullable: true }
+      required: [examQuestionId]
+
+    SubmitExamRequest:
+      type: object
+      properties:
+        answers:
+          type: array
+          items: { $ref: "#/components/schemas/SubmitAnswer" }
+      required: [answers]
+
+    ExamResult:
+      type: object
+      properties:
+        examId: { type: integer }
+        score: { type: number }
+        correctCount: { type: integer }
+        totalQuestions: { type: integer }
+        status: { $ref: "#/components/schemas/ExamStatus" }
+      required: [examId, score, correctCount, totalQuestions, status]
+
+    ReviewItem:
+      type: object
+      properties:
+        examQuestionId: { type: integer }
+        questionId: { type: integer }
+        title: { type: string }
+        questionText: { type: string }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        topicName: { type: string, nullable: true }
+        explanationText: { type: string, nullable: true }
+        isCorrect: { type: boolean }
+        selectedAnswerOptionId: { type: integer, nullable: true }
+        correctAnswerOptionId: { type: integer, nullable: true }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/AnswerOption" }
+      required:
+        [examQuestionId, questionId, title, questionText, difficultyLevel, isCorrect, options]
+
+    ExamReview:
+      type: object
+      properties:
+        exam: { $ref: "#/components/schemas/Exam" }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ReviewItem" }
+      required: [exam, items]
+
+    AdminOverview:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            users: { type: integer }
+            students: { type: integer }
+            lecturers: { type: integer }
+            admins: { type: integer }
+            courses: { type: integer }
+            topics: { type: integer }
+            questions: { type: integer }
+            approvedQuestions: { type: integer }
+            archivedQuestions: { type: integer }
+            exams: { type: integer }
+            submittedExams: { type: integer }
+          required:
+            [users, students, lecturers, admins, courses, topics, questions, approvedQuestions, archivedQuestions, exams, submittedExams]
+      required: [totals]

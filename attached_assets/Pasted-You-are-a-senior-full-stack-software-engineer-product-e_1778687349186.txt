@@ -1,0 +1,559 @@
+You are a senior full-stack software engineer, product engineer, and project implementation expert.
+
+We are building Sprint 2 of an academic project called:
+
+Exam Preparation System (EPS) – Team 4
+
+The system is a smart academic exam preparation module inside a larger educational platform. It helps students prepare for exams through question bank management, mock exam generation, randomized answers, exam submission, scoring, and review of mistakes.
+
+IMPORTANT:
+Implement ONLY Sprint 2 scope.
+Do not implement Sprint 3 features unless they are required as placeholders.
+The implementation must be clean, professional, demo-ready, and aligned with the PRD.
+
+========================
+SPRINT 2 SCOPE
+========================
+
+Sprint 2 includes these User Stories:
+
+US-01 to US-18
+US-20 to US-23
+US-25 to US-29
+
+Do NOT implement:
+US-19 admin approval workflow as full feature
+US-24 question order randomization
+US-30 to US-53 practice mode, weak areas, recommendations, dashboards, notifications, readiness score, streaks, etc.
+
+However, the database and code structure should be ready for future Sprint 3 expansion.
+
+========================
+TECH STACK
+========================
+
+Build a full-stack web application in Replit using:
+
+Frontend:
+- React
+- Tailwind CSS
+- Axios
+- React Router
+
+Backend:
+- Node.js
+- Express.js
+- REST API
+
+Database:
+- PostgreSQL
+- Use environment variable DATABASE_URL
+- Use pg package or Prisma if easier, but keep it simple and reliable
+
+Authentication:
+- JWT-based authentication
+- bcrypt password hashing
+- Role-based access control
+
+Roles:
+- student
+- lecturer
+- admin
+
+========================
+MAIN SYSTEM REQUIREMENTS
+========================
+
+The system must support three role-based users:
+
+1. Student
+- Can log in
+- Can see only enrolled courses
+- Can generate mock exams
+- Can select course
+- Can select topics
+- Can choose number of questions
+- Can start exam
+- Can answer questions
+- Can submit exam
+- Can receive score
+- Can review incorrect answers
+
+2. Lecturer
+- Can log in
+- Can create questions
+- Can edit questions
+- Can archive questions
+- Can assign question to course, topic, and subtopic
+- Can assign difficulty level
+- Can define answer options
+- Can mark correct answer
+- Can add explanation
+- Can search and filter questions
+
+3. Admin
+- Can log in
+- Can access admin area
+- Can manage course/topic structure for Sprint 2
+- Full question approval workflow is Sprint 3, so for Sprint 2 use seeded approved questions or allow questions to be marked approved only as seed/demo data.
+
+========================
+USER STORIES TO IMPLEMENT
+========================
+
+User Access and Role Management:
+
+US-01:
+As a student, I can log into the system using platform credentials, so that I can access my courses and exams.
+
+US-02:
+As a lecturer, I can log into the system, so that I can manage questions and course content.
+
+US-03:
+As an admin, I can log into the system, so that I can manage system-level permissions.
+
+US-04:
+As a system, I can identify the user role upon login and assign appropriate permissions, so that access is controlled correctly.
+
+US-05:
+As a system, I can restrict access to unauthorized features, so that users cannot perform actions outside their role.
+
+Course Context and Content Structure:
+
+US-06:
+As a student, I can view my enrolled courses, so that I can access relevant study material.
+
+US-07:
+As a lecturer, I can assign questions to a course, so that content is organized by subject.
+
+US-08:
+As a lecturer, I can assign topics and subtopics to questions, so that content is categorized correctly.
+
+US-09:
+As a lecturer/admin, I can create course structure including courses, topics, and subtopics, so that academic content is organized.
+
+US-10:
+As a lecturer/admin, I can edit course structure, so that I can update topics and subtopics when needed.
+
+US-11:
+As a system, I can link questions to courses and topics, so that exams can be generated accurately.
+
+Question Bank Management:
+
+US-12:
+As a lecturer, I can create a question, so that I can add new content to the system.
+
+US-13:
+As a lecturer, I can edit an existing question, so that I can update content when needed.
+
+US-14:
+As a lecturer, I can archive a question, so that outdated questions are removed from active use.
+
+US-15:
+As a lecturer, I can define answer options for a question, so that students can choose answers.
+
+US-16:
+As a lecturer, I can mark the correct answer, so that the system can evaluate responses.
+
+US-17:
+As a lecturer, I can add an explanation to a question, so that students can learn from mistakes.
+
+US-18:
+As a lecturer, I can assign difficulty level to a question, so that content can be categorized.
+
+US-20:
+As a lecturer, I can search and filter questions, so that I can quickly find relevant content.
+
+Exam Generation and Submission:
+
+US-21:
+As a student, I can generate a mock exam, so that I can practice before the real exam.
+
+US-22:
+As a student, I can select topics for an exam, so that I can focus on specific areas.
+
+US-23:
+As a student, I can select the number of questions, so that I can control exam length.
+
+US-25:
+As a system, I can randomize answer order, so that guessing patterns are reduced.
+Important: preserve grading correctness after randomizing answer options.
+
+US-26:
+As a student, I can start an exam, so that I can begin answering questions.
+
+US-27:
+As a student, I can submit an exam, so that my answers are evaluated.
+
+US-28:
+As a system, I can calculate the exam score based on correct answers after submission, so that students receive accurate results.
+
+US-29:
+As a student, I can review incorrect answers after submission, so that I can learn from mistakes.
+
+========================
+DATABASE MODEL
+========================
+
+Create the following PostgreSQL tables:
+
+users:
+- id
+- full_name
+- email
+- password_hash
+- role
+- account_status
+- created_at
+- updated_at
+
+courses:
+- id
+- course_code
+- course_name
+- semester
+- academic_year
+- status
+- created_at
+- updated_at
+
+enrollments:
+- id
+- user_id
+- course_id
+- enrollment_status
+
+topics:
+- id
+- course_id
+- topic_name
+- parent_topic_id nullable
+- weight
+- status
+- created_at
+- updated_at
+
+questions:
+- id
+- course_id
+- topic_id
+- subtopic_id nullable
+- title
+- question_text
+- question_type
+- difficulty_level
+- explanation_text
+- source_reference nullable
+- status
+- created_by
+- created_at
+- updated_at
+
+answer_options:
+- id
+- question_id
+- answer_text
+- is_correct
+- display_order
+
+mock_exams:
+- id
+- user_id
+- course_id
+- generated_by_rule
+- exam_mode
+- total_questions
+- duration_minutes nullable
+- started_at nullable
+- submitted_at nullable
+- score nullable
+- status
+- created_at
+- updated_at
+
+mock_exam_questions:
+- id
+- exam_id
+- question_id
+- randomized_order
+- selected_answer_option_id nullable
+- is_correct nullable
+- response_time_seconds nullable
+
+Also create a junction table if needed for selected answers in multiple-answer questions.
+
+========================
+BUSINESS RULES
+========================
+
+Implement these rules:
+
+1. Only lecturers and admins can create or edit questions.
+2. Students can access only their enrolled courses.
+3. Archived questions cannot be used in newly generated exams.
+4. Only active/approved/demo-approved questions can be used in exams.
+5. Answer randomization must preserve grading correctness.
+6. Every generated mock exam must be stored.
+7. Every submitted mock exam must store selected answers, correctness, score, and status.
+8. Unauthorized users must receive 403 Forbidden.
+9. Unauthenticated users must receive 401 Unauthorized.
+10. Input must be validated.
+
+========================
+API ENDPOINTS
+========================
+
+Implement REST API endpoints:
+
+Auth:
+POST /api/auth/login
+GET /api/auth/me
+
+Courses:
+GET /api/courses
+GET /api/courses/:id
+GET /api/courses/:id/topics
+POST /api/courses
+PUT /api/courses/:id
+GET /api/users/:id/courses
+
+Questions:
+GET /api/questions
+GET /api/questions/:id
+POST /api/questions
+PUT /api/questions/:id
+PATCH /api/questions/:id/archive
+GET /api/questions/search
+
+Exam:
+POST /api/exams/generate
+GET /api/exams/:id
+POST /api/exams/:id/start
+POST /api/exams/:id/submit
+GET /api/users/:id/exams
+GET /api/exams/:id/review
+
+========================
+FRONTEND PAGES
+========================
+
+Create a clean, professional UI with React and Tailwind.
+
+Pages:
+
+1. Login Page
+- Email
+- Password
+- Login button
+- Show demo credentials
+
+2. Student Dashboard
+- Welcome message
+- List of enrolled courses
+- Button: Generate Mock Exam
+- Recent exams list if available
+
+3. Generate Exam Page
+- Select course
+- Select topics
+- Select number of questions
+- Generate exam button
+
+4. Exam Taking Page
+- Show questions
+- Show randomized answer options
+- Allow student to select answers
+- Submit exam button
+
+5. Exam Result Page
+- Show score
+- Show number correct / total
+- Show incorrect answers
+- Show correct answer
+- Show explanation
+
+6. Lecturer Dashboard
+- Question bank
+- Search/filter by course, topic, difficulty, status
+- Create question button
+
+7. Question Form Page
+- Course select
+- Topic select
+- Subtopic select
+- Title
+- Question text
+- Question type
+- Difficulty
+- Answer options
+- Mark correct answer
+- Explanation
+- Save
+
+8. Admin Dashboard
+- Basic course/topic structure management
+- View users by role
+- View system overview
+
+9. Unauthorized Page
+- Clear message that user does not have permission
+
+========================
+SEED DATA
+========================
+
+Create seed data for demo:
+
+Users:
+1. Student:
+email: student@eps.com
+password: 123456
+role: student
+
+2. Lecturer:
+email: lecturer@eps.com
+password: 123456
+role: lecturer
+
+3. Admin:
+email: admin@eps.com
+password: 123456
+role: admin
+
+Courses:
+- CS101 Introduction to Programming
+- DB201 Database Systems
+
+Topics and subtopics:
+For CS101:
+- Variables
+- Loops
+- Functions
+- Arrays
+
+For DB201:
+- SQL Basics
+- Joins
+- Normalization
+- Transactions
+
+Questions:
+Create at least 20 approved/demo-approved questions distributed across both courses and topics.
+Each question must include:
+- 4 answer options
+- 1 correct answer
+- explanation
+- difficulty: Easy / Medium / Hard
+
+Enrollments:
+- Enroll student in CS101 and DB201
+
+========================
+PROJECT STRUCTURE
+========================
+
+Use a professional folder structure:
+
+/server
+  /src
+    /config
+    /db
+    /middleware
+    /routes
+    /controllers
+    /services
+    /validators
+    /utils
+  server.js
+
+/client
+  /src
+    /api
+    /components
+    /pages
+    /routes
+    /context
+    /utils
+  App.jsx
+
+Add:
+- README.md
+- .env.example
+- package.json scripts
+- database setup instructions
+- seed script
+
+========================
+QUALITY REQUIREMENTS
+========================
+
+The code must be:
+- Clean
+- Modular
+- Easy to understand
+- Well-commented where needed
+- Demo-ready
+- Not hardcoded except seed/demo credentials
+- Connected to PostgreSQL
+- Using real API calls from frontend to backend
+- Using role-based route protection
+- Using meaningful error messages
+
+========================
+DEMO FLOW TO SUPPORT
+========================
+
+The final demo must support this flow:
+
+Lecturer:
+1. Login as lecturer
+2. Open Question Bank
+3. Create a new question
+4. Add answers
+5. Mark correct answer
+6. Add explanation
+7. Assign course/topic/difficulty
+8. Save question
+9. Search/filter the question bank
+
+Student:
+1. Login as student
+2. See enrolled courses only
+3. Generate mock exam for a selected course/topic
+4. Select number of questions
+5. Start exam
+6. Answer questions
+7. Submit exam
+8. See score
+9. Review incorrect answers and explanations
+
+Admin:
+1. Login as admin
+2. View admin dashboard
+3. Create/edit course/topic structure
+4. Confirm role-based access works
+
+========================
+IMPORTANT IMPLEMENTATION NOTES
+========================
+
+- Since Sprint 2 excludes US-19, do not build a complex approval workflow.
+- For Sprint 2 demo, questions may have status approved by default.
+- Archive must work and archived questions must not appear in new exams.
+- Implement US-25 answer randomization carefully:
+  The displayed answer order can change, but grading must still check the answer option ID, not the display position.
+- Do not implement weak area detection, recommendations, practice mode, notifications, readiness score, streaks, or lecturer analytics yet. Those are Sprint 3.
+- You may add placeholder navigation items for Sprint 3 features, but mark them as “Coming in Sprint 3”.
+
+========================
+DELIVERABLE
+========================
+
+Generate the full working project code.
+Make sure it runs in Replit.
+Include clear setup instructions in README.md.
+Include seed command.
+Include demo credentials.
+Include explanation of what Sprint 2 user stories are implemented.
+
+Start by creating the full project structure, then implement backend, database, seed data, frontend, and README.

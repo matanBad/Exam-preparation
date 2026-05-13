@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Exam Preparation System"
+version = "1.0.0"
+id = "artifacts/eps"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24152
+
+[services.development]
+run = "pnpm --filter @workspace/eps run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/eps", "run", "build" ]
+publicDir = "artifacts/eps/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24152"
+BASE_PATH = "/"
