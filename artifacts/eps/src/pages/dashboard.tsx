@@ -1,5 +1,5 @@
 import { getAuthUser } from "@/lib/auth";
-import { useGetUserCourses, useGetUserExams, useListCourses, useListQuestions, useGetAdminOverview, useListUsers } from "@workspace/api-client-react";
+import { useGetUserCourses, useGetUserExams, useListCourses, useListQuestions, useGetAdminOverview } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -73,16 +73,68 @@ function LecturerDashboard() {
 }
 
 function AdminDashboardView() {
-  const { data: overview } = useGetAdminOverview();
+  const { data, isLoading } = useGetAdminOverview();
+  if (isLoading || !data) return <p>Loading...</p>;
+  const t = data.totals;
+
+  const stat = (label: string, value: number, key: string) => (
+    <Card key={key}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-bold" data-testid={`stat-${key}`}>
+          {value}
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Users</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{overview?.totals.users}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Courses</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{overview?.totals.courses}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Questions</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{overview?.totals.questions}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Exams</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{overview?.totals.exams}</CardContent></Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">System Overview</h2>
+        <Link href="/admin/users">
+          <Button variant="outline" data-testid="btn-manage-users">
+            Manage Users
+          </Button>
+        </Link>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stat("Users", t.users, "users")}
+        {stat("Courses", t.courses, "courses")}
+        {stat("Topics", t.topics, "topics")}
+        {stat("Questions", t.questions, "questions")}
+        {stat("Approved", t.approvedQuestions, "approved")}
+        {stat("Archived", t.archivedQuestions, "archived")}
+        {stat("Exams", t.exams, "exams")}
+        {stat("Submitted", t.submittedExams, "submitted")}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Users by role</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Students</p>
+              <p className="text-2xl font-bold mt-1">{t.students}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Lecturers</p>
+              <p className="text-2xl font-bold mt-1">{t.lecturers}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Admins</p>
+              <p className="text-2xl font-bold mt-1">{t.admins}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

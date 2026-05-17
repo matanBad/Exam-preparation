@@ -20,7 +20,6 @@ import ExamReview from "@/pages/exams/review";
 import QuestionsList from "@/pages/questions/list";
 import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
-import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import Account from "@/pages/account";
 
@@ -109,9 +108,6 @@ function Router() {
         <ProtectedRoute component={Account} />
       </Route>
 
-      <Route path="/admin">
-        <ProtectedRoute component={AdminDashboard} allowedRoles={['admin']} />
-      </Route>
       <Route path="/admin/users">
         <ProtectedRoute component={AdminUsers} allowedRoles={['admin']} />
       </Route>

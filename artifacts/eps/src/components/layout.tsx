@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { getAuthUser, clearAuth } from "@/lib/auth";
-import { BookOpen, CheckSquare, Home, Users, LogOut, Settings, List, User } from "lucide-react";
+import { BookOpen, CheckSquare, Home, Users, LogOut, List, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoUrl from "@/assets/ep-logo.png";
 
@@ -19,7 +19,6 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     { label: "Courses", href: "/courses", icon: BookOpen, roles: ["student", "lecturer", "admin"] },
     { label: "My Exams", href: "/exams", icon: CheckSquare, roles: ["student"] },
     { label: "Question Bank", href: "/lecturer/questions", icon: List, roles: ["lecturer", "admin"] },
-    { label: "Admin Overview", href: "/admin", icon: Settings, roles: ["admin"] },
     { label: "Users", href: "/admin/users", icon: Users, roles: ["admin"] },
     { label: "My Account", href: "/account", icon: User, roles: ["student", "lecturer", "admin"] },
   ];
