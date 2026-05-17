@@ -59,6 +59,7 @@ export interface User {
   email: string;
   role: Role;
   accountStatus: string;
+  profileImageUrl?: string | null;
 }
 
 export interface CreateUserRequest {
@@ -77,6 +78,11 @@ export interface UpdateUserRequest {
 
 export interface AddCourseMemberRequest {
   userId: number;
+}
+
+export interface UpdateProfileImageRequest {
+  /** Data URL (data:image/...;base64,...) up to ~2MB; null to remove the current image */
+  imageDataUrl: string | null;
 }
 
 export interface DeleteAccountRequest {

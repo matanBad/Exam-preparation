@@ -9,6 +9,8 @@ import {
   ChangeMyEmailBody,
   ChangeMyEmailResponse,
   DeleteMyAccountBody,
+  UpdateMyProfileImageBody,
+  UpdateMyProfileImageResponse,
 } from "@workspace/api-zod";
 import { signToken, verifyPassword, hashPassword } from "../lib/auth";
 import { requireAuth } from "../middlewares/auth";
@@ -50,6 +52,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         email: user.email,
         role,
         accountStatus: user.accountStatus,
+        profileImageUrl: user.profileImageUrl,
       },
     }),
   );
@@ -71,6 +74,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       email: user.email,
       role: user.role,
       accountStatus: user.accountStatus,
+      profileImageUrl: user.profileImageUrl,
     }),
   );
 });
@@ -155,6 +159,50 @@ router.patch(
         email: updated.email,
         role: updated.role,
         accountStatus: updated.accountStatus,
+        profileImageUrl: updated.profileImageUrl,
+      }),
+    );
+  },
+);
+
+router.patch(
+  "/auth/me/profile-image",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const parsed = UpdateMyProfileImageBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const value = parsed.data.imageDataUrl;
+    if (value !== null) {
+      if (
+        !/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(value) ||
+        value.length > 3_000_000
+      ) {
+        res.status(400).json({
+          error: "Image must be a PNG/JPEG/WebP data URL under ~2MB",
+        });
+        return;
+      }
+    }
+    const [updated] = await db
+      .update(usersTable)
+      .set({ profileImageUrl: value, updatedAt: new Date() })
+      .where(eq(usersTable.id, req.auth!.userId))
+      .returning();
+    if (!updated) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
+    res.json(
+      UpdateMyProfileImageResponse.parse({
+        id: updated.id,
+        fullName: updated.fullName,
+        email: updated.email,
+        role: updated.role,
+        accountStatus: updated.accountStatus,
+        profileImageUrl: updated.profileImageUrl,
       }),
     );
   },

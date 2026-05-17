@@ -93,6 +93,29 @@ paths:
         "409":
           description: Email already in use
 
+  /auth/me/profile-image:
+    patch:
+      operationId: updateMyProfileImage
+      tags: [auth]
+      summary: Update or clear current user's profile image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileImageRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /auth/me/delete:
     post:
       operationId: deleteMyAccount
@@ -785,6 +808,7 @@ components:
         email: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
+        profileImageUrl: { type: string, nullable: true }
       required: [id, fullName, email, role, accountStatus]
 
     CreateUserRequest:
@@ -809,6 +833,15 @@ components:
       properties:
         userId: { type: integer }
       required: [userId]
+
+    UpdateProfileImageRequest:
+      type: object
+      properties:
+        imageDataUrl:
+          type: string
+          nullable: true
+          description: Data URL (data:image/...;base64,...) up to ~2MB; null to remove the current image
+      required: [imageDataUrl]
 
     DeleteAccountRequest:
       type: object

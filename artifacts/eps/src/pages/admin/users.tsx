@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "wouter";
 import {
   useListUsers,
   useCreateUser,
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,7 +35,23 @@ type Role = "student" | "lecturer" | "admin";
 const ROLES: Role[] = ["student", "lecturer", "admin"];
 
 export default function AdminUsers() {
-  const [role, setRole] = useState<string>(ALL);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const roleParam = searchParams.get("role");
+  const role: string =
+    roleParam && (ROLES as string[]).includes(roleParam) ? roleParam : ALL;
+
+  const setRole = (next: string) => {
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        if (next === ALL) out.delete("role");
+        else out.set("role", next);
+        return out;
+      },
+      { replace: true },
+    );
+  };
+
   const filter = role === ALL ? {} : { role: role as Role };
   const { data: users, isLoading } = useListUsers(filter, {
     query: { queryKey: getListUsersQueryKey(filter) },
@@ -108,10 +126,21 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground mt-1">All accounts in the system</p>
+          {role !== ALL && (
+            <button
+              type="button"
+              onClick={() => setRole(ALL)}
+              className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 hover:bg-primary/20 transition-colors"
+              data-testid="chip-active-filter"
+            >
+              Role: <span className="capitalize font-medium">{role}</span>
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Select value={role} onValueChange={setRole}>

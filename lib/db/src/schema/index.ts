@@ -20,6 +20,7 @@ export const usersTable = pgTable(
     passwordHash: text("password_hash").notNull(),
     role: text("role").notNull(), // student | lecturer | admin
     accountStatus: text("account_status").notNull().default("active"),
+    profileImageUrl: text("profile_image_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

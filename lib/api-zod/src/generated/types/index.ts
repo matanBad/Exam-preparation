@@ -49,6 +49,7 @@ export * from "./submitExamRequest";
 export * from "./topic";
 export * from "./unauthorizedResponse";
 export * from "./updateCourseRequest";
+export * from "./updateProfileImageRequest";
 export * from "./updateQuestionRequest";
 export * from "./updateTopicRequest";
 export * from "./updateUserRequest";

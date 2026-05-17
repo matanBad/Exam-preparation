@@ -1,22 +1,89 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useChangeMyEmail,
   useChangeMyPassword,
   useDeleteMyAccount,
+  useUpdateMyProfileImage,
 } from "@workspace/api-client-react";
-import { getAuthUser, setAuthUser, clearAuth } from "@/lib/auth";
+import { useAuthUser, setAuthUser, clearAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useToast } from "@/hooks/use-toast";
 
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
 export default function Account() {
-  const user = getAuthUser();
+  const user = useAuthUser();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const updateProfileImage = useUpdateMyProfileImage();
+
+  const handleImageFile = (file: File) => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast({
+        title: "Unsupported file type",
+        description: "Please choose a JPG, PNG, or WebP image.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast({
+        title: "Image too large",
+        description: "Maximum file size is 2 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? "");
+      updateProfileImage.mutate(
+        { data: { imageDataUrl: dataUrl } },
+        {
+          onSuccess: (updated) => {
+            if (user) setAuthUser({ ...user, profileImageUrl: updated.profileImageUrl });
+            toast({ title: "Profile picture updated" });
+          },
+          onError: (err: unknown) => {
+            const e = err as { data?: { error?: string } };
+            toast({
+              title: "Failed to update picture",
+              description: e?.data?.error ?? "Try again",
+              variant: "destructive",
+            });
+          },
+        },
+      );
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Could not read image",
+        description: "Please try a different file.",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    updateProfileImage.mutate(
+      { data: { imageDataUrl: null } },
+      {
+        onSuccess: () => {
+          if (user) setAuthUser({ ...user, profileImageUrl: null });
+          toast({ title: "Profile picture removed" });
+        },
+      },
+    );
+  };
 
   const [email, setEmail] = useState(user?.email ?? "");
   const [emailPassword, setEmailPassword] = useState("");
@@ -152,15 +219,71 @@ export default function Account() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-1 text-sm">
-          <p>
-            <span className="text-muted-foreground">Name: </span>
-            {user.fullName}
-          </p>
-          <p>
-            <span className="text-muted-foreground">Role: </span>
-            <span className="capitalize">{user.role}</span>
-          </p>
+        <CardContent>
+          <div className="flex items-start gap-5 flex-wrap">
+            <ProfileAvatar
+              fullName={user.fullName}
+              imageUrl={user.profileImageUrl}
+              size="xl"
+            />
+            <div className="space-y-2 text-sm flex-1 min-w-[200px]">
+              <p>
+                <span className="text-muted-foreground">Name: </span>
+                {user.fullName}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Email: </span>
+                {user.email}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Role: </span>
+                <span className="capitalize">{user.role}</span>
+              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  data-testid="input-profile-image"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImageFile(f);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={updateProfileImage.isPending}
+                  data-testid="btn-upload-image"
+                >
+                  {updateProfileImage.isPending
+                    ? "Uploading..."
+                    : user.profileImageUrl
+                      ? "Change picture"
+                      : "Upload picture"}
+                </Button>
+                {user.profileImageUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                    disabled={updateProfileImage.isPending}
+                    data-testid="btn-remove-image"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground pt-1">
+                JPG, PNG, or WebP. Max 2 MB.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

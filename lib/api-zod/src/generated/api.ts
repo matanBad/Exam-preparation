@@ -30,6 +30,7 @@ export const LoginResponse = zod.object({
     email: zod.string(),
     role: zod.enum(["student", "lecturer", "admin"]),
     accountStatus: zod.string(),
+    profileImageUrl: zod.string().nullish(),
   }),
 });
 
@@ -51,6 +52,28 @@ export const ChangeMyEmailResponse = zod.object({
   email: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
+});
+
+/**
+ * @summary Update or clear current user's profile image
+ */
+export const UpdateMyProfileImageBody = zod.object({
+  imageDataUrl: zod
+    .string()
+    .nullable()
+    .describe(
+      "Data URL (data:image\/...;base64,...) up to ~2MB; null to remove the current image",
+    ),
+});
+
+export const UpdateMyProfileImageResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "lecturer", "admin"]),
+  accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -78,6 +101,7 @@ export const GetMeResponse = zod.object({
   email: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -593,6 +617,7 @@ export const ListUsersResponseItem = zod.object({
   email: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
@@ -620,6 +645,7 @@ export const UpdateUserResponse = zod.object({
   email: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
 });
 
 export const DeleteUserParams = zod.object({
@@ -636,6 +662,7 @@ export const ListCourseMembersResponseItem = zod.object({
   email: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
+  profileImageUrl: zod.string().nullish(),
 });
 export const ListCourseMembersResponse = zod.array(
   ListCourseMembersResponseItem,

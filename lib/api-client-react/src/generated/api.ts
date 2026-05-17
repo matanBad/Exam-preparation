@@ -47,6 +47,7 @@ import type {
   Topic,
   UnauthorizedResponse,
   UpdateCourseRequest,
+  UpdateProfileImageRequest,
   UpdateQuestionRequest,
   UpdateTopicRequest,
   UpdateUserRequest,
@@ -382,6 +383,94 @@ export const useChangeMyEmail = <
   TContext
 > => {
   return useMutation(getChangeMyEmailMutationOptions(options));
+};
+
+/**
+ * @summary Update or clear current user's profile image
+ */
+export const getUpdateMyProfileImageUrl = () => {
+  return `/api/auth/me/profile-image`;
+};
+
+export const updateMyProfileImage = async (
+  updateProfileImageRequest: UpdateProfileImageRequest,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getUpdateMyProfileImageUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateProfileImageRequest),
+  });
+};
+
+export const getUpdateMyProfileImageMutationOptions = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyProfileImage>>,
+    TError,
+    { data: BodyType<UpdateProfileImageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMyProfileImage>>,
+  TError,
+  { data: BodyType<UpdateProfileImageRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateMyProfileImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMyProfileImage>>,
+    { data: BodyType<UpdateProfileImageRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateMyProfileImage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMyProfileImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMyProfileImage>>
+>;
+export type UpdateMyProfileImageMutationBody =
+  BodyType<UpdateProfileImageRequest>;
+export type UpdateMyProfileImageMutationError =
+  ErrorType<void | UnauthorizedResponse>;
+
+/**
+ * @summary Update or clear current user's profile image
+ */
+export const useUpdateMyProfileImage = <
+  TError = ErrorType<void | UnauthorizedResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyProfileImage>>,
+    TError,
+    { data: BodyType<UpdateProfileImageRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMyProfileImage>>,
+  TError,
+  { data: BodyType<UpdateProfileImageRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateMyProfileImageMutationOptions(options));
 };
 
 /**

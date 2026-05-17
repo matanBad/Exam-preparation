@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useSearchParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListQuestions,
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,11 +21,36 @@ import {
 } from "@/components/ui/select";
 
 const ALL = "_all";
+const STATUSES = ["draft", "approved", "archived"] as const;
+const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 
 export default function QuestionsList() {
-  const [courseId, setCourseId] = useState<string>(ALL);
-  const [difficulty, setDifficulty] = useState<string>(ALL);
-  const [status, setStatus] = useState<string>(ALL);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const courseId = searchParams.get("courseId") ?? ALL;
+  const difficulty = (() => {
+    const v = searchParams.get("difficulty");
+    return v && (DIFFICULTIES as readonly string[]).includes(v) ? v : ALL;
+  })();
+  const status = (() => {
+    const v = searchParams.get("status");
+    return v && (STATUSES as readonly string[]).includes(v) ? v : ALL;
+  })();
+
+  const setParam = (key: string, value: string) => {
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        if (!value || value === ALL) out.delete(key);
+        else out.set(key, value);
+        return out;
+      },
+      { replace: true },
+    );
+  };
+  const setCourseId = (v: string) => setParam("courseId", v);
+  const setDifficulty = (v: string) => setParam("difficulty", v);
+  const setStatus = (v: string) => setParam("status", v);
+
   const [q, setQ] = useState("");
 
   const params = {
@@ -58,12 +84,49 @@ export default function QuestionsList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">Question Bank</h1>
           <p className="text-muted-foreground mt-1">
             Manage all approved, draft, and archived questions
           </p>
+          {(status !== ALL || difficulty !== ALL || courseId !== ALL) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {status !== ALL && (
+                <FilterChip
+                  label="Status"
+                  value={status}
+                  onClear={() => setStatus(ALL)}
+                />
+              )}
+              {difficulty !== ALL && (
+                <FilterChip
+                  label="Difficulty"
+                  value={difficulty}
+                  onClear={() => setDifficulty(ALL)}
+                />
+              )}
+              {courseId !== ALL && (
+                <FilterChip
+                  label="Course"
+                  value={courseId}
+                  onClear={() => setCourseId(ALL)}
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setStatus(ALL);
+                  setDifficulty(ALL);
+                  setCourseId(ALL);
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+                data-testid="btn-clear-filters"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
         <Link href="/lecturer/questions/new">
           <Button data-testid="btn-new-question">New Question</Button>
@@ -184,5 +247,27 @@ export default function QuestionsList() {
         )}
       </div>
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  value,
+  onClear,
+}: {
+  label: string;
+  value: string;
+  onClear: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 hover:bg-primary/20 transition-colors"
+      data-testid={`chip-${label.toLowerCase()}`}
+    >
+      {label}: <span className="capitalize font-medium">{value}</span>
+      <X className="w-3 h-3" />
+    </button>
   );
 }

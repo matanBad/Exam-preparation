@@ -1,22 +1,67 @@
-import { Link } from "wouter";
-import { useGetUserExams, getGetUserExamsQueryKey } from "@workspace/api-client-react";
+import { Link, useSearchParams } from "wouter";
+import {
+  useGetUserExams,
+  getGetUserExamsQueryKey,
+} from "@workspace/api-client-react";
 import { getAuthUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+
+const STATUSES = ["generated", "in_progress", "submitted"] as const;
 
 export default function ExamsList() {
   const user = getAuthUser();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = (() => {
+    const v = searchParams.get("status");
+    return v && (STATUSES as readonly string[]).includes(v) ? v : null;
+  })();
+
+  const clearStatus = () =>
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        out.delete("status");
+        return out;
+      },
+      { replace: true },
+    );
+
   const { data: exams, isLoading } = useGetUserExams(user?.id ?? 0, {
-    query: { enabled: !!user?.id, queryKey: getGetUserExamsQueryKey(user?.id ?? 0) },
+    query: {
+      enabled: !!user?.id,
+      queryKey: getGetUserExamsQueryKey(user?.id ?? 0),
+    },
   });
+
+  const visible = statusFilter
+    ? (exams ?? []).filter((e) => e.status === statusFilter)
+    : exams;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">My Exams</h1>
-          <p className="text-muted-foreground mt-1">All practice and mock exams</p>
+          <p className="text-muted-foreground mt-1">
+            All practice and mock exams
+          </p>
+          {statusFilter && (
+            <button
+              type="button"
+              onClick={clearStatus}
+              className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 hover:bg-primary/20 transition-colors"
+              data-testid="chip-status"
+            >
+              Status:{" "}
+              <span className="capitalize font-medium">
+                {statusFilter.replace("_", " ")}
+              </span>
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
         <Link href="/exams/new">
           <Button data-testid="btn-new-exam">New Exam</Button>
@@ -25,23 +70,27 @@ export default function ExamsList() {
 
       {isLoading && <p>Loading...</p>}
 
-      {!isLoading && (!exams || exams.length === 0) && (
+      {!isLoading && (!visible || visible.length === 0) && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No exams yet. Generate your first mock exam to get started.
+            {statusFilter
+              ? `No exams match status "${statusFilter}".`
+              : "No exams yet. Generate your first mock exam to get started."}
           </CardContent>
         </Card>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {exams?.map((e) => (
+        {visible?.map((e) => (
           <Card key={e.id} data-testid={`card-exam-${e.id}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">
                   {e.courseName ?? `Course ${e.courseId}`}
                 </CardTitle>
-                <Badge variant={e.status === "submitted" ? "default" : "secondary"}>
+                <Badge
+                  variant={e.status === "submitted" ? "default" : "secondary"}
+                >
                   {e.status}
                 </Badge>
               </div>
@@ -49,7 +98,9 @@ export default function ExamsList() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>Questions</span>
-                <span data-testid={`text-exam-total-${e.id}`}>{e.totalQuestions}</span>
+                <span data-testid={`text-exam-total-${e.id}`}>
+                  {e.totalQuestions}
+                </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Score</span>
@@ -60,13 +111,20 @@ export default function ExamsList() {
               <div className="flex gap-2 pt-2">
                 {e.status === "submitted" ? (
                   <Link href={`/exams/${e.id}/review`} className="flex-1">
-                    <Button variant="outline" className="w-full" data-testid={`btn-review-${e.id}`}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      data-testid={`btn-review-${e.id}`}
+                    >
                       Review
                     </Button>
                   </Link>
                 ) : (
                   <Link href={`/exams/${e.id}/take`} className="flex-1">
-                    <Button className="w-full" data-testid={`btn-resume-${e.id}`}>
+                    <Button
+                      className="w-full"
+                      data-testid={`btn-resume-${e.id}`}
+                    >
                       {e.status === "in_progress" ? "Resume" : "Start"}
                     </Button>
                   </Link>

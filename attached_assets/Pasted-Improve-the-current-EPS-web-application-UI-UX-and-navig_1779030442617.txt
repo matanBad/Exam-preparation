@@ -1,0 +1,175 @@
+Improve the current EPS web application UI/UX and navigation experience.
+
+Context:
+The system is Exam Preparation System (EPS), Sprint 2. The app already has role-based dashboards, sidebar navigation, admin overview cards, user account section, courses, question bank, users, exams, and submitted exams.
+
+Goal:
+Make the application feel more professional, interactive, and product-ready by improving navigation, profile access, profile image support, and top-bar communication features.
+
+Requirements:
+
+1. Make dashboard statistic cards clickable
+All overview cards and category labels must be clickable when they represent real system entities.
+
+Examples:
+- Users card → navigate to Users page
+- Courses card → navigate to Courses page
+- Topics card → navigate to Topics/Courses structure page
+- Questions card → navigate to Question Bank page
+- Approved card → navigate to Question Bank filtered by status=approved
+- Archived card → navigate to Question Bank filtered by status=archived
+- Exams card → navigate to Exams page
+- Submitted card → navigate to Exams page filtered by status=submitted
+- Students count → navigate to Users page filtered by role=student
+- Lecturers count → navigate to Users page filtered by role=lecturer
+- Admins count → navigate to Users page filtered by role=admin
+
+Implementation details:
+- Use React Router navigation.
+- Add query parameters where filtering is needed.
+  Example:
+  /questions?status=approved
+  /questions?status=archived
+  /users?role=student
+  /users?role=lecturer
+  /users?role=admin
+  /exams?status=submitted
+- Make clickable cards visually clear:
+  - cursor pointer
+  - hover shadow
+  - subtle scale or border highlight
+  - accessible aria-label
+- Do not break existing dashboard logic.
+
+2. Make account/profile areas clickable
+The user account area in the sidebar must be clickable and navigate to “My Account”.
+
+Clickable areas:
+- User avatar circle
+- User name
+- User role label
+- My Account sidebar item
+
+All should route to:
+/ account or /my-account according to the existing route convention.
+
+3. Add profile picture support
+Enhance the My Account page with profile image functionality.
+
+Requirements:
+- Show current profile image if available.
+- If no profile image exists, show initials fallback.
+- Allow user to upload or select a profile picture.
+- Store profile image URL/path in the user profile.
+- Add backend support if missing:
+  - user.profile_image_url column or equivalent
+  - endpoint to update profile image
+- For Replit demo, it is acceptable to store uploaded image in local uploads folder or save a base64/profile image URL if simpler, but implement it cleanly.
+- Validate file type: jpg, jpeg, png, webp.
+- Limit file size to reasonable size, for example 2MB.
+- Show success/error feedback after upload.
+- Update sidebar avatar immediately after image update.
+
+4. Add professional top navigation bar
+Add a top bar to the main content area across all authenticated pages.
+
+Top bar should include:
+- Page title or breadcrumb
+- Global search input if simple to implement
+- Notifications icon
+- Messages icon
+- Profile/avatar shortcut
+
+Notifications:
+- Add bell icon with unread badge.
+- Clicking it opens a dropdown.
+- For Sprint 2, notifications can be demo/static or fetched from a simple endpoint.
+- Suggested demo notifications:
+  - “New exam submitted”
+  - “Question bank updated”
+  - “Course structure modified”
+- Include timestamp and read/unread visual state.
+
+Messages:
+- Add message icon with unread badge.
+- Clicking it opens a dropdown.
+- For Sprint 2, messages can be demo/static.
+- Suggested demo messages:
+  - “Lecturer added new questions”
+  - “Admin reviewed system activity”
+- Include sender, short message, and timestamp.
+
+Profile shortcut:
+- Avatar in top bar should be clickable.
+- Clicking opens small menu:
+  - My Account
+  - Logout
+
+5. Improve navigation consistency
+Every entity displayed as a number, category, badge, or summary should either:
+- Be clickable and navigate to the relevant page/filter, or
+- Not look clickable.
+
+Apply this especially to:
+- Admin dashboard cards
+- Users by role section
+- Account deletion request entries if relevant
+- Question status badges
+- Course cards
+- Exam status cards
+
+6. Filtering behavior
+Update Users, Questions, and Exams pages to read query parameters from the URL.
+
+Examples:
+- /users?role=student should show only students.
+- /questions?status=approved should show only approved questions.
+- /questions?status=archived should show only archived questions.
+- /exams?status=submitted should show only submitted exams.
+
+Show active filters clearly at the top of the page with an option to clear filters.
+
+7. UI quality
+Keep the current clean visual style, but make it more interactive and professional.
+
+Use:
+- Tailwind CSS
+- consistent spacing
+- hover states
+- active states
+- badges
+- dropdown animations if simple
+- responsive behavior
+
+Do not redesign the whole system from scratch.
+Preserve the existing layout and improve it.
+
+8. Backend/API requirements
+Add or update backend support only where needed:
+- GET current user profile
+- PATCH current user profile
+- PATCH profile image
+- Optional notifications endpoint:
+  GET /api/notifications
+- Optional messages endpoint:
+  GET /api/messages
+
+If notifications/messages are static demo data, keep the code structured so real DB integration can be added in Sprint 3.
+
+9. Acceptance criteria
+The implementation is complete when:
+- Clicking dashboard cards navigates correctly.
+- Clicking Students/Lecturers/Admins filters users correctly.
+- Clicking Approved/Archived filters questions correctly.
+- Clicking Submitted filters exams correctly.
+- Sidebar account block navigates to My Account.
+- Profile image can be uploaded and displayed.
+- Sidebar avatar and top bar avatar update after profile image change.
+- Top bar appears across authenticated pages.
+- Notification dropdown works.
+- Message dropdown works.
+- Profile dropdown works.
+- Existing role-based access control is not broken.
+- Existing Sprint 2 features continue working.
+
+Please implement this carefully in the current codebase without breaking existing functionality.
