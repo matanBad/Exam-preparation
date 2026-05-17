@@ -193,13 +193,6 @@ function AdminDashboardView() {
       key: "archived",
       href: "/lecturer/questions?status=archived",
     },
-    { label: "Exams", value: t.exams, key: "exams", href: "/exams" },
-    {
-      label: "Submitted",
-      value: t.submittedExams,
-      key: "submitted",
-      href: "/exams?status=submitted",
-    },
   ];
 
   const roleCounts = [
