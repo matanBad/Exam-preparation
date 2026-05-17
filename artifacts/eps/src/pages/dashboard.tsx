@@ -1,7 +1,6 @@
 import { getAuthUser } from "@/lib/auth";
 import { useGetUserCourses, useGetUserExams, useListCourses, useListQuestions, useGetAdminOverview, useListDeletionRequests } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
 function StudentDashboard({ userId }: { userId: number }) {
@@ -94,14 +93,7 @@ function AdminDashboardView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">System Overview</h2>
-        <Link href="/admin/users">
-          <Button variant="outline" data-testid="btn-manage-users">
-            Manage Users
-          </Button>
-        </Link>
-      </div>
+      <h2 className="text-2xl font-bold">System Overview</h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stat("Users", t.users, "users")}
