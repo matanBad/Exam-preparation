@@ -93,6 +93,27 @@ paths:
         "409":
           description: Email already in use
 
+  /auth/me/delete:
+    post:
+      operationId: deleteMyAccount
+      tags: [auth]
+      summary: Self-service account deletion (students only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountRequest"
+      responses:
+        "204":
+          description: Account deleted
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /auth/me:
     get:
       operationId: getMe
@@ -656,6 +677,23 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /admin/deletion-requests:
+    get:
+      operationId: listDeletionRequests
+      tags: [admin]
+      summary: All account deletion requests (newest first)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeletionRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/overview:
     get:
       operationId: getAdminOverview
@@ -771,6 +809,26 @@ components:
       properties:
         userId: { type: integer }
       required: [userId]
+
+    DeleteAccountRequest:
+      type: object
+      properties:
+        currentPassword: { type: string, minLength: 1 }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+        confirm: { type: boolean, enum: [true] }
+      required: [currentPassword, reason, confirm]
+
+    DeletionRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        formerUserId: { type: integer }
+        formerEmail: { type: string }
+        formerFullName: { type: string }
+        formerRole: { $ref: "#/components/schemas/Role" }
+        reason: { type: string }
+        deletedAt: { type: string, format: date-time }
+      required: [id, formerUserId, formerEmail, formerFullName, formerRole, reason, deletedAt]
 
     ChangePasswordRequest:
       type: object

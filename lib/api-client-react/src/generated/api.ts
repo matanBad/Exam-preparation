@@ -28,6 +28,8 @@ import type {
   CreateQuestionRequest,
   CreateTopicRequest,
   CreateUserRequest,
+  DeleteAccountRequest,
+  DeletionRequest,
   Exam,
   ExamResult,
   ExamReview,
@@ -380,6 +382,94 @@ export const useChangeMyEmail = <
   TContext
 > => {
   return useMutation(getChangeMyEmailMutationOptions(options));
+};
+
+/**
+ * @summary Self-service account deletion (students only)
+ */
+export const getDeleteMyAccountUrl = () => {
+  return `/api/auth/me/delete`;
+};
+
+export const deleteMyAccount = async (
+  deleteAccountRequest: DeleteAccountRequest,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteMyAccountUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(deleteAccountRequest),
+  });
+};
+
+export const getDeleteMyAccountMutationOptions = <
+  TError = ErrorType<void | UnauthorizedResponse | ForbiddenResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    { data: BodyType<DeleteAccountRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  { data: BodyType<DeleteAccountRequest> },
+  TContext
+> => {
+  const mutationKey = ["deleteMyAccount"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    { data: BodyType<DeleteAccountRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return deleteMyAccount(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMyAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMyAccount>>
+>;
+export type DeleteMyAccountMutationBody = BodyType<DeleteAccountRequest>;
+export type DeleteMyAccountMutationError = ErrorType<
+  void | UnauthorizedResponse | ForbiddenResponse
+>;
+
+/**
+ * @summary Self-service account deletion (students only)
+ */
+export const useDeleteMyAccount = <
+  TError = ErrorType<void | UnauthorizedResponse | ForbiddenResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    { data: BodyType<DeleteAccountRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  { data: BodyType<DeleteAccountRequest> },
+  TContext
+> => {
+  return useMutation(getDeleteMyAccountMutationOptions(options));
 };
 
 /**
@@ -2706,6 +2796,81 @@ export const useRemoveCourseMember = <
 > => {
   return useMutation(getRemoveCourseMemberMutationOptions(options));
 };
+
+/**
+ * @summary All account deletion requests (newest first)
+ */
+export const getListDeletionRequestsUrl = () => {
+  return `/api/admin/deletion-requests`;
+};
+
+export const listDeletionRequests = async (
+  options?: RequestInit,
+): Promise<DeletionRequest[]> => {
+  return customFetch<DeletionRequest[]>(getListDeletionRequestsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDeletionRequestsQueryKey = () => {
+  return [`/api/admin/deletion-requests`] as const;
+};
+
+export const getListDeletionRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDeletionRequests>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listDeletionRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListDeletionRequestsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDeletionRequests>>
+  > = ({ signal }) => listDeletionRequests({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDeletionRequests>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDeletionRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDeletionRequests>>
+>;
+export type ListDeletionRequestsQueryError = ErrorType<ForbiddenResponse>;
+
+/**
+ * @summary All account deletion requests (newest first)
+ */
+
+export function useListDeletionRequests<
+  TData = Awaited<ReturnType<typeof listDeletionRequests>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listDeletionRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDeletionRequestsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary System overview totals (users, courses, topics, questions, exams)

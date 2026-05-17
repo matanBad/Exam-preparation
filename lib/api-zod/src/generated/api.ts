@@ -54,6 +54,22 @@ export const ChangeMyEmailResponse = zod.object({
 });
 
 /**
+ * @summary Self-service account deletion (students only)
+ */
+
+export const deleteMyAccountBodyReasonMin = 5;
+export const deleteMyAccountBodyReasonMax = 1000;
+
+export const DeleteMyAccountBody = zod.object({
+  currentPassword: zod.string().min(1),
+  reason: zod
+    .string()
+    .min(deleteMyAccountBodyReasonMin)
+    .max(deleteMyAccountBodyReasonMax),
+  confirm: zod.literal(true),
+});
+
+/**
  * @summary Current authenticated user
  */
 export const GetMeResponse = zod.object({
@@ -637,6 +653,22 @@ export const RemoveCourseMemberParams = zod.object({
   id: zod.coerce.number(),
   userId: zod.coerce.number(),
 });
+
+/**
+ * @summary All account deletion requests (newest first)
+ */
+export const ListDeletionRequestsResponseItem = zod.object({
+  id: zod.number(),
+  formerUserId: zod.number(),
+  formerEmail: zod.string(),
+  formerFullName: zod.string(),
+  formerRole: zod.enum(["student", "lecturer", "admin"]),
+  reason: zod.string(),
+  deletedAt: zod.coerce.date(),
+});
+export const ListDeletionRequestsResponse = zod.array(
+  ListDeletionRequestsResponseItem,
+);
 
 /**
  * @summary System overview totals (users, courses, topics, questions, exams)

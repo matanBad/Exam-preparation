@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, ne } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, accountDeletionRequestsTable } from "@workspace/db";
 import {
   LoginBody,
   LoginResponse,
@@ -8,6 +8,7 @@ import {
   ChangeMyPasswordBody,
   ChangeMyEmailBody,
   ChangeMyEmailResponse,
+  DeleteMyAccountBody,
 } from "@workspace/api-zod";
 import { signToken, verifyPassword, hashPassword } from "../lib/auth";
 import { requireAuth } from "../middlewares/auth";
@@ -156,6 +157,61 @@ router.patch(
         accountStatus: updated.accountStatus,
       }),
     );
+  },
+);
+
+router.post(
+  "/auth/me/delete",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const parsed = DeleteMyAccountBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const auth = req.auth!;
+    if (auth.role !== "student") {
+      res
+        .status(403)
+        .json({ error: "Only students can delete their own account" });
+      return;
+    }
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, auth.userId));
+    if (!user) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
+    const ok = await verifyPassword(
+      parsed.data.currentPassword,
+      user.passwordHash,
+    );
+    if (!ok) {
+      res.status(400).json({ error: "Current password is incorrect" });
+      return;
+    }
+    const committed = await db.transaction(async (tx) => {
+      const deleted = await tx
+        .delete(usersTable)
+        .where(eq(usersTable.id, user.id))
+        .returning({ id: usersTable.id });
+      if (deleted.length === 0) return false;
+      await tx.insert(accountDeletionRequestsTable).values({
+        formerUserId: user.id,
+        formerEmail: user.email,
+        formerFullName: user.fullName,
+        formerRole: user.role,
+        reason: parsed.data.reason,
+      });
+      return true;
+    });
+    if (!committed) {
+      res.status(404).json({ error: "Account no longer exists" });
+      return;
+    }
+    res.status(204).end();
   },
 );
 

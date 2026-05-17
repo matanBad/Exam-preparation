@@ -20,6 +20,8 @@ export * from "./createCourseRequest";
 export * from "./createQuestionRequest";
 export * from "./createTopicRequest";
 export * from "./createUserRequest";
+export * from "./deleteAccountRequest";
+export * from "./deletionRequest";
 export * from "./difficulty";
 export * from "./error";
 export * from "./exam";

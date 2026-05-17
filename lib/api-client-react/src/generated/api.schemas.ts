@@ -79,6 +79,27 @@ export interface AddCourseMemberRequest {
   userId: number;
 }
 
+export interface DeleteAccountRequest {
+  /** @minLength 1 */
+  currentPassword: string;
+  /**
+   * @minLength 5
+   * @maxLength 1000
+   */
+  reason: string;
+  confirm: boolean;
+}
+
+export interface DeletionRequest {
+  id: number;
+  formerUserId: number;
+  formerEmail: string;
+  formerFullName: string;
+  formerRole: Role;
+  reason: string;
+  deletedAt: string;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   /** @minLength 6 */

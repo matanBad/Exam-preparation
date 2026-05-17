@@ -184,6 +184,19 @@ export const mockExamQuestionsTable = pgTable(
   }),
 );
 
+export const accountDeletionRequestsTable = pgTable(
+  "account_deletion_requests",
+  {
+    id: serial("id").primaryKey(),
+    formerUserId: integer("former_user_id").notNull(),
+    formerEmail: text("former_email").notNull(),
+    formerFullName: text("former_full_name").notNull(),
+    formerRole: text("former_role").notNull(),
+    reason: text("reason").notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
 export type User = typeof usersTable.$inferSelect;
 export type Course = typeof coursesTable.$inferSelect;
 export type Topic = typeof topicsTable.$inferSelect;

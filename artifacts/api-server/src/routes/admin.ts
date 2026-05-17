@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -7,6 +7,7 @@ import {
   topicsTable,
   questionsTable,
   mockExamsTable,
+  accountDeletionRequestsTable,
 } from "@workspace/db";
 import {
   ListUsersQueryParams,
@@ -17,6 +18,7 @@ import {
   UpdateUserBody,
   UpdateUserResponse,
   DeleteUserParams,
+  ListDeletionRequestsResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword } from "../lib/auth";
@@ -143,6 +145,19 @@ router.delete(
       return;
     }
     res.status(204).end();
+  },
+);
+
+router.get(
+  "/admin/deletion-requests",
+  requireAuth,
+  requireRole("admin"),
+  async (_req, res): Promise<void> => {
+    const rows = await db
+      .select()
+      .from(accountDeletionRequestsTable)
+      .orderBy(desc(accountDeletionRequestsTable.deletedAt));
+    res.json(ListDeletionRequestsResponse.parse(rows));
   },
 );
 
