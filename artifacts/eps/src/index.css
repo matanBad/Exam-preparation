@@ -61,55 +61,55 @@
 }
 
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 40 30% 97%;
+  --foreground: 213 40% 14%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --border: 213 20% 88%;
+  --input: 213 20% 88%;
+  --ring: 213 52% 28%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --card-border: 214.3 31.8% 91.4%;
+  --card-foreground: 213 40% 14%;
+  --card-border: 213 20% 88%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --popover-border: 214.3 31.8% 91.4%;
+  --popover-foreground: 213 40% 14%;
+  --popover-border: 213 20% 88%;
 
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 213 52% 24%;
+  --primary-foreground: 40 30% 97%;
 
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 145 32% 28%;
+  --secondary-foreground: 40 30% 97%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 40 25% 94%;
+  --muted-foreground: 213 15% 40%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 42 55% 55%;
+  --accent-foreground: 213 52% 18%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 40 30% 97%;
 
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 222.2 84% 4.9%;
-  --sidebar-border: 214.3 31.8% 91.4%;
-  --sidebar-primary: 221.2 83.2% 53.3%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 210 40% 96.1%;
-  --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-  --sidebar-ring: 221.2 83.2% 53.3%;
+  --sidebar-foreground: 213 40% 14%;
+  --sidebar-border: 213 20% 88%;
+  --sidebar-primary: 213 52% 24%;
+  --sidebar-primary-foreground: 40 30% 97%;
+  --sidebar-accent: 40 25% 94%;
+  --sidebar-accent-foreground: 213 52% 24%;
+  --sidebar-ring: 213 52% 28%;
 
   --app-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --radius: 0.5rem;
 
-  --chart-1: 221.2 83.2% 53.3%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  --chart-1: 213 52% 24%;
+  --chart-2: 145 32% 32%;
+  --chart-3: 42 55% 55%;
+  --chart-4: 213 35% 50%;
+  --chart-5: 145 25% 55%;
 }
 
 .dark {

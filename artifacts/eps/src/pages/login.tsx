@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap } from "lucide-react";
+import logoUrl from "@/assets/ep-logo.png";
 
 const demos = [
   { label: "Student", email: "student@eps.com" },
@@ -52,14 +52,14 @@ export default function Login() {
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl">Exam Preparation System</CardTitle>
-              <p className="text-sm text-muted-foreground">Sign in to continue</p>
-            </div>
+          <div className="flex flex-col items-center text-center mb-2">
+            <img
+              src={logoUrl}
+              alt="Exam Preparation"
+              className="w-64 h-auto object-contain"
+            />
+            <CardTitle className="sr-only">Exam Preparation System</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Sign in to continue</p>
           </div>
         </CardHeader>
         <CardContent>

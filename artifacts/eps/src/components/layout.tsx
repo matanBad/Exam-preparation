@@ -1,8 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { getAuthUser, clearAuth } from "@/lib/auth";
-import { BookOpen, CheckSquare, FileText, Home, Users, LogOut, Settings, List, User } from "lucide-react";
+import { BookOpen, CheckSquare, Home, Users, LogOut, Settings, List, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoUrl from "@/assets/ep-logo.png";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
@@ -28,10 +29,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 border-r border-border bg-card flex flex-col justify-between hidden md:flex">
         <div>
-          <div className="p-6">
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <FileText className="w-6 h-6" /> EPS
-            </h1>
+          <div className="px-4 py-4 border-b border-border/60">
+            <Link href="/" className="block" data-testid="brand-logo">
+              <img
+                src={logoUrl}
+                alt="Exam Preparation"
+                className="w-full h-20 object-contain"
+              />
+            </Link>
           </div>
           <nav className="px-4 space-y-2">
             {navItems
@@ -70,7 +75,9 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
         <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:hidden">
-          <h1 className="text-lg font-bold text-primary">EPS</h1>
+          <Link href="/" className="flex items-center">
+            <img src={logoUrl} alt="Exam Preparation" className="h-10 object-contain" />
+          </Link>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>
