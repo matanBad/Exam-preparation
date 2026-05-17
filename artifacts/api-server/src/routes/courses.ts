@@ -238,6 +238,33 @@ router.put(
   },
 );
 
+router.delete(
+  "/topics/:id",
+  requireAuth,
+  requireRole("lecturer", "admin"),
+  async (req, res): Promise<void> => {
+    const params = UpdateTopicParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    // Reparent any subtopics to null so we don't orphan/cascade-destroy them
+    await db
+      .update(topicsTable)
+      .set({ parentTopicId: null })
+      .where(eq(topicsTable.parentTopicId, params.data.id));
+    const deleted = await db
+      .delete(topicsTable)
+      .where(eq(topicsTable.id, params.data.id))
+      .returning({ id: topicsTable.id });
+    if (deleted.length === 0) {
+      res.status(404).json({ error: "Topic not found" });
+      return;
+    }
+    res.status(204).end();
+  },
+);
+
 export default router;
 
 // expose a helper for `and` if needed elsewhere

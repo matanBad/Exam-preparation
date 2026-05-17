@@ -845,6 +845,86 @@ export const useUpdateTopic = <
   return useMutation(getUpdateTopicMutationOptions(options));
 };
 
+export const getDeleteTopicUrl = (id: number) => {
+  return `/api/topics/${id}`;
+};
+
+export const deleteTopic = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteTopicUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteTopicMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTopic>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTopic>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteTopic"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTopic>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteTopic(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTopicMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTopic>>
+>;
+
+export type DeleteTopicMutationError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export const useDeleteTopic = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTopic>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTopic>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteTopicMutationOptions(options));
+};
+
 export const getGetUserCoursesUrl = (id: number) => {
   return `/api/users/${id}/courses`;
 };

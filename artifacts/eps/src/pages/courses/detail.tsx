@@ -1,4 +1,12 @@
-import { useGetCourse, useListCourseTopics, useCreateTopic, getListCourseTopicsQueryKey, getGetCourseQueryKey } from "@workspace/api-client-react";
+import {
+  useGetCourse,
+  useListCourseTopics,
+  useCreateTopic,
+  useUpdateTopic,
+  useDeleteTopic,
+  getListCourseTopicsQueryKey,
+  getGetCourseQueryKey,
+} from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,34 +14,164 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAuthUser } from "@/lib/auth";
 
+type Topic = {
+  id: number;
+  topicName: string;
+  parentTopicId?: number | null;
+};
+
 export default function CourseDetail({ params }: { params: { id: string } }) {
   const id = parseInt(params.id, 10);
-  const { data: course, isLoading: loadingCourse } = useGetCourse(id, { query: { enabled: !!id, queryKey: getGetCourseQueryKey(id) } });
-  const { data: topics, isLoading: loadingTopics } = useListCourseTopics(id, { query: { enabled: !!id, queryKey: getListCourseTopicsQueryKey(id) } });
+  const { data: course, isLoading: loadingCourse } = useGetCourse(id, {
+    query: { enabled: !!id, queryKey: getGetCourseQueryKey(id) },
+  });
+  const { data: topics, isLoading: loadingTopics } = useListCourseTopics(id, {
+    query: { enabled: !!id, queryKey: getListCourseTopicsQueryKey(id) },
+  });
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const createTopic = useCreateTopic();
+  const updateTopic = useUpdateTopic();
+  const deleteTopic = useDeleteTopic();
   const queryClient = useQueryClient();
-  const [topicName, setTopicName] = useState("");
 
-  const handleAddTopic = () => {
-    if (!topicName) return;
-    createTopic.mutate({ id, data: { topicName } }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListCourseTopicsQueryKey(id) });
-        setTopicName("");
-      }
-    });
+  const [newTopic, setNewTopic] = useState("");
+  const [newParent, setNewParent] = useState<number | "">("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editParent, setEditParent] = useState<number | "">("");
+
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: getListCourseTopicsQueryKey(id) });
+
+  const handleAdd = () => {
+    if (!newTopic.trim()) return;
+    createTopic.mutate(
+      {
+        id,
+        data: {
+          topicName: newTopic.trim(),
+          parentTopicId: newParent === "" ? null : newParent,
+        },
+      },
+      {
+        onSuccess: () => {
+          refresh();
+          setNewTopic("");
+          setNewParent("");
+        },
+      },
+    );
+  };
+
+  const startEdit = (t: Topic) => {
+    setEditingId(t.id);
+    setEditName(t.topicName);
+    setEditParent(t.parentTopicId ?? "");
+  };
+
+  const handleSaveEdit = () => {
+    if (editingId == null || !editName.trim()) return;
+    updateTopic.mutate(
+      {
+        id: editingId,
+        data: {
+          topicName: editName.trim(),
+          parentTopicId: editParent === "" ? null : editParent,
+        },
+      },
+      {
+        onSuccess: () => {
+          refresh();
+          setEditingId(null);
+        },
+      },
+    );
+  };
+
+  const handleDelete = (topicId: number) => {
+    if (!confirm("Delete this topic? Any subtopics will be moved to top level.")) return;
+    deleteTopic.mutate({ id: topicId }, { onSuccess: refresh });
   };
 
   if (loadingCourse || loadingTopics) return <p>Loading...</p>;
   if (!course) return <p>Course not found.</p>;
 
+  const all = (topics ?? []) as Topic[];
+  const roots = all.filter((t) => !t.parentTopicId);
+  const childrenOf = (pid: number) => all.filter((t) => t.parentTopicId === pid);
+
+  const renderTopic = (t: Topic, depth: number) => (
+    <li
+      key={t.id}
+      className="p-3 border rounded-md"
+      style={{ marginLeft: depth * 20 }}
+    >
+      {editingId === t.id ? (
+        <div className="space-y-2">
+          <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <select
+            className="border rounded px-2 py-1 w-full"
+            value={editParent}
+            onChange={(e) =>
+              setEditParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
+            }
+          >
+            <option value="">No parent (top-level topic)</option>
+            {all
+              .filter((x) => x.id !== t.id && x.parentTopicId == null)
+              .map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.topicName}
+                </option>
+              ))}
+          </select>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSaveEdit} disabled={updateTopic.isPending}>
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-between items-center">
+          <span>{t.topicName}</span>
+          {isPrivileged && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => startEdit(t)}>
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDelete(t.id)}
+                disabled={deleteTopic.isPending}
+              >
+                Delete
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+      {childrenOf(t.id).length > 0 && (
+        <ul className="space-y-2 mt-2">
+          {childrenOf(t.id).map((c) => renderTopic(c, depth + 1))}
+        </ul>
+      )}
+    </li>
+  );
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">{course.courseCode}: {course.courseName}</h1>
-        <p className="text-muted-foreground mt-2">Manage course details and topics.</p>
+        <h1 className="text-3xl font-bold">
+          {course.courseCode}: {course.courseName}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Manage course details, topics, and subtopics.
+        </p>
       </div>
 
       <Card>
@@ -41,19 +179,40 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           <CardTitle>Topics</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-4 mb-6">
-            {topics?.map(t => (
-              <li key={t.id} className="p-4 border rounded-md">
-                {t.topicName}
-              </li>
-            ))}
-            {topics?.length === 0 && <p className="text-muted-foreground">No topics yet.</p>}
+          <ul className="space-y-2 mb-6">
+            {roots.map((t) => renderTopic(t, 0))}
+            {all.length === 0 && (
+              <p className="text-muted-foreground">No topics yet.</p>
+            )}
           </ul>
 
           {isPrivileged && (
-            <div className="flex gap-2">
-              <Input placeholder="New topic name" value={topicName} onChange={e => setTopicName(e.target.value)} />
-              <Button onClick={handleAddTopic} disabled={createTopic.isPending}>Add Topic</Button>
+            <div className="space-y-2 border-t pt-4">
+              <h3 className="font-semibold">Add topic</h3>
+              <Input
+                placeholder="New topic name"
+                value={newTopic}
+                onChange={(e) => setNewTopic(e.target.value)}
+              />
+              <select
+                className="border rounded px-2 py-1 w-full"
+                value={newParent}
+                onChange={(e) =>
+                  setNewParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
+                }
+              >
+                <option value="">No parent (top-level topic)</option>
+                {all
+                  .filter((t) => t.parentTopicId == null)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.topicName} (add as subtopic)
+                    </option>
+                  ))}
+              </select>
+              <Button onClick={handleAdd} disabled={createTopic.isPending}>
+                Add Topic
+              </Button>
             </div>
           )}
         </CardContent>

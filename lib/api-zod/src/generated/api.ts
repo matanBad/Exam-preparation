@@ -145,6 +145,10 @@ export const UpdateTopicResponse = zod.object({
   status: zod.string(),
 });
 
+export const DeleteTopicParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const GetUserCoursesParams = zod.object({
   id: zod.coerce.number(),
 });
