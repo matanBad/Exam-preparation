@@ -27,14 +27,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card flex flex-col justify-between hidden md:flex">
+      <aside className="w-72 border-r border-border bg-card flex flex-col justify-between hidden md:flex">
         <div>
-          <div className="px-4 py-4 border-b border-border/60">
+          <div className="px-4 pt-6 pb-4 border-b border-border/60">
             <Link href="/" className="block" data-testid="brand-logo">
               <img
                 src={logoUrl}
                 alt="Exam Preparation"
-                className="w-full h-20 object-contain"
+                className="w-full h-36 object-contain"
               />
             </Link>
           </div>
@@ -76,7 +76,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header */}
         <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:hidden">
           <Link href="/" className="flex items-center">
-            <img src={logoUrl} alt="Exam Preparation" className="h-10 object-contain" />
+            <img src={logoUrl} alt="Exam Preparation" className="h-12 object-contain" />
           </Link>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
