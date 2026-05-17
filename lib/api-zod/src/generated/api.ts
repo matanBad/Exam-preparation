@@ -33,6 +33,26 @@ export const LoginResponse = zod.object({
   }),
 });
 
+export const changeMyPasswordBodyNewPasswordMin = 6;
+
+export const ChangeMyPasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string().min(changeMyPasswordBodyNewPasswordMin),
+});
+
+export const ChangeMyEmailBody = zod.object({
+  currentPassword: zod.string(),
+  newEmail: zod.string().email(),
+});
+
+export const ChangeMyEmailResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "lecturer", "admin"]),
+  accountStatus: zod.string(),
+});
+
 /**
  * @summary Current authenticated user
  */

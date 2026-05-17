@@ -13,6 +13,8 @@ export * from "./answerOption";
 export * from "./answerOptionInput";
 export * from "./authLoginResponse";
 export * from "./badRequestResponse";
+export * from "./changeEmailRequest";
+export * from "./changePasswordRequest";
 export * from "./course";
 export * from "./createCourseRequest";
 export * from "./createQuestionRequest";

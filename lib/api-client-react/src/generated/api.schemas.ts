@@ -79,6 +79,17 @@ export interface AddCourseMemberRequest {
   userId: number;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  /** @minLength 6 */
+  newPassword: string;
+}
+
+export interface ChangeEmailRequest {
+  currentPassword: string;
+  newEmail: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

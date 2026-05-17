@@ -26,17 +26,38 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
+async function lecturerOwnsCourse(
+  userId: number,
+  courseId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: enrollmentsTable.id })
+    .from(enrollmentsTable)
+    .where(
+      and(
+        eq(enrollmentsTable.userId, userId),
+        eq(enrollmentsTable.courseId, courseId),
+      ),
+    );
+  return !!row;
+}
+
 async function loadQuestionsWithOptions(
   filters: SQL[],
-  studentUserId: number | null,
+  scope:
+    | { kind: "admin" }
+    | { kind: "student"; userId: number }
+    | { kind: "lecturer"; userId: number },
 ) {
   const allFilters = [...filters];
-  if (studentUserId != null) {
-    allFilters.push(eq(questionsTable.status, "approved"));
+  if (scope.kind !== "admin") {
+    if (scope.kind === "student") {
+      allFilters.push(eq(questionsTable.status, "approved"));
+    }
     const enrolled = await db
       .select({ courseId: enrollmentsTable.courseId })
       .from(enrollmentsTable)
-      .where(eq(enrollmentsTable.userId, studentUserId));
+      .where(eq(enrollmentsTable.userId, scope.userId));
     const courseIds = enrolled.map((e) => e.courseId);
     if (courseIds.length === 0) return [];
     allFilters.push(inArray(questionsTable.courseId, courseIds));
@@ -103,7 +124,9 @@ router.get("/questions", requireAuth, async (req, res): Promise<void> => {
   }
   const result = await loadQuestionsWithOptions(
     filters,
-    auth.role === "student" ? auth.userId : null,
+    auth.role === "admin"
+      ? { kind: "admin" }
+      : { kind: auth.role, userId: auth.userId },
   );
   res.json(ListQuestionsResponse.parse(result));
 });
@@ -138,7 +161,9 @@ router.get(
     }
     const result = await loadQuestionsWithOptions(
       filters,
-      auth.role === "student" ? auth.userId : null,
+      auth.role === "admin"
+        ? { kind: "admin" }
+        : { kind: auth.role, userId: auth.userId },
     );
     res.json(SearchQuestionsResponse.parse(result));
   },
@@ -156,6 +181,15 @@ router.post(
     }
     const auth = req.auth!;
     const data = parsed.data;
+    if (auth.role === "lecturer") {
+      const owns = await lecturerOwnsCourse(auth.userId, data.courseId);
+      if (!owns) {
+        res
+          .status(403)
+          .json({ error: "You are not assigned to this course" });
+        return;
+      }
+    }
     const [question] = await db
       .insert(questionsTable)
       .values({
@@ -184,7 +218,7 @@ router.post(
 
     const [full] = await loadQuestionsWithOptions(
       [eq(questionsTable.id, question.id)],
-      null,
+      { kind: "admin" },
     );
     res.status(201).json(GetQuestionResponse.parse(full));
   },
@@ -202,7 +236,9 @@ router.get(
     const auth = req.auth!;
     const [full] = await loadQuestionsWithOptions(
       [eq(questionsTable.id, params.data.id)],
-      auth.role === "student" ? auth.userId : null,
+      auth.role === "admin"
+        ? { kind: "admin" }
+        : { kind: auth.role, userId: auth.userId },
     );
     if (!full) {
       res.status(404).json({ error: "Question not found" });
@@ -228,6 +264,32 @@ router.put(
       return;
     }
     const data = parsed.data;
+    const auth = req.auth!;
+    if (auth.role === "lecturer") {
+      const [existing] = await db
+        .select({ courseId: questionsTable.courseId })
+        .from(questionsTable)
+        .where(eq(questionsTable.id, params.data.id));
+      if (!existing) {
+        res.status(404).json({ error: "Question not found" });
+        return;
+      }
+      const targetCourseId = data.courseId ?? existing.courseId;
+      const ownsExisting = await lecturerOwnsCourse(
+        auth.userId,
+        existing.courseId,
+      );
+      const ownsTarget =
+        targetCourseId === existing.courseId
+          ? ownsExisting
+          : await lecturerOwnsCourse(auth.userId, targetCourseId);
+      if (!ownsExisting || !ownsTarget) {
+        res
+          .status(403)
+          .json({ error: "You are not assigned to this course" });
+        return;
+      }
+    }
     const updateValues: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of [
       "courseId",
@@ -267,7 +329,7 @@ router.put(
     }
     const [full] = await loadQuestionsWithOptions(
       [eq(questionsTable.id, params.data.id)],
-      null,
+      { kind: "admin" },
     );
     res.json(UpdateQuestionResponse.parse(full));
   },
@@ -283,6 +345,24 @@ router.patch(
       res.status(400).json({ error: params.error.message });
       return;
     }
+    const auth = req.auth!;
+    if (auth.role === "lecturer") {
+      const [existing] = await db
+        .select({ courseId: questionsTable.courseId })
+        .from(questionsTable)
+        .where(eq(questionsTable.id, params.data.id));
+      if (!existing) {
+        res.status(404).json({ error: "Question not found" });
+        return;
+      }
+      const owns = await lecturerOwnsCourse(auth.userId, existing.courseId);
+      if (!owns) {
+        res
+          .status(403)
+          .json({ error: "You are not assigned to this course" });
+        return;
+      }
+    }
     const [updated] = await db
       .update(questionsTable)
       .set({ status: "archived", updatedAt: new Date() })
@@ -294,7 +374,7 @@ router.patch(
     }
     const [full] = await loadQuestionsWithOptions(
       [eq(questionsTable.id, params.data.id)],
-      null,
+      { kind: "admin" },
     );
     res.json(ArchiveQuestionResponse.parse(full));
   },

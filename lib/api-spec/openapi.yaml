@@ -51,6 +51,48 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /auth/me/password:
+    patch:
+      operationId: changeMyPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Updated
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/me/email:
+    patch:
+      operationId: changeMyEmail
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeEmailRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Email already in use
+
   /auth/me:
     get:
       operationId: getMe
@@ -729,6 +771,20 @@ components:
       properties:
         userId: { type: integer }
       required: [userId]
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string, minLength: 6 }
+      required: [currentPassword, newPassword]
+
+    ChangeEmailRequest:
+      type: object
+      properties:
+        currentPassword: { type: string }
+        newEmail: { type: string, format: email }
+      required: [currentPassword, newEmail]
 
     LoginRequest:
       type: object

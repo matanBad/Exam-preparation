@@ -22,6 +22,7 @@ import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
+import Account from "@/pages/account";
 
 import { AuthLayout } from "@/components/layout";
 
@@ -102,6 +103,10 @@ function Router() {
       </Route>
       <Route path="/lecturer/questions/:id/edit">
         {(params) => <ProtectedRoute component={QuestionEdit} params={params} allowedRoles={['lecturer', 'admin']} />}
+      </Route>
+
+      <Route path="/account">
+        <ProtectedRoute component={Account} />
       </Route>
 
       <Route path="/admin">

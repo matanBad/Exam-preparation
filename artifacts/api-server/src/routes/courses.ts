@@ -33,7 +33,7 @@ router.get(
   async (req, res): Promise<void> => {
     const auth = req.auth!;
     let courses;
-    if (auth.role === "student") {
+    if (auth.role === "student" || auth.role === "lecturer") {
       const enrolled = await db
         .select({ courseId: enrollmentsTable.courseId })
         .from(enrollmentsTable)
@@ -85,7 +85,7 @@ router.get(
       return;
     }
     const auth = req.auth!;
-    if (auth.role === "student") {
+    if (auth.role === "student" || auth.role === "lecturer") {
       const [enr] = await db
         .select()
         .from(enrollmentsTable)
@@ -96,7 +96,7 @@ router.get(
           ),
         );
       if (!enr) {
-        res.status(403).json({ error: "Not enrolled in this course" });
+        res.status(403).json({ error: "Not assigned to this course" });
         return;
       }
     }
@@ -150,7 +150,7 @@ router.get(
       return;
     }
     const auth = req.auth!;
-    if (auth.role === "student") {
+    if (auth.role === "student" || auth.role === "lecturer") {
       const [enr] = await db
         .select()
         .from(enrollmentsTable)
@@ -161,7 +161,7 @@ router.get(
           ),
         );
       if (!enr) {
-        res.status(403).json({ error: "Not enrolled in this course" });
+        res.status(403).json({ error: "Not assigned to this course" });
         return;
       }
     }

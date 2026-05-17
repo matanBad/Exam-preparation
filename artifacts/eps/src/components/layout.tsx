@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { getAuthUser, clearAuth } from "@/lib/auth";
-import { BookOpen, CheckSquare, FileText, Home, Users, LogOut, Settings, List } from "lucide-react";
+import { BookOpen, CheckSquare, FileText, Home, Users, LogOut, Settings, List, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +20,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     { label: "Question Bank", href: "/lecturer/questions", icon: List, roles: ["lecturer", "admin"] },
     { label: "Admin Overview", href: "/admin", icon: Settings, roles: ["admin"] },
     { label: "Users", href: "/admin/users", icon: Users, roles: ["admin"] },
+    { label: "My Account", href: "/account", icon: User, roles: ["student", "lecturer", "admin"] },
   ];
 
   return (

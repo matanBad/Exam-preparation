@@ -8,6 +8,7 @@ import {
   mockExamQuestionsTable,
   coursesTable,
   topicsTable,
+  enrollmentsTable,
 } from "@workspace/db";
 import {
   GenerateExamBody,
@@ -122,6 +123,24 @@ router.post(
     }
     const { courseId, topicIds, totalQuestions, durationMinutes } = parsed.data;
     const auth = req.auth!;
+
+    if (auth.role !== "student") {
+      res.status(403).json({ error: "Only students can generate exams" });
+      return;
+    }
+    const [enr] = await db
+      .select({ id: enrollmentsTable.id })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, auth.userId),
+          eq(enrollmentsTable.courseId, courseId),
+        ),
+      );
+    if (!enr) {
+      res.status(403).json({ error: "Not enrolled in this course" });
+      return;
+    }
 
     const filters = [
       eq(questionsTable.courseId, courseId),
