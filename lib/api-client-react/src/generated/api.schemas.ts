@@ -75,6 +75,10 @@ export interface UpdateUserRequest {
   accountStatus?: string;
 }
 
+export interface AddCourseMemberRequest {
+  userId: number;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

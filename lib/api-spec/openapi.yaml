@@ -538,6 +538,81 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Bad request
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /courses/{id}/members:
+    get:
+      operationId: listCourseMembers
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: addCourseMember
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCourseMemberRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Already a member
+
+  /courses/{id}/members/{userId}:
+    delete:
+      operationId: removeCourseMember
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /admin/overview:
     get:
@@ -648,6 +723,12 @@ components:
         fullName: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
+
+    AddCourseMemberRequest:
+      type: object
+      properties:
+        userId: { type: integer }
+      required: [userId]
 
     LoginRequest:
       type: object

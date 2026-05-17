@@ -4,8 +4,13 @@ import {
   useCreateTopic,
   useUpdateTopic,
   useDeleteTopic,
+  useListCourseMembers,
+  useAddCourseMember,
+  useRemoveCourseMember,
+  useListUsers,
   getListCourseTopicsQueryKey,
   getGetCourseQueryKey,
+  getListCourseMembersQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,10 +35,54 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   });
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
+  const isAdmin = user?.role === "admin";
   const createTopic = useCreateTopic();
   const updateTopic = useUpdateTopic();
   const deleteTopic = useDeleteTopic();
   const queryClient = useQueryClient();
+
+  const { data: members } = useListCourseMembers(id, {
+    query: {
+      enabled: !!id && isAdmin,
+      queryKey: getListCourseMembersQueryKey(id),
+    },
+  });
+  const { data: allUsers } = useListUsers(
+    {},
+    { query: { enabled: isAdmin, queryKey: ["/api/admin/users"] as const } },
+  );
+  const addMember = useAddCourseMember();
+  const removeMember = useRemoveCourseMember();
+  const [memberToAdd, setMemberToAdd] = useState<number | "">("");
+
+  const refreshMembers = () =>
+    queryClient.invalidateQueries({
+      queryKey: getListCourseMembersQueryKey(id),
+    });
+
+  const memberIds = new Set((members ?? []).map((m) => m.id));
+  const assignable = (allUsers ?? []).filter(
+    (u) =>
+      (u.role === "student" || u.role === "lecturer") && !memberIds.has(u.id),
+  );
+
+  const handleAddMember = () => {
+    if (memberToAdd === "") return;
+    addMember.mutate(
+      { id, data: { userId: memberToAdd } },
+      {
+        onSuccess: () => {
+          refreshMembers();
+          setMemberToAdd("");
+        },
+      },
+    );
+  };
+
+  const handleRemoveMember = (userId: number) => {
+    if (!confirm("Remove this user from the course?")) return;
+    removeMember.mutate({ id, userId }, { onSuccess: refreshMembers });
+  };
 
   const [newTopic, setNewTopic] = useState("");
   const [newParent, setNewParent] = useState<number | "">("");
@@ -187,7 +236,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </ul>
 
           {isPrivileged && (
-            <div className="space-y-2 border-t pt-4">
+            <div className="space-y-2 border-t pt-4" data-testid="add-topic">
               <h3 className="font-semibold">Add topic</h3>
               <Input
                 placeholder="New topic name"
@@ -217,6 +266,68 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           )}
         </CardContent>
       </Card>
+
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 mb-6">
+              {(members ?? []).map((m) => (
+                <li
+                  key={m.id}
+                  className="flex justify-between items-center p-3 border rounded-md"
+                >
+                  <div>
+                    <span className="font-medium">{m.fullName}</span>
+                    <span className="text-muted-foreground ml-2 text-sm">
+                      ({m.email}) — {m.role}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleRemoveMember(m.id)}
+                    disabled={removeMember.isPending}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+              {(members ?? []).length === 0 && (
+                <p className="text-muted-foreground">No members yet.</p>
+              )}
+            </ul>
+
+            <div className="space-y-2 border-t pt-4">
+              <h3 className="font-semibold">Add member</h3>
+              <select
+                className="border rounded px-2 py-1 w-full"
+                value={memberToAdd}
+                onChange={(e) =>
+                  setMemberToAdd(
+                    e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                  )
+                }
+              >
+                <option value="">Select a student or lecturer...</option>
+                {assignable.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.fullName} ({u.email}) — {u.role}
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={handleAddMember}
+                disabled={memberToAdd === "" || addMember.isPending}
+              >
+                Add to course
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

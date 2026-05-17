@@ -16,6 +16,7 @@ import {
   UpdateUserParams,
   UpdateUserBody,
   UpdateUserResponse,
+  DeleteUserParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword } from "../lib/auth";
@@ -116,6 +117,32 @@ router.patch(
       return;
     }
     res.json(UpdateUserResponse.parse(updated));
+  },
+);
+
+router.delete(
+  "/admin/users/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const params = DeleteUserParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    if (req.auth!.userId === params.data.id) {
+      res.status(400).json({ error: "Admins cannot delete their own account" });
+      return;
+    }
+    const deleted = await db
+      .delete(usersTable)
+      .where(eq(usersTable.id, params.data.id))
+      .returning({ id: usersTable.id });
+    if (deleted.length === 0) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.status(204).end();
   },
 );
 

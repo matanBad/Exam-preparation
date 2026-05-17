@@ -5,6 +5,7 @@ import {
   coursesTable,
   enrollmentsTable,
   topicsTable,
+  usersTable,
 } from "@workspace/db";
 import {
   ListCoursesResponse,
@@ -259,6 +260,101 @@ router.delete(
       .returning({ id: topicsTable.id });
     if (deleted.length === 0) {
       res.status(404).json({ error: "Topic not found" });
+      return;
+    }
+    res.status(204).end();
+  },
+);
+
+router.get(
+  "/courses/:id/members",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const id = parseInt(req.params.id as string, 10);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const rows = await db
+      .select({
+        id: usersTable.id,
+        fullName: usersTable.fullName,
+        email: usersTable.email,
+        role: usersTable.role,
+        accountStatus: usersTable.accountStatus,
+      })
+      .from(enrollmentsTable)
+      .innerJoin(usersTable, eq(usersTable.id, enrollmentsTable.userId))
+      .where(eq(enrollmentsTable.courseId, id));
+    res.json(rows);
+  },
+);
+
+router.post(
+  "/courses/:id/members",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const id = parseInt(req.params.id as string, 10);
+    const userId = Number(req.body?.userId);
+    if (Number.isNaN(id) || Number.isNaN(userId)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [course] = await db
+      .select({ id: coursesTable.id })
+      .from(coursesTable)
+      .where(eq(coursesTable.id, id));
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    if (!course || !user) {
+      res.status(404).json({ error: "Course or user not found" });
+      return;
+    }
+    const [existing] = await db
+      .select({ id: enrollmentsTable.id })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, userId),
+          eq(enrollmentsTable.courseId, id),
+        ),
+      );
+    if (existing) {
+      res.status(409).json({ error: "User is already a member of this course" });
+      return;
+    }
+    await db.insert(enrollmentsTable).values({ userId, courseId: id });
+    const { passwordHash: _ph, ...safe } = user;
+    res.status(201).json(safe);
+  },
+);
+
+router.delete(
+  "/courses/:id/members/:userId",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const id = parseInt(req.params.id as string, 10);
+    const userId = parseInt(req.params.userId as string, 10);
+    if (Number.isNaN(id) || Number.isNaN(userId)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const deleted = await db
+      .delete(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, userId),
+          eq(enrollmentsTable.courseId, id),
+        ),
+      )
+      .returning({ id: enrollmentsTable.id });
+    if (deleted.length === 0) {
+      res.status(404).json({ error: "Membership not found" });
       return;
     }
     res.status(204).end();

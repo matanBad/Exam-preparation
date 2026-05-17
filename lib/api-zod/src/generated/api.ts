@@ -586,6 +586,38 @@ export const UpdateUserResponse = zod.object({
   accountStatus: zod.string(),
 });
 
+export const DeleteUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListCourseMembersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListCourseMembersResponseItem = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "lecturer", "admin"]),
+  accountStatus: zod.string(),
+});
+export const ListCourseMembersResponse = zod.array(
+  ListCourseMembersResponseItem,
+);
+
+export const AddCourseMemberParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddCourseMemberBody = zod.object({
+  userId: zod.number(),
+});
+
+export const RemoveCourseMemberParams = zod.object({
+  id: zod.coerce.number(),
+  userId: zod.coerce.number(),
+});
+
 /**
  * @summary System overview totals (users, courses, topics, questions, exams)
  */

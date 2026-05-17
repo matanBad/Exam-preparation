@@ -4,6 +4,7 @@ import {
   useListUsers,
   useCreateUser,
   useUpdateUser,
+  useDeleteUser,
   getListUsersQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +42,7 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
@@ -92,6 +94,16 @@ export default function AdminUsers() {
       { id, data: { accountStatus: current === "active" ? "disabled" : "active" } },
       { onSuccess: refresh },
     );
+  };
+
+  const handleDelete = (id: number, name: string) => {
+    if (
+      !confirm(
+        `Delete user "${name}"? This permanently removes their account and all related data (enrollments, exams).`,
+      )
+    )
+      return;
+    deleteUser.mutate({ id }, { onSuccess: refresh });
   };
 
   return (
@@ -216,14 +228,24 @@ export default function AdminUsers() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isSelf || updateUser.isPending}
-                        onClick={() => handleStatusToggle(u.id, u.accountStatus)}
-                      >
-                        {u.accountStatus === "active" ? "Disable" : "Enable"}
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isSelf || updateUser.isPending}
+                          onClick={() => handleStatusToggle(u.id, u.accountStatus)}
+                        >
+                          {u.accountStatus === "active" ? "Disable" : "Enable"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={isSelf || deleteUser.isPending}
+                          onClick={() => handleDelete(u.id, u.fullName)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

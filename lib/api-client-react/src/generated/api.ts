@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddCourseMemberRequest,
   AdminOverview,
   AuthLoginResponse,
   BadRequestResponse,
@@ -2217,6 +2218,330 @@ export const useUpdateUser = <
   TContext
 > => {
   return useMutation(getUpdateUserMutationOptions(options));
+};
+
+export const getDeleteUserUrl = (id: number) => {
+  return `/api/admin/users/${id}`;
+};
+
+export const deleteUser = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteUserUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteUserMutationOptions = <
+  TError = ErrorType<void | ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUser>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteUser(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUser>>
+>;
+
+export type DeleteUserMutationError = ErrorType<
+  void | ForbiddenResponse | NotFoundResponse
+>;
+
+export const useDeleteUser = <
+  TError = ErrorType<void | ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteUserMutationOptions(options));
+};
+
+export const getListCourseMembersUrl = (id: number) => {
+  return `/api/courses/${id}/members`;
+};
+
+export const listCourseMembers = async (
+  id: number,
+  options?: RequestInit,
+): Promise<User[]> => {
+  return customFetch<User[]>(getListCourseMembersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCourseMembersQueryKey = (id: number) => {
+  return [`/api/courses/${id}/members`] as const;
+};
+
+export const getListCourseMembersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCourseMembers>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourseMembers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCourseMembersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCourseMembers>>
+  > = ({ signal }) => listCourseMembers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCourseMembers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCourseMembersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCourseMembers>>
+>;
+export type ListCourseMembersQueryError = ErrorType<ForbiddenResponse>;
+
+export function useListCourseMembers<
+  TData = Awaited<ReturnType<typeof listCourseMembers>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourseMembers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCourseMembersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getAddCourseMemberUrl = (id: number) => {
+  return `/api/courses/${id}/members`;
+};
+
+export const addCourseMember = async (
+  id: number,
+  addCourseMemberRequest: AddCourseMemberRequest,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getAddCourseMemberUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addCourseMemberRequest),
+  });
+};
+
+export const getAddCourseMemberMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addCourseMember>>,
+    TError,
+    { id: number; data: BodyType<AddCourseMemberRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addCourseMember>>,
+  TError,
+  { id: number; data: BodyType<AddCourseMemberRequest> },
+  TContext
+> => {
+  const mutationKey = ["addCourseMember"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addCourseMember>>,
+    { id: number; data: BodyType<AddCourseMemberRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addCourseMember(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddCourseMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addCourseMember>>
+>;
+export type AddCourseMemberMutationBody = BodyType<AddCourseMemberRequest>;
+export type AddCourseMemberMutationError = ErrorType<
+  ForbiddenResponse | NotFoundResponse | void
+>;
+
+export const useAddCourseMember = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addCourseMember>>,
+    TError,
+    { id: number; data: BodyType<AddCourseMemberRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addCourseMember>>,
+  TError,
+  { id: number; data: BodyType<AddCourseMemberRequest> },
+  TContext
+> => {
+  return useMutation(getAddCourseMemberMutationOptions(options));
+};
+
+export const getRemoveCourseMemberUrl = (id: number, userId: number) => {
+  return `/api/courses/${id}/members/${userId}`;
+};
+
+export const removeCourseMember = async (
+  id: number,
+  userId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRemoveCourseMemberUrl(id, userId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveCourseMemberMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCourseMember>>,
+    TError,
+    { id: number; userId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeCourseMember>>,
+  TError,
+  { id: number; userId: number },
+  TContext
+> => {
+  const mutationKey = ["removeCourseMember"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeCourseMember>>,
+    { id: number; userId: number }
+  > = (props) => {
+    const { id, userId } = props ?? {};
+
+    return removeCourseMember(id, userId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveCourseMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeCourseMember>>
+>;
+
+export type RemoveCourseMemberMutationError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export const useRemoveCourseMember = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCourseMember>>,
+    TError,
+    { id: number; userId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeCourseMember>>,
+  TError,
+  { id: number; userId: number },
+  TContext
+> => {
+  return useMutation(getRemoveCourseMemberMutationOptions(options));
 };
 
 /**
