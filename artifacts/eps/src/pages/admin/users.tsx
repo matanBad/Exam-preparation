@@ -52,7 +52,11 @@ export default function AdminUsers() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ["/admin/users"] });
+    queryClient.invalidateQueries({
+      predicate: (q) =>
+        typeof q.queryKey[0] === "string" &&
+        q.queryKey[0].startsWith("/api/admin/users"),
+    });
 
   const handleCreate = () => {
     setCreateError(null);
