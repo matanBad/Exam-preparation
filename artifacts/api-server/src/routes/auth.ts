@@ -14,6 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { signToken, verifyPassword, hashPassword } from "../lib/auth";
 import { requireAuth } from "../middlewares/auth";
+import { notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -258,6 +259,17 @@ router.post(
     if (!committed) {
       res.status(404).json({ error: "Account no longer exists" });
       return;
+    }
+    try {
+      await notifyUsersByRole("admin", {
+        type: "account_deleted",
+        title: "New account deletion",
+        message: `${user.fullName} (${user.email}, ${user.role}) deleted their account.`,
+        relatedEntityType: "user",
+        relatedEntityId: user.id,
+      });
+    } catch (err) {
+      req.log?.warn({ err }, "Failed to notify admins of account deletion");
     }
     res.status(204).end();
   },

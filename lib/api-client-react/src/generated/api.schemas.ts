@@ -80,6 +80,48 @@ export interface AddCourseMemberRequest {
   userId: number;
 }
 
+export type NotificationStatus =
+  (typeof NotificationStatus)[keyof typeof NotificationStatus];
+
+export const NotificationStatus = {
+  unread: "unread",
+  read: "read",
+} as const;
+
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  relatedEntityType?: string | null;
+  relatedEntityId?: number | null;
+  status: NotificationStatus;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export type MessageStatus = (typeof MessageStatus)[keyof typeof MessageStatus];
+
+export const MessageStatus = {
+  unread: "unread",
+  read: "read",
+} as const;
+
+export interface Message {
+  id: number;
+  senderId?: number | null;
+  senderName?: string | null;
+  subject: string;
+  body: string;
+  status: MessageStatus;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface MarkAllReadResponse {
+  updated: number;
+}
+
 export interface UpdateProfileImageRequest {
   /** Data URL (data:image/...;base64,...) up to ~2MB; null to remove the current image */
   imageDataUrl: string | null;

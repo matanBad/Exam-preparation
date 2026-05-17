@@ -56,6 +56,90 @@ export const ChangeMyEmailResponse = zod.object({
 });
 
 /**
+ * @summary List notifications for the authenticated user (newest first)
+ */
+export const ListMyNotificationsResponseItem = zod.object({
+  id: zod.number(),
+  type: zod.string(),
+  title: zod.string(),
+  message: zod.string(),
+  relatedEntityType: zod.string().nullish(),
+  relatedEntityId: zod.number().nullish(),
+  status: zod.enum(["unread", "read"]),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullish(),
+});
+export const ListMyNotificationsResponse = zod.array(
+  ListMyNotificationsResponseItem,
+);
+
+/**
+ * @summary Mark one notification as read (only if it belongs to the caller)
+ */
+export const MarkNotificationReadParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const MarkNotificationReadResponse = zod.object({
+  id: zod.number(),
+  type: zod.string(),
+  title: zod.string(),
+  message: zod.string(),
+  relatedEntityType: zod.string().nullish(),
+  relatedEntityId: zod.number().nullish(),
+  status: zod.enum(["unread", "read"]),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Mark all of the caller's notifications as read
+ */
+export const MarkAllNotificationsReadResponse = zod.object({
+  updated: zod.number(),
+});
+
+/**
+ * @summary List messages for the authenticated user (newest first)
+ */
+export const ListMyMessagesResponseItem = zod.object({
+  id: zod.number(),
+  senderId: zod.number().nullish(),
+  senderName: zod.string().nullish(),
+  subject: zod.string(),
+  body: zod.string(),
+  status: zod.enum(["unread", "read"]),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullish(),
+});
+export const ListMyMessagesResponse = zod.array(ListMyMessagesResponseItem);
+
+/**
+ * @summary Mark one message as read (only if it belongs to the caller)
+ */
+export const MarkMessageReadParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const MarkMessageReadResponse = zod.object({
+  id: zod.number(),
+  senderId: zod.number().nullish(),
+  senderName: zod.string().nullish(),
+  subject: zod.string(),
+  body: zod.string(),
+  status: zod.enum(["unread", "read"]),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Mark all of the caller's messages as read
+ */
+export const MarkAllMessagesReadResponse = zod.object({
+  updated: zod.number(),
+});
+
+/**
  * @summary Update or clear current user's profile image
  */
 export const UpdateMyProfileImageBody = zod.object({

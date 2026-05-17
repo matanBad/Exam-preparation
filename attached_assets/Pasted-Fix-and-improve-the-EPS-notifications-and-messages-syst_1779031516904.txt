@@ -1,0 +1,288 @@
+Fix and improve the EPS notifications and messages system.
+
+Context:
+The app currently has a top bar with notifications and messages, but the behavior is not correct.
+
+Main problems:
+1. “Mark as read” does not persist.
+2. Read/unread state is not saved after refresh or navigation.
+3. All users receive the same notifications.
+4. Some users receive notifications they should not receive.
+5. Notifications are also appearing inside the dashboard, but they should appear only in the Notifications dropdown/page.
+6. Messages cannot be opened properly.
+7. Messages behavior is incomplete and not role/user-specific.
+
+Goal:
+Make notifications and messages behave like a real role-based system, aligned with EPS Sprint 2, without breaking existing functionality.
+
+========================
+NOTIFICATIONS REQUIREMENTS
+========================
+
+1. Notifications must be user-specific
+Each notification must belong to a specific user.
+
+Add or fix database model:
+
+notifications:
+- id
+- user_id
+- type
+- title
+- message
+- related_entity_type nullable
+- related_entity_id nullable
+- status: unread/read
+- created_at
+- read_at nullable
+
+Do not use one shared static notification list for all users.
+
+2. Role-based notification logic
+Only send relevant notifications to the correct users.
+
+Examples:
+- Student should receive:
+  - exam submitted successfully
+  - exam score available
+  - enrolled course related updates
+
+- Lecturer should receive:
+  - question created/updated by them
+  - question archived
+  - course question bank updates related to their courses
+
+- Admin should receive:
+  - system-level events
+  - new users
+  - account deletion requests
+  - course structure changes
+
+Do not show admin-only notifications to students.
+Do not show student exam notifications to all users.
+
+3. Persist read/unread state
+Implement backend endpoints:
+
+GET /api/notifications
+Return notifications only for the authenticated user.
+
+PATCH /api/notifications/:id/read
+Mark one notification as read only if it belongs to the authenticated user.
+
+PATCH /api/notifications/read-all
+Mark all authenticated user notifications as read.
+
+Expected behavior:
+- Clicking “mark as read” updates DB.
+- Badge count decreases immediately.
+- Refreshing page keeps notification as read.
+- Users cannot mark other users’ notifications as read.
+
+4. Notifications should appear only in notifications area
+Remove notifications from the main dashboard content if they are currently displayed there.
+
+Notifications should appear only in:
+- Top bar notification dropdown
+- Optional dedicated Notifications page, if already exists or easy to add
+
+The dashboard may show summary statistics only, but not the full notification list.
+
+5. Notification dropdown behavior
+Top bar bell dropdown should:
+- Show only current user notifications
+- Show unread notifications visually highlighted
+- Show read notifications with normal style
+- Include timestamp
+- Include “Mark as read” per item
+- Include “Mark all as read”
+- Include empty state: “No notifications”
+- Update unread badge in real time after marking read
+
+6. Notification creation hooks
+Create notifications from real system actions where relevant.
+
+Examples:
+- When student submits an exam:
+  - create notification for that student: “Your exam was submitted successfully”
+  - create notification for admin: “A new exam was submitted”
+  - do NOT notify unrelated students
+
+- When lecturer creates a question:
+  - create notification for that lecturer: “Question created successfully”
+  - optionally create notification for admin: “New question added to question bank”
+
+- When admin/course structure changes:
+  - create notification for admin confirming change
+  - optionally notify lecturers only if related to their course
+
+Keep this simple but real.
+
+========================
+MESSAGES REQUIREMENTS
+========================
+
+1. Messages must be user-specific
+Do not use one shared static message list for all users.
+
+Create or fix database model:
+
+messages:
+- id
+- sender_id nullable
+- recipient_id
+- subject
+- body
+- status: unread/read
+- created_at
+- read_at nullable
+
+2. Messages dropdown
+Top bar message icon dropdown should:
+- Show only messages for the authenticated user
+- Show unread badge count
+- Show sender name if available
+- Show subject
+- Show short preview
+- Allow clicking a message
+
+3. Opening a message must work
+When the user clicks a message:
+- Open a message details modal or navigate to /messages/:id
+- Show:
+  - subject
+  - sender
+  - full body
+  - created date/time
+- Automatically mark message as read when opened
+- Persist read state in DB
+- Update unread badge
+
+4. Message endpoints
+Implement:
+
+GET /api/messages
+Return messages only for authenticated user.
+
+GET /api/messages/:id
+Return message only if it belongs to authenticated user.
+
+PATCH /api/messages/:id/read
+Mark one message as read only if it belongs to authenticated user.
+
+PATCH /api/messages/read-all
+Mark all authenticated user messages as read.
+
+5. Permissions
+Users must not be able to access messages or notifications that belong to another user.
+Return 403 or 404 safely.
+
+========================
+SEED DATA
+========================
+
+Update seed data so notifications/messages are realistic and role-specific.
+
+Example:
+
+Student:
+- Notification: “Your CS101 mock exam was submitted successfully”
+- Message: “Reminder: Practice before your next exam”
+
+Lecturer:
+- Notification: “A question was added to your question bank”
+- Message: “Please review your course questions”
+
+Admin:
+- Notification: “New account deletion request submitted”
+- Notification: “System activity updated”
+- Message: “System overview report is ready”
+
+Make sure each user sees different notifications/messages.
+
+========================
+FRONTEND REQUIREMENTS
+========================
+
+Update top bar components:
+
+NotificationBell:
+- Fetch /api/notifications
+- Display current user notifications only
+- Show unread count
+- Mark one as read
+- Mark all as read
+- Persist state
+- Refresh UI after actions
+
+MessageIcon:
+- Fetch /api/messages
+- Display current user messages only
+- Show unread count
+- Open message details on click
+- Mark message as read on open
+- Persist state
+- Refresh UI after actions
+
+Use Axios with the existing auth token.
+
+Do not rely on local component state only.
+Local state can update immediately, but DB must be updated too.
+
+========================
+DASHBOARD CLEANUP
+========================
+
+Remove full notifications/messages lists from dashboard pages.
+
+Dashboards should focus on:
+- statistics
+- courses
+- questions
+- exams
+- system overview
+
+Notifications/messages belong in the top bar dropdown or dedicated page only.
+
+========================
+QUALITY REQUIREMENTS
+========================
+
+- Do not break existing login/auth/roles.
+- Do not break existing dashboard.
+- Do not break existing exam submission.
+- Do not break existing question bank.
+- Keep existing UI style.
+- Add clear error handling.
+- Add loading states.
+- Add empty states.
+- Keep code modular:
+  - notification routes/controller/service
+  - message routes/controller/service
+  - NotificationBell component
+  - MessageDropdown component
+  - MessageDetails modal or page
+
+========================
+ACCEPTANCE CRITERIA
+========================
+
+The fix is complete when:
+
+1. Student, lecturer, and admin each see only their own notifications.
+2. Notifications are not shared globally between users.
+3. Marking one notification as read works.
+4. Marking all notifications as read works.
+5. Read/unread status stays correct after refresh.
+6. Unread badge updates correctly.
+7. Notifications no longer appear as full lists inside the dashboard.
+8. Messages are user-specific.
+9. Clicking a message opens the full message.
+10. Opening a message marks it as read.
+11. Message read/unread state persists after refresh.
+12. Users cannot access notifications or messages of other users.
+13. Existing Sprint 2 functionality remains working.
+
+Please inspect the current implementation first, then refactor only what is necessary.
+Do not redesign the entire app.
+Fix the behavior professionally and safely.

@@ -198,6 +198,48 @@ export const accountDeletionRequestsTable = pgTable(
   },
 );
 
+export const notificationsTable = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    relatedEntityType: text("related_entity_type"),
+    relatedEntityId: integer("related_entity_id"),
+    status: text("status").notNull().default("unread"), // unread | read
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => ({
+    userIdx: index("notifications_user_idx").on(t.userId),
+  }),
+);
+
+export const messagesTable = pgTable(
+  "messages",
+  {
+    id: serial("id").primaryKey(),
+    senderId: integer("sender_id").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
+    recipientId: integer("recipient_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    subject: text("subject").notNull(),
+    body: text("body").notNull(),
+    status: text("status").notNull().default("unread"), // unread | read
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => ({
+    recipientIdx: index("messages_recipient_idx").on(t.recipientId),
+  }),
+);
+
 export type User = typeof usersTable.$inferSelect;
 export type Course = typeof coursesTable.$inferSelect;
 export type Topic = typeof topicsTable.$inferSelect;

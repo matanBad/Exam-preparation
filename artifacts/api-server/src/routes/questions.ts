@@ -23,6 +23,7 @@ import {
   ArchiveQuestionResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { createNotification, notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -220,6 +221,25 @@ router.post(
       [eq(questionsTable.id, question.id)],
       { kind: "admin" },
     );
+    try {
+      await createNotification({
+        userId: auth.userId,
+        type: "question_created",
+        title: "Question created",
+        message: `Your question "${question.title}" was added to the bank.`,
+        relatedEntityType: "question",
+        relatedEntityId: question.id,
+      });
+      await notifyUsersByRole("admin", {
+        type: "question_created",
+        title: "New question added",
+        message: `A new question "${question.title}" was added to the question bank.`,
+        relatedEntityType: "question",
+        relatedEntityId: question.id,
+      });
+    } catch (err) {
+      req.log?.warn({ err }, "Failed to create question-created notifications");
+    }
     res.status(201).json(GetQuestionResponse.parse(full));
   },
 );

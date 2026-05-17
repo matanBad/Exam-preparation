@@ -23,6 +23,7 @@ import {
   GetExamReviewResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { createNotification, notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -333,6 +334,33 @@ router.post(
         updatedAt: submittedAt,
       })
       .where(eq(mockExamsTable.id, exam.id));
+
+    const [courseRow] = await db
+      .select({ courseName: coursesTable.courseName, courseCode: coursesTable.courseCode })
+      .from(coursesTable)
+      .where(eq(coursesTable.id, exam.courseId));
+    const courseLabel = courseRow
+      ? `${courseRow.courseCode} ${courseRow.courseName}`
+      : `Course ${exam.courseId}`;
+    try {
+      await createNotification({
+        userId: exam.userId,
+        type: "exam_submitted",
+        title: "Your exam was submitted",
+        message: `Your ${courseLabel} mock exam was submitted. Score: ${score}%.`,
+        relatedEntityType: "exam",
+        relatedEntityId: exam.id,
+      });
+      await notifyUsersByRole("admin", {
+        type: "exam_submitted",
+        title: "A new exam was submitted",
+        message: `A student submitted a ${courseLabel} mock exam (score ${score}%).`,
+        relatedEntityType: "exam",
+        relatedEntityId: exam.id,
+      });
+    } catch (err) {
+      req.log?.warn({ err }, "Failed to create exam-submit notifications");
+    }
 
     res.json(
       SubmitExamResponse.parse({

@@ -93,6 +93,110 @@ paths:
         "409":
           description: Email already in use
 
+  /notifications:
+    get:
+      operationId: listMyNotifications
+      tags: [notifications]
+      summary: List notifications for the authenticated user (newest first)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Notification" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark one notification as read (only if it belongs to the caller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all of the caller's notifications as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkAllReadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /messages:
+    get:
+      operationId: listMyMessages
+      tags: [messages]
+      summary: List messages for the authenticated user (newest first)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Message" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /messages/{id}/read:
+    patch:
+      operationId: markMessageRead
+      tags: [messages]
+      summary: Mark one message as read (only if it belongs to the caller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+
+  /messages/read-all:
+    patch:
+      operationId: markAllMessagesRead
+      tags: [messages]
+      summary: Mark all of the caller's messages as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkAllReadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /auth/me/profile-image:
     patch:
       operationId: updateMyProfileImage
@@ -833,6 +937,39 @@ components:
       properties:
         userId: { type: integer }
       required: [userId]
+
+    Notification:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        title: { type: string }
+        message: { type: string }
+        relatedEntityType: { type: string, nullable: true }
+        relatedEntityId: { type: integer, nullable: true }
+        status: { type: string, enum: [unread, read] }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
+      required: [id, type, title, message, status, createdAt]
+
+    Message:
+      type: object
+      properties:
+        id: { type: integer }
+        senderId: { type: integer, nullable: true }
+        senderName: { type: string, nullable: true }
+        subject: { type: string }
+        body: { type: string }
+        status: { type: string, enum: [unread, read] }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
+      required: [id, subject, body, status, createdAt]
+
+    MarkAllReadResponse:
+      type: object
+      properties:
+        updated: { type: integer }
+      required: [updated]
 
     UpdateProfileImageRequest:
       type: object

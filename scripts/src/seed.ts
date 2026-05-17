@@ -8,14 +8,16 @@ import {
   topicsTable,
   questionsTable,
   answerOptionsTable,
+  notificationsTable,
+  messagesTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 async function main() {
   console.log("Clearing existing data...");
   await db.execute(sql`TRUNCATE TABLE
-    mock_exam_questions, mock_exams, answer_options, questions, topics,
-    enrollments, courses, users RESTART IDENTITY CASCADE`);
+    notifications, messages, mock_exam_questions, mock_exams, answer_options,
+    questions, topics, enrollments, courses, users RESTART IDENTITY CASCADE`);
 
   const hash = await bcrypt.hash("123456", 10);
 
@@ -406,6 +408,105 @@ async function main() {
       })),
     );
   }
+
+  console.log("Seeding notifications...");
+  await db.insert(notificationsTable).values([
+    {
+      userId: student.id,
+      type: "exam_submitted",
+      title: "Your CS101 mock exam was submitted",
+      message: "Score: 80%. Review your answers from the My Exams page.",
+      relatedEntityType: "exam",
+      status: "read",
+      readAt: new Date(),
+    },
+    {
+      userId: student.id,
+      type: "course_update",
+      title: "New questions in DB201",
+      message: "Your lecturer added 5 new questions to your enrolled course.",
+      relatedEntityType: "course",
+      relatedEntityId: db201.id,
+    },
+    {
+      userId: student.id,
+      type: "reminder",
+      title: "Practice reminder",
+      message: "You haven't taken a mock exam in 7 days.",
+    },
+    {
+      userId: lecturer.id,
+      type: "question_created",
+      title: "Question added to your bank",
+      message: "Your question \"What is normalization?\" is now in the DB201 bank.",
+      relatedEntityType: "question",
+      status: "read",
+      readAt: new Date(),
+    },
+    {
+      userId: lecturer.id,
+      type: "course_update",
+      title: "Course question bank updated",
+      message: "10 questions in DB201 are now approved and available to students.",
+      relatedEntityType: "course",
+      relatedEntityId: db201.id,
+    },
+    {
+      userId: admin.id,
+      type: "system",
+      title: "Weekly system activity",
+      message: "Daily active users up 12% this week.",
+    },
+    {
+      userId: admin.id,
+      type: "account_deleted",
+      title: "Account deletion processed",
+      message: "1 account deletion request was processed in the last 24h.",
+    },
+    {
+      userId: admin.id,
+      type: "course_update",
+      title: "Course structure changed",
+      message: "Topics for CS101 were reorganized by a lecturer.",
+      relatedEntityType: "course",
+      relatedEntityId: cs101.id,
+    },
+  ]);
+
+  console.log("Seeding messages...");
+  await db.insert(messagesTable).values([
+    {
+      senderId: lecturer.id,
+      recipientId: student.id,
+      subject: "Practice before your next exam",
+      body:
+        "Hi Sam,\n\nA reminder to take at least one mock exam before our midterm next week. " +
+        "Focus on the indexing and normalization topics.\n\n— Dr. Lena",
+    },
+    {
+      senderId: admin.id,
+      recipientId: student.id,
+      subject: "Welcome to EPS",
+      body:
+        "Welcome! You're enrolled in CS101 and DB201. Generate a mock exam any time from the New Exam page.",
+      status: "read",
+      readAt: new Date(),
+    },
+    {
+      senderId: admin.id,
+      recipientId: lecturer.id,
+      subject: "Please review your course questions",
+      body:
+        "Hi Lena,\n\nWhen you have a moment, please review the pending questions in DB201 and mark them approved or archived.\n\nThanks,\nAlex",
+    },
+    {
+      senderId: null,
+      recipientId: admin.id,
+      subject: "System overview report is ready",
+      body:
+        "The weekly system overview report has been generated and is ready to review in the admin dashboard.",
+    },
+  ]);
 
   console.log(
     `Seeded: users=${[student, lecturer, admin].length}, courses=2, ` +
