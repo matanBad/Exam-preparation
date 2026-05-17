@@ -61,6 +61,20 @@ export interface User {
   accountStatus: string;
 }
 
+export interface CreateUserRequest {
+  fullName: string;
+  email: string;
+  password: string;
+  role: Role;
+  accountStatus?: string;
+}
+
+export interface UpdateUserRequest {
+  fullName?: string;
+  role?: Role;
+  accountStatus?: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

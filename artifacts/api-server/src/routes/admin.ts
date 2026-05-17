@@ -12,8 +12,13 @@ import {
   ListUsersQueryParams,
   ListUsersResponse,
   GetAdminOverviewResponse,
+  CreateUserBody,
+  UpdateUserParams,
+  UpdateUserBody,
+  UpdateUserResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { hashPassword } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -34,6 +39,83 @@ router.get(
           .where(eq(usersTable.role, parsed.data.role))
       : await db.select().from(usersTable);
     res.json(ListUsersResponse.parse(users));
+  },
+);
+
+router.post(
+  "/admin/users",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const parsed = CreateUserBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const { fullName, email, password, role, accountStatus } = parsed.data;
+    const [existing] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.email, email));
+    if (existing) {
+      res.status(409).json({ error: "Email already in use" });
+      return;
+    }
+    const passwordHash = await hashPassword(password);
+    const [created] = await db
+      .insert(usersTable)
+      .values({
+        fullName,
+        email,
+        passwordHash,
+        role,
+        accountStatus: accountStatus ?? "active",
+      })
+      .returning();
+    const { passwordHash: _ph, ...safe } = created;
+    res.status(201).json(safe);
+  },
+);
+
+router.patch(
+  "/admin/users/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const params = UpdateUserParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const parsed = UpdateUserBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    if (
+      parsed.data.role &&
+      parsed.data.role !== "admin" &&
+      req.auth!.userId === params.data.id
+    ) {
+      res.status(400).json({ error: "Admins cannot demote their own account" });
+      return;
+    }
+    const updateValues: Record<string, unknown> = { updatedAt: new Date() };
+    if (parsed.data.fullName !== undefined)
+      updateValues.fullName = parsed.data.fullName;
+    if (parsed.data.role !== undefined) updateValues.role = parsed.data.role;
+    if (parsed.data.accountStatus !== undefined)
+      updateValues.accountStatus = parsed.data.accountStatus;
+    const [updated] = await db
+      .update(usersTable)
+      .set(updateValues)
+      .where(eq(usersTable.id, params.data.id))
+      .returning();
+    if (!updated) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.json(UpdateUserResponse.parse(updated));
   },
 );
 

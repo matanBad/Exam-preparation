@@ -492,6 +492,52 @@ paths:
                   $ref: "#/components/schemas/User"
         "403":
           $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createUser
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad Request
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Email already in use
+
+  /admin/users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /admin/overview:
     get:
@@ -585,6 +631,23 @@ components:
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
       required: [id, fullName, email, role, accountStatus]
+
+    CreateUserRequest:
+      type: object
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        password: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        accountStatus: { type: string }
+      required: [fullName, email, password, role]
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        fullName: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        accountStatus: { type: string }
 
     LoginRequest:
       type: object

@@ -560,6 +560,32 @@ export const ListUsersResponseItem = zod.object({
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
+export const CreateUserBody = zod.object({
+  fullName: zod.string(),
+  email: zod.string(),
+  password: zod.string(),
+  role: zod.enum(["student", "lecturer", "admin"]),
+  accountStatus: zod.string().optional(),
+});
+
+export const UpdateUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateUserBody = zod.object({
+  fullName: zod.string().optional(),
+  role: zod.enum(["student", "lecturer", "admin"]).optional(),
+  accountStatus: zod.string().optional(),
+});
+
+export const UpdateUserResponse = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "lecturer", "admin"]),
+  accountStatus: zod.string(),
+});
+
 /**
  * @summary System overview totals (users, courses, topics, questions, exams)
  */
