@@ -1,0 +1,115 @@
+I want to add a new academic structure layer to the system called Program / Track / Degree Path.
+
+Examples of programs:
+- Software Engineering
+- Civil Engineering
+- Industrial Engineering and Management
+- Mechanical Engineering
+
+Goal:
+The system must correctly connect students, lecturers, courses, topics, and subtopics through the academic program/track.
+
+Important:
+Do NOT start changing files immediately.
+First, analyze the current project structure and tell me:
+1. Which files you plan to edit.
+2. Whether a database schema change is required.
+3. Which new tables/fields you recommend adding.
+4. How you will preserve the existing logic without breaking current features.
+
+Required behavior:
+
+1. Student registration:
+When a student registers, the student must select the program/track they study in.
+For example: Software Engineering.
+
+2. Lecturer registration by admin:
+When an admin creates/registers a lecturer, the admin must select one or more programs/tracks in which the lecturer teaches.
+A lecturer can teach in multiple programs.
+
+3. Student course visibility:
+After a student registers and selects a program, the student should see only the courses that belong to that student’s selected program.
+
+4. Course creation by lecturer:
+When a lecturer creates a course, the lecturer must select which program/track the course belongs to.
+The course must then be connected to that program.
+
+5. Correct relationship between lecturer, course, and program:
+I want the system to connect a course to the lecturer who teaches it in a specific program.
+
+This means the same course name can exist under different lecturers or different programs.
+
+Example:
+- Computer Networks 2 taught by Lecturer A in Software Engineering
+- Computer Networks 2 taught by Lecturer B in Industrial Engineering and Management
+
+These should be treated as different course offerings, because the lecturer and program may be different.
+
+6. Topics and subtopics:
+Topics and subtopics must be connected to the correct course offering.
+This is important because 3 lecturers may teach the same course name, but each lecturer may teach different topics/subtopics.
+
+Recommended data model direction:
+Add or support entities similar to:
+
+programs:
+- id
+- name
+- code
+- status
+- created_at
+- updated_at
+
+student_programs or user_programs:
+- id
+- user_id
+- program_id
+- status
+
+lecturer_programs:
+- id
+- lecturer_id
+- program_id
+- status
+
+course_offerings:
+- id
+- course_id
+- program_id
+- lecturer_id
+- semester
+- academic_year
+- status
+
+Then topics/questions should be connected to the correct course offering if needed.
+
+Important rules:
+1. Do not break the existing login system.
+2. Do not break role-based access for student, lecturer, and admin.
+3. Do not remove existing users, courses, topics, questions, or answers unless I explicitly approve it.
+4. Do not change frontend design unless needed for the new fields.
+5. Do not rename existing fields unless required and approved.
+6. Keep the current database structure as much as possible.
+7. If a schema change is required, ask me before applying it.
+8. Preserve all existing relationships:
+   - users
+   - courses
+   - topics
+   - questions
+   - answer_options
+   - enrollments
+
+Implementation expectations:
+1. Add program/track selection to student registration.
+2. Add program/track assignment when admin creates a lecturer.
+3. Allow lecturer to select program/track when creating a course.
+4. Filter student courses by the student’s selected program.
+5. Filter lecturer course management by the lecturer’s assigned programs.
+6. Make sure course → program → lecturer → topics/subtopics relationships are valid.
+7. Make sure the same course name can appear more than once if it belongs to a different program or lecturer.
+
+Before making changes:
+Explain your plan clearly and wait for my approval.
+
+After making changes:
+Summarize exactly what was changed and confirm that no unrelated logic or UI was modified.
