@@ -1,0 +1,177 @@
+I want to implement several UI and DB-data behavior improvements in the EPS system.
+
+Important:
+Do NOT start changing files immediately.
+First, analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any DB/schema change is required.
+3. How you will implement the changes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change the login logic.
+2. Do not change existing role-based permissions unless explicitly required below.
+3. Do not delete existing DB/data files.
+4. Do not change questions.course_id.
+5. Do not change topics.course_id.
+6. Keep Strategy A:
+   - courses = shared course catalog
+   - course_offerings = course taught by a specific lecturer in a specific program
+   - topics.course_id and questions.course_id stay connected to the parent course
+7. Do not move topics or questions to course_offerings.
+8. Use course_offerings to know which lecturer teaches a course in a specific program.
+9. Students should see courses based on:
+   student program + active course_offering + enrollment.
+10. Lecturers should see/manage courses based on:
+   course_offerings.lecturer_id = current logged-in lecturer id.
+11. Treat only the new DB files I upload as the source of truth.
+12. Ignore old DB files if they conflict with the new uploaded DB files.
+
+Now implement these changes:
+
+1. Lecturer course cards: show program name instead of lecturer name  
+In the lecturer Courses page, course cards currently show the lecturer name.  
+Do not show the lecturer name there, because the logged-in lecturer already knows it is his/her courses.
+
+Instead, show the full program/track name that the course offering belongs to.
+
+Example:
+Show:
+Program: Software Engineering
+
+Do not show only a small abbreviation such as SE.
+Show the full program name clearly inside the card.
+
+2. Student approval should enroll student into all relevant program courses  
+When an admin approves a newly registered student, automatically create enrollments for all active courses that belong to the student’s selected program.
+
+Use this rule:
+student.program_id → active course_offerings.program_id → course_id → enrollments
+
+Requirements:
+- Enroll the student only in courses from the student’s program.
+- Do not enroll the student in courses from other programs.
+- Do not enroll lecturers.
+- enrollments must remain student-only.
+- Avoid duplicate enrollments if the student is already enrolled in a course.
+- After approval, the student should see all relevant courses for his/her program.
+
+3. Add at least 3 students for every remaining program/track  
+Update the new DB seed/data files so that every program/track has at least 3 active student users.
+
+Each new student must have:
+- role = student
+- account_status = active
+- a valid program_id
+- valid enrollments for all active courses in that student’s program
+
+Do not add lecturers to enrollments.
+
+4. Admin User Accounts table: show program/track  
+In the Admin → User Accounts table, add a Program/Track column.
+
+For students:
+Show the student’s full program name.
+
+For lecturers:
+Show the full names of the programs the lecturer teaches.
+If the lecturer teaches multiple programs and the table becomes crowded, show a compact summary such as “3 programs”, but the full list must appear in the user details view.
+
+For admins:
+Leave the Program/Track field empty.
+Do not show “N/A”.
+Do not show “System Admin”.
+
+Do not show only program abbreviations such as SE, CS, EE, or ME when full names can be shown.
+
+5. Student course page: show main topics first, then subtopics after selecting a topic  
+When a student opens a specific course page, initially show only the main topics of the course.
+
+Do not immediately show all subtopics under all topics.
+
+When the student clicks/selects a main topic, then show only the subtopics that belong to that selected topic.
+
+Keep the current topic structure:
+- Main topics have parent_topic_id = null
+- Subtopics have parent_topic_id pointing to a main topic
+
+Search behavior:
+- If the student searches a main topic name, show matching main topics.
+- If the student searches a subtopic name, show the parent topic and the matching subtopic in a clear filtered view.
+- Do not change topics.course_id.
+- Keep Strategy A.
+
+6. Admin Question Bank: add course search by course, program, or lecturer  
+In the Admin Question Bank page, add a search bar above the course cards.
+
+The admin should be able to search course cards by:
+- course name
+- course code
+- full program/track name
+- lecturer full name
+
+The search must use course_offerings to connect:
+course → program → lecturer
+
+Do not search only in the courses table.
+The search must also consider:
+- programs.name
+- users.full_name for lecturers
+- course_offerings.program_id
+- course_offerings.lecturer_id
+
+The results should still display course cards with question counts.
+Do not change questions.course_id.
+Do not move questions to course_offerings.
+Keep Strategy A.
+
+7. Admin User Details: show full program names, not abbreviations  
+When an admin clicks a user and opens the user details view/modal/page, always show full program/track names.
+
+For students:
+Show the student’s full program name.
+
+For lecturers:
+Show the full names of all programs the lecturer teaches.
+
+For admins:
+Do not show a Program/Track field at all.
+
+Do not display only abbreviations such as SE, CS, EE, ME, or similar.
+Use programs.name as the display value.
+
+Validation after implementation:
+After making the changes, verify:
+
+1. Login still works for student, lecturer, and admin.
+2. Existing permissions still work.
+3. New DB files are used as the source of truth.
+4. Old DB files are ignored if there is a conflict.
+5. Student visibility still follows:
+   student program + active course_offering + enrollment.
+6. New approved students are automatically enrolled in all active courses of their program.
+7. Every program has at least 3 active students.
+8. enrollments contains students only, not lecturers.
+9. Lecturer course cards show full program name instead of lecturer name.
+10. Admin User Accounts table shows full program/track names for students and lecturers.
+11. Admin rows have an empty Program/Track field.
+12. Student course page initially shows main topics only.
+13. Student can select a main topic and then see its subtopics.
+14. Admin Question Bank search works by course name, course code, program name, and lecturer name.
+15. Admin User Details shows full program names, not abbreviations.
+16. questions.course_id and topics.course_id were not changed.
+17. Strategy A was preserved.
+18. No unrelated login, permission, route, API, or UI logic was modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly:
+- Which files were edited.
+- What was changed.
+- Whether any DB/schema change was required.
+- Confirm that login logic was not changed.
+- Confirm that existing permissions were not changed.
+- Confirm that questions.course_id and topics.course_id were not changed.
+- Confirm that Strategy A was preserved.
