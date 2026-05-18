@@ -218,9 +218,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
         <h1 className="text-3xl font-bold">
           {course.courseCode}: {course.courseName}
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage course details, topics, and subtopics.
-        </p>
       </div>
 
       <Card>
