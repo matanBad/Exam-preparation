@@ -246,9 +246,6 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold tracking-tight">
           Welcome, {user.fullName}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Here is your {user.role} overview.
-        </p>
       </div>
 
       {user.role === "student" && <StudentDashboard userId={user.id} />}
