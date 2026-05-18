@@ -202,8 +202,6 @@ function AdminDashboardView() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">System Overview</h2>
-
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {stats.map((s) => (
           <StatTile key={s.key} stat={s} />
