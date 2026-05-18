@@ -54,6 +54,9 @@ export default function QuestionsList() {
   const setStatus = (v: string) => setParam("status", v);
 
   const [q, setQ] = useState("");
+  const me = getAuthUser();
+  const isPrivileged = me?.role === "lecturer" || me?.role === "admin";
+  const isLecturer = me?.role === "lecturer";
 
   const params = {
     ...(courseId !== ALL ? { courseId: parseInt(courseId, 10) } : {}),
@@ -63,18 +66,69 @@ export default function QuestionsList() {
     ...(status !== ALL
       ? { status: status as "draft" | "approved" | "archived" }
       : {}),
-    ...(q ? { q } : {}),
+    // Server `q` matches title/text only. For privileged users we expand the
+    // search to course/program/lecturer fields on the client below, so skip
+    // server-side `q` filtering in that case to avoid losing those matches.
+    ...(q && !(me?.role === "lecturer" || me?.role === "admin")
+      ? { q }
+      : {}),
   };
 
   const { data: courses } = useListCourses();
-  const { data: questions, isLoading } = useListQuestions(params);
+  const { data: serverQuestions, isLoading } = useListQuestions(params);
   // Unfiltered set, used to populate the course-overview index for lecturer/admin.
   const { data: allQuestions } = useListQuestions();
+
+  // Build a lookup of course → { programName, lecturerName, courseCode,
+  // courseName } so we can search question rows by their parent course's
+  // program/lecturer (admins/lecturers).
+  const courseMeta = new Map<
+    number,
+    {
+      courseCode: string;
+      courseName: string;
+      programName?: string | null;
+      lecturerName?: string | null;
+    }
+  >();
+  for (const c of courses ?? []) {
+    courseMeta.set(c.id, {
+      courseCode: c.courseCode,
+      courseName: c.courseName,
+      programName: c.programName ?? null,
+      lecturerName: c.lecturerName ?? null,
+    });
+  }
+
+  const isPrivilegedSearch =
+    (me?.role === "lecturer" || me?.role === "admin") && q.trim().length > 0;
+  const questions = isPrivilegedSearch
+    ? (allQuestions ?? []).filter((qu) => {
+        if (
+          courseId !== ALL &&
+          qu.courseId !== parseInt(courseId, 10)
+        )
+          return false;
+        if (difficulty !== ALL && qu.difficultyLevel !== difficulty) return false;
+        if (status !== ALL && qu.status !== status) return false;
+        const needle = q.trim().toLowerCase();
+        const meta = courseMeta.get(qu.courseId);
+        const hay = [
+          qu.title,
+          qu.questionText,
+          qu.topicName ?? "",
+          qu.courseName ?? meta?.courseName ?? "",
+          meta?.courseCode ?? "",
+          meta?.programName ?? "",
+          meta?.lecturerName ?? "",
+        ]
+          .join(" \u0000 ")
+          .toLowerCase();
+        return hay.includes(needle);
+      })
+    : serverQuestions;
   const archive = useArchiveQuestion();
   const queryClient = useQueryClient();
-  const me = getAuthUser();
-  const isPrivileged = me?.role === "lecturer" || me?.role === "admin";
-  const isLecturer = me?.role === "lecturer";
 
   // When no course is selected and no other filters are active, show the
   // course-cards overview + pending approval shortcut for lecturers/admins.

@@ -27,6 +27,7 @@ export default function CoursesList() {
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
+  const isLecturer = user?.role === "lecturer";
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [code, setCode] = useState("");
@@ -189,19 +190,28 @@ export default function CoursesList() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
                   <span>{c.courseCode}</span>
-                  {c.programCode && (
-                    <span
-                      className="text-xs font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5"
-                      data-testid={`badge-program-${c.id}`}
-                    >
-                      {c.programCode}
-                    </span>
-                  )}
+                  {isLecturer
+                    ? c.programName && (
+                        <span
+                          className="text-xs font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5"
+                          data-testid={`badge-program-${c.id}`}
+                        >
+                          {c.programName}
+                        </span>
+                      )
+                    : c.programCode && (
+                        <span
+                          className="text-xs font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5"
+                          data-testid={`badge-program-${c.id}`}
+                        >
+                          {c.programCode}
+                        </span>
+                      )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-1">{c.courseName}</p>
-                {c.lecturerName && (
+                {!isLecturer && c.lecturerName && (
                   <p className="text-xs text-muted-foreground mb-3">
                     Lecturer: {c.lecturerName}
                   </p>

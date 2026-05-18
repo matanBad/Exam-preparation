@@ -90,6 +90,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const [editName, setEditName] = useState("");
   const [editParent, setEditParent] = useState<number | "">("");
   const [topicSearch, setTopicSearch] = useState("");
+  const isStudent = user?.role === "student";
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const toggleExpand = (tid: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(tid)) next.delete(tid);
+      else next.add(tid);
+      return next;
+    });
+  };
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getListCourseTopicsQueryKey(id) });
@@ -188,67 +198,107 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
     childrenOf(pid).filter(isVisible);
   void subtreeMatches;
 
-  const renderTopic = (t: Topic, depth: number) => (
-    <li
-      key={t.id}
-      className="p-3 border rounded-md"
-      style={{ marginLeft: depth * 20 }}
-    >
-      {editingId === t.id ? (
-        <div className="space-y-2">
-          <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-          <select
-            className="border rounded px-2 py-1 w-full"
-            value={editParent}
-            onChange={(e) =>
-              setEditParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
-            }
-          >
-            <option value="">No parent (top-level topic)</option>
-            {all
-              .filter((x) => x.id !== t.id && x.parentTopicId == null)
-              .map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.topicName}
-                </option>
-              ))}
-          </select>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveEdit} disabled={updateTopic.isPending}>
-              Save
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-between items-center">
-          <span>{t.topicName}</span>
-          {isPrivileged && (
+  // For students, when a search matches a subtopic, auto-expand its ancestor
+  // chain so the matching child is reachable.
+  const autoExpanded = new Set<number>(expanded);
+  if (isStudent && q) {
+    for (const t of all) {
+      if (visibleIds.has(t.id) && t.parentTopicId) {
+        let cur: Topic | undefined = t;
+        while (cur?.parentTopicId) {
+          autoExpanded.add(cur.parentTopicId);
+          cur = all.find((x) => x.id === cur!.parentTopicId);
+        }
+      }
+    }
+  }
+
+  const renderTopic = (t: Topic, depth: number) => {
+    const children = visibleChildrenOf(t.id);
+    const hasChildren = children.length > 0;
+    const isOpen = !isStudent || autoExpanded.has(t.id);
+    return (
+      <li
+        key={t.id}
+        className="p-3 border rounded-md"
+        style={{ marginLeft: depth * 20 }}
+      >
+        {editingId === t.id ? (
+          <div className="space-y-2">
+            <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={editParent}
+              onChange={(e) =>
+                setEditParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
+              }
+            >
+              <option value="">No parent (top-level topic)</option>
+              {all
+                .filter((x) => x.id !== t.id && x.parentTopicId == null)
+                .map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.topicName}
+                  </option>
+                ))}
+            </select>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => startEdit(t)}>
-                Edit
+              <Button size="sm" onClick={handleSaveEdit} disabled={updateTopic.isPending}>
+                Save
               </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDelete(t.id)}
-                disabled={deleteTopic.isPending}
-              >
-                Delete
+              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                Cancel
               </Button>
             </div>
-          )}
-        </div>
-      )}
-      {visibleChildrenOf(t.id).length > 0 && (
-        <ul className="space-y-2 mt-2">
-          {visibleChildrenOf(t.id).map((c) => renderTopic(c, depth + 1))}
-        </ul>
-      )}
-    </li>
-  );
+          </div>
+        ) : (
+          <div className="flex justify-between items-center">
+            {isStudent && hasChildren ? (
+              <button
+                type="button"
+                onClick={() => toggleExpand(t.id)}
+                className="flex items-center gap-2 text-left hover:text-primary focus:outline-none"
+                data-testid={`btn-toggle-topic-${t.id}`}
+              >
+                <span
+                  className="inline-block w-3 text-xs text-muted-foreground transition-transform"
+                  aria-hidden
+                >
+                  {isOpen ? "▾" : "▸"}
+                </span>
+                <span>{t.topicName}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({children.length})
+                </span>
+              </button>
+            ) : (
+              <span className={isStudent ? "ml-5" : ""}>{t.topicName}</span>
+            )}
+            {isPrivileged && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => startEdit(t)}>
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(t.id)}
+                  disabled={deleteTopic.isPending}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+        {hasChildren && isOpen && (
+          <ul className="space-y-2 mt-2">
+            {children.map((c) => renderTopic(c, depth + 1))}
+          </ul>
+        )}
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-6">

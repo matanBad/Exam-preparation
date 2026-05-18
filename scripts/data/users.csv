@@ -18,3 +18,15 @@ id,full_name,email,password_hash,role,account_status,created_at,updated_at,profi
 19,Dr. Gal Naveh,gal.electrical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
 20,Eden Electrical,eden.electrical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
 21,Tamar Computer Science,tamar.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7
+22,Avi Civil,avi.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2
+23,Hila Civil,hila.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2
+24,Yossi Mechanical,yossi.mech@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3
+25,Nava Mechanical,nava.mech@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3
+26,Itai Chemical,itai.chem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4
+27,Shira Chemical,shira.chem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4
+28,Omer IEM,omer.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5
+29,Roni IEM,roni.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5
+30,Tomer Electrical,tomer.ee@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
+31,Maya Electrical,maya.ee@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
+32,Yuval CS,yuval.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7
+33,Liron CS,liron.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -10,6 +10,8 @@ import {
   accountDeletionRequestsTable,
   lecturerProgramsTable,
   programsTable,
+  courseOfferingsTable,
+  enrollmentsTable,
 } from "@workspace/db";
 import {
   ListUsersQueryParams,
@@ -37,12 +39,69 @@ router.get(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const users = parsed.data.role
+    const baseRows = parsed.data.role
       ? await db
           .select()
           .from(usersTable)
           .where(eq(usersTable.role, parsed.data.role))
       : await db.select().from(usersTable);
+
+    // Enrich student rows with program name/code; lecturer rows with the list
+    // of programs they teach (program ids). Names are resolved on the client
+    // via the existing programs list to keep the API surface unchanged.
+    const studentProgramIds = Array.from(
+      new Set(
+        baseRows
+          .filter((u) => u.role === "student" && u.programId != null)
+          .map((u) => u.programId as number),
+      ),
+    );
+    const lecturerIds = baseRows
+      .filter((u) => u.role === "lecturer")
+      .map((u) => u.id);
+
+    const programRows = studentProgramIds.length
+      ? await db
+          .select({
+            id: programsTable.id,
+            name: programsTable.name,
+            code: programsTable.code,
+          })
+          .from(programsTable)
+          .where(inArray(programsTable.id, studentProgramIds))
+      : [];
+    const programById = new Map(programRows.map((p) => [p.id, p]));
+
+    const lecturerLinks = lecturerIds.length
+      ? await db
+          .select({
+            lecturerId: lecturerProgramsTable.lecturerId,
+            programId: lecturerProgramsTable.programId,
+          })
+          .from(lecturerProgramsTable)
+          .where(inArray(lecturerProgramsTable.lecturerId, lecturerIds))
+      : [];
+    const lecturerProgramIds = new Map<number, number[]>();
+    for (const l of lecturerLinks) {
+      const arr = lecturerProgramIds.get(l.lecturerId) ?? [];
+      arr.push(l.programId);
+      lecturerProgramIds.set(l.lecturerId, arr);
+    }
+
+    const users = baseRows.map((u) => {
+      if (u.role === "student" && u.programId != null) {
+        const p = programById.get(u.programId);
+        return {
+          ...u,
+          programName: p?.name ?? null,
+          programCode: p?.code ?? null,
+        };
+      }
+      if (u.role === "lecturer") {
+        return { ...u, programIds: lecturerProgramIds.get(u.id) ?? [] };
+      }
+      return u;
+    });
     res.json(ListUsersResponse.parse(users));
   },
 );
@@ -145,16 +204,84 @@ router.patch(
     if (parsed.data.role !== undefined) updateValues.role = parsed.data.role;
     if (parsed.data.accountStatus !== undefined)
       updateValues.accountStatus = parsed.data.accountStatus;
-    const [updated] = await db
-      .update(usersTable)
-      .set(updateValues)
-      .where(eq(usersTable.id, params.data.id))
-      .returning();
-    if (!updated) {
+
+    // Run the prior-status read, update, and any auto-enrollment in a single
+    // transaction with a row lock on the user, so two concurrent approvals
+    // can't both observe the prior non-active status and double-insert.
+    const txResult = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, params.data.id))
+        .for("update");
+      if (!existing) {
+        return { notFound: true as const };
+      }
+
+      const [updated] = await tx
+        .update(usersTable)
+        .set(updateValues)
+        .where(eq(usersTable.id, params.data.id))
+        .returning();
+      if (!updated) {
+        return { notFound: true as const };
+      }
+
+      // Auto-enrollment on approval: when an admin moves a student from a
+      // non-active status to active, enroll them in every active course
+      // that has an existing offering in their program. Idempotent via
+      // ON CONFLICT DO NOTHING on the (user_id, course_id) unique index.
+      const becameActive =
+        updated.role === "student" &&
+        updated.accountStatus === "active" &&
+        existing.accountStatus !== "active" &&
+        updated.programId != null;
+      let enrolled = 0;
+      if (becameActive) {
+        const offerings = await tx
+          .selectDistinct({ courseId: courseOfferingsTable.courseId })
+          .from(courseOfferingsTable)
+          .innerJoin(
+            coursesTable,
+            eq(coursesTable.id, courseOfferingsTable.courseId),
+          )
+          .where(
+            and(
+              eq(courseOfferingsTable.programId, updated.programId as number),
+              eq(coursesTable.status, "active"),
+            ),
+          );
+        if (offerings.length > 0) {
+          const inserted = await tx
+            .insert(enrollmentsTable)
+            .values(
+              offerings.map((o) => ({
+                userId: updated.id,
+                courseId: o.courseId,
+                enrollmentStatus: "active",
+              })),
+            )
+            .onConflictDoNothing({
+              target: [enrollmentsTable.userId, enrollmentsTable.courseId],
+            })
+            .returning({ id: enrollmentsTable.id });
+          enrolled = inserted.length;
+        }
+      }
+      return { notFound: false as const, updated, enrolled, becameActive };
+    });
+
+    if (txResult.notFound) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    res.json(UpdateUserResponse.parse(updated));
+    if (txResult.becameActive) {
+      req.log.info(
+        { userId: txResult.updated.id, enrolled: txResult.enrolled },
+        "auto-enrolled approved student",
+      );
+    }
+    res.json(UpdateUserResponse.parse(txResult.updated));
   },
 );
 

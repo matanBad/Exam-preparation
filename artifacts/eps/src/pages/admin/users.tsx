@@ -381,6 +381,7 @@ export default function AdminUsers() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Program / Track</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -418,6 +419,31 @@ export default function AdminUsers() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {u.role === "student" ? (
+                        u.programName ??
+                        (u.programId
+                          ? programs?.find((p) => p.id === u.programId)?.name
+                          : null) ??
+                        "—"
+                      ) : u.role === "lecturer" ? (
+                        (() => {
+                          const ids = u.programIds ?? [];
+                          if (ids.length === 0) return "—";
+                          const names = ids
+                            .map((pid) => programs?.find((p) => p.id === pid)?.name)
+                            .filter(Boolean) as string[];
+                          if (names.length <= 2) return names.join(", ");
+                          return (
+                            <span title={names.join(", ")}>
+                              {names.length} programs
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -470,6 +496,7 @@ type UserRow = {
   role: string;
   accountStatus: string;
   programId?: number | null;
+  programName?: string | null;
   programCode?: string | null;
   programIds?: number[] | null;
   createdAt?: string | null;
@@ -521,11 +548,17 @@ function UserDetailsDialog({
                   <>
                     <span className="text-muted-foreground">Program</span>
                     <span className="col-span-2">
-                      {user.programCode ??
-                        (user.programId
-                          ? programLookup(user.programId)?.code
-                          : null) ??
-                        "—"}
+                      {(() => {
+                        const p = user.programId
+                          ? programLookup(user.programId)
+                          : null;
+                        const name = user.programName ?? p?.name;
+                        const code = user.programCode ?? p?.code;
+                        if (!name && !code) return "—";
+                        return name && code
+                          ? `${name} (${code})`
+                          : (name ?? code);
+                      })()}
                     </span>
                   </>
                 )}
@@ -538,7 +571,7 @@ function UserDetailsDialog({
                         const p = programLookup(pid);
                         return (
                           <Badge key={pid} variant="outline">
-                            {p?.code ?? pid}
+                            {p?.name ?? pid}
                           </Badge>
                         );
                       })}
