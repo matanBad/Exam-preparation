@@ -34,6 +34,20 @@ export const LoginResponse = zod.object({
   }),
 });
 
+/**
+ * Always returns a generic acknowledgment regardless of whether the email already exists, to avoid account enumeration. New accounts are created with status "pending" and require admin approval before they can sign in.
+
+ * @summary Self-register a new student account (pending admin approval)
+ */
+
+export const registerBodyPasswordMin = 6;
+
+export const RegisterBody = zod.object({
+  fullName: zod.string().min(1),
+  email: zod.string().email(),
+  password: zod.string().min(registerBodyPasswordMin),
+});
+
 export const changeMyPasswordBodyNewPasswordMin = 6;
 
 export const ChangeMyPasswordBody = zod.object({

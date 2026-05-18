@@ -164,6 +164,18 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  /** @minLength 1 */
+  fullName: string;
+  email: string;
+  /** @minLength 6 */
+  password: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+}
+
 export interface AuthLoginResponse {
   token: string;
   user: User;

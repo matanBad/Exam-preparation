@@ -46,6 +46,8 @@ export * from "./notificationStatus";
 export * from "./question";
 export * from "./questionStatus";
 export * from "./questionType";
+export * from "./registerRequest";
+export * from "./registerResponse";
 export * from "./reviewItem";
 export * from "./role";
 export * from "./searchQuestionsParams";

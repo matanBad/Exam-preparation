@@ -51,6 +51,31 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Self-register a new student account (pending admin approval)
+      description: >
+        Always returns a generic acknowledgment regardless of whether the email
+        already exists, to avoid account enumeration. New accounts are created
+        with status "pending" and require admin approval before they can sign in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "202":
+          description: Registration request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Bad request
+
   /auth/me/password:
     patch:
       operationId: changeMyPassword
@@ -1020,6 +1045,20 @@ components:
         email: { type: string }
         password: { type: string }
       required: [email, password]
+
+    RegisterRequest:
+      type: object
+      properties:
+        fullName: { type: string, minLength: 1 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+      required: [fullName, email, password]
+
+    RegisterResponse:
+      type: object
+      properties:
+        message: { type: string }
+      required: [message]
 
     AuthLoginResponse:
       type: object

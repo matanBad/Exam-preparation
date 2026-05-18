@@ -11,6 +11,7 @@ import {
   DeleteMyAccountBody,
   UpdateMyProfileImageBody,
   UpdateMyProfileImageResponse,
+  RegisterBody,
 } from "@workspace/api-zod";
 import { signToken, verifyPassword, hashPassword } from "../lib/auth";
 import { requireAuth } from "../middlewares/auth";
@@ -39,7 +40,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
   if (user.accountStatus !== "active") {
-    res.status(401).json({ error: "Account is not active" });
+    const msg =
+      user.accountStatus === "pending"
+        ? "Your account is awaiting admin approval."
+        : "Account is not active";
+    res.status(401).json({ error: msg });
     return;
   }
   const role = user.role as "student" | "lecturer" | "admin";
@@ -57,6 +62,57 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       },
     }),
   );
+});
+
+router.post("/auth/register", async (req, res): Promise<void> => {
+  const parsed = RegisterBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const fullName = parsed.data.fullName.trim();
+  const email = parsed.data.email.trim().toLowerCase();
+  const { password } = parsed.data;
+  if (!fullName) {
+    res.status(400).json({ error: "Full name is required" });
+    return;
+  }
+
+  const passwordHash = await hashPassword(password);
+  const inserted = await db
+    .insert(usersTable)
+    .values({
+      fullName,
+      email,
+      passwordHash,
+      role: "student",
+      accountStatus: "pending",
+    })
+    .onConflictDoNothing({ target: usersTable.email })
+    .returning();
+  const created = inserted[0];
+
+  if (created) {
+    try {
+      await notifyUsersByRole("admin", {
+        type: "user_registration",
+        title: "New student registration",
+        message: `${created.fullName} <${created.email}> requested an account and is awaiting approval.`,
+        relatedEntityType: "user",
+        relatedEntityId: created.id,
+      });
+    } catch (err) {
+      req.log.error(
+        { err, userId: created.id },
+        "failed to notify admins of new registration",
+      );
+    }
+  }
+
+  res.status(202).json({
+    message:
+      "Registration received. If the email is not already in use, an administrator will review and activate the account.",
+  });
 });
 
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {

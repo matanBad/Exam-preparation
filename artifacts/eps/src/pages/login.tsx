@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
 import { setAuthToken, setAuthUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,6 +99,16 @@ export default function Login() {
             >
               {login.isPending ? "Signing in..." : "Sign in"}
             </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              New student?{" "}
+              <Link
+                href="/register"
+                className="text-primary hover:underline"
+                data-testid="link-to-register"
+              >
+                Create an account
+              </Link>
+            </p>
           </form>
 
           <div className="mt-6 pt-6 border-t border-border">

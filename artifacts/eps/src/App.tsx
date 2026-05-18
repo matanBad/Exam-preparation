@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import Unauthorized from "@/pages/unauthorized";
 import Dashboard from "@/pages/dashboard";
 import CoursesList from "@/pages/courses/list";
@@ -66,6 +67,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/unauthorized" component={Unauthorized} />
       
       <Route path="/">
