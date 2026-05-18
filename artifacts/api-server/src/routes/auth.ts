@@ -1,6 +1,11 @@
 import { Router, type IRouter } from "express";
 import { and, eq, ne } from "drizzle-orm";
-import { db, usersTable, accountDeletionRequestsTable } from "@workspace/db";
+import {
+  db,
+  usersTable,
+  accountDeletionRequestsTable,
+  lecturerProgramsTable,
+} from "@workspace/db";
 import {
   LoginBody,
   LoginResponse,
@@ -59,6 +64,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         role,
         accountStatus: user.accountStatus,
         profileImageUrl: user.profileImageUrl,
+        programId: user.programId ?? null,
       },
     }),
   );
@@ -87,6 +93,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       passwordHash,
       role: "student",
       accountStatus: "pending",
+      programId: parsed.data.programId,
     })
     .onConflictDoNothing({ target: usersTable.email })
     .returning();
@@ -124,6 +131,15 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
     res.status(401).json({ error: "User not found" });
     return;
   }
+  // For lecturers, include the list of programs they teach in.
+  let programIds: number[] | undefined;
+  if (user.role === "lecturer") {
+    const rows = await db
+      .select({ programId: lecturerProgramsTable.programId })
+      .from(lecturerProgramsTable)
+      .where(eq(lecturerProgramsTable.lecturerId, user.id));
+    programIds = rows.map((r) => r.programId);
+  }
   res.json(
     GetMeResponse.parse({
       id: user.id,
@@ -132,6 +148,8 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       role: user.role,
       accountStatus: user.accountStatus,
       profileImageUrl: user.profileImageUrl,
+      programId: user.programId ?? null,
+      ...(programIds !== undefined ? { programIds } : {}),
     }),
   );
 });

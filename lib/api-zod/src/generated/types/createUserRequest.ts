@@ -13,4 +13,8 @@ export interface CreateUserRequest {
   password: string;
   role: Role;
   accountStatus?: string;
+  /** For role=student: the program they study in */
+  programId?: number | null;
+  /** For role=lecturer: programs they teach in */
+  programIds?: number[];
 }

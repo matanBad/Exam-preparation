@@ -8,11 +8,13 @@ import usersRouter from "./users";
 import adminRouter from "./admin";
 import notificationsRouter from "./notifications";
 import messagesRouter from "./messages";
+import programsRouter from "./programs";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(programsRouter);
 router.use(coursesRouter);
 router.use(questionsRouter);
 router.use(examsRouter);

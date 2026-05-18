@@ -13,6 +13,9 @@ import {
   answerOptionsTable,
   notificationsTable,
   messagesTable,
+  programsTable,
+  lecturerProgramsTable,
+  courseOfferingsTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
@@ -92,11 +95,30 @@ async function main() {
   console.log("Clearing existing data...");
   await db.execute(sql`TRUNCATE TABLE
     notifications, messages, mock_exam_questions, mock_exams, answer_options,
-    questions, topics, enrollments, courses, users RESTART IDENTITY CASCADE`);
+    questions, topics, enrollments, course_offerings, lecturer_programs,
+    courses, users, programs RESTART IDENTITY CASCADE`);
 
   const passwordHash = await bcrypt.hash("123456", 10);
 
+  // ---- programs (must be inserted before users so users.program_id can reference) ----
+  const programRows = readCsv("programs.csv");
+  console.log(`Seeding ${programRows.length} programs...`);
+  await db.insert(programsTable).values(
+    programRows.map((p) => ({
+      id: Number(p.id),
+      name: p.name,
+      code: p.code,
+      status: p.status || "active",
+    })),
+  );
+  const seProgramId = Number(
+    programRows.find((p) => p.code === "SE")?.id ?? 1,
+  );
+
   // ---- users ----
+  // All existing students get the Software Engineering program by default
+  // (per migration plan). Admin and lecturers keep program_id null; lecturers
+  // get their program links via lecturer_programs below.
   const userRows = readCsv("users.csv");
   console.log(`Seeding ${userRows.length} users...`);
   await db.insert(usersTable).values(
@@ -108,6 +130,7 @@ async function main() {
       role: u.role,
       accountStatus: u.account_status || "active",
       profileImageUrl: nullable(u.profile_image_url ?? ""),
+      programId: u.role === "student" ? seProgramId : null,
     })),
   );
 
@@ -184,6 +207,34 @@ async function main() {
     })),
   );
 
+  // ---- lecturer_programs ----
+  // Demo lecturer (lecturer@eps.com) teaches in Software Engineering so all
+  // existing offerings can be linked to them.
+  const lecturerRow0 = userRows.find((u) => u.email === "lecturer@eps.com")!;
+  console.log("Seeding lecturer_programs...");
+  await db.insert(lecturerProgramsTable).values([
+    { lecturerId: Number(lecturerRow0.id), programId: seProgramId },
+  ]);
+
+  // ---- course_offerings ----
+  // Each existing course becomes one offering under Software Engineering,
+  // taught by the demo lecturer. This preserves the legacy behavior while
+  // wiring everything into the new program/offering layer.
+  const courseRowsForOfferings = courseRows;
+  console.log(
+    `Seeding ${courseRowsForOfferings.length} course_offerings...`,
+  );
+  await db.insert(courseOfferingsTable).values(
+    courseRowsForOfferings.map((c) => ({
+      courseId: Number(c.id),
+      programId: seProgramId,
+      lecturerId: Number(lecturerRow0.id),
+      semester: nullable(c.semester),
+      academicYear: nullable(c.academic_year),
+      status: "active" as const,
+    })),
+  );
+
   // Bump serial sequences past the largest explicit id we inserted, so future
   // inserts (registration, lecturer-created questions, etc.) don't collide.
   console.log("Resyncing sequences...");
@@ -194,6 +245,9 @@ async function main() {
     "topics",
     "questions",
     "answer_options",
+    "programs",
+    "lecturer_programs",
+    "course_offerings",
   ]) {
     await db.execute(
       sql.raw(

@@ -1,11 +1,13 @@
 import { Router, type IRouter } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, type SQL } from "drizzle-orm";
 import {
   db,
   coursesTable,
   enrollmentsTable,
   topicsTable,
   usersTable,
+  courseOfferingsTable,
+  programsTable,
 } from "@workspace/db";
 import {
   ListCoursesResponse,
@@ -27,27 +29,107 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
+/**
+ * Returns the set of course ids the caller can access.
+ * - admin: all courses (returns null meaning "no filter").
+ * - student: any course with an offering in the student's program.
+ * - lecturer: any course with an offering they teach.
+ */
+async function visibleCourseIds(auth: {
+  role: string;
+  userId: number;
+}): Promise<number[] | null> {
+  if (auth.role === "admin") return null;
+  if (auth.role === "student") {
+    const [me] = await db
+      .select({ programId: usersTable.programId })
+      .from(usersTable)
+      .where(eq(usersTable.id, auth.userId));
+    if (!me?.programId) return [];
+    const rows = await db
+      .selectDistinct({ courseId: courseOfferingsTable.courseId })
+      .from(courseOfferingsTable)
+      .where(eq(courseOfferingsTable.programId, me.programId));
+    return rows.map((r) => r.courseId);
+  }
+  // lecturer
+  const rows = await db
+    .selectDistinct({ courseId: courseOfferingsTable.courseId })
+    .from(courseOfferingsTable)
+    .where(eq(courseOfferingsTable.lecturerId, auth.userId));
+  return rows.map((r) => r.courseId);
+}
+
 router.get(
   "/courses",
   requireAuth,
   async (req, res): Promise<void> => {
     const auth = req.auth!;
-    let courses;
-    if (auth.role === "student" || auth.role === "lecturer") {
-      const enrolled = await db
-        .select({ courseId: enrollmentsTable.courseId })
-        .from(enrollmentsTable)
-        .where(eq(enrollmentsTable.userId, auth.userId));
-      const ids = enrolled.map((e) => e.courseId);
-      courses = ids.length
-        ? await db
-            .select()
-            .from(coursesTable)
-            .where(inArray(coursesTable.id, ids))
-        : [];
-    } else {
-      courses = await db.select().from(coursesTable);
+    const ids = await visibleCourseIds(auth);
+    if (ids !== null && ids.length === 0) {
+      res.json(ListCoursesResponse.parse([]));
+      return;
     }
+    // Join with one offering (per access scope) for program/lecturer enrichment.
+    // Students: filter offerings to their program. Lecturers: filter to their own.
+    // Admins: leftJoin any offering (first match).
+    const [me] = auth.role === "student"
+      ? await db
+          .select({ programId: usersTable.programId })
+          .from(usersTable)
+          .where(eq(usersTable.id, auth.userId))
+      : [{ programId: null as number | null }];
+
+    // Build the leftJoin ON-conditions for course_offerings. For admins the only
+    // condition is the natural join on course id (we want any offering, if one
+    // exists, for enrichment). For students/lecturers we additionally scope to
+    // their program / their lecturer id so the enrichment row matches their
+    // actual access.
+    const joinConditions: SQL[] = [
+      eq(courseOfferingsTable.courseId, coursesTable.id),
+    ];
+    if (auth.role === "student" && me.programId) {
+      joinConditions.push(eq(courseOfferingsTable.programId, me.programId));
+    } else if (auth.role === "lecturer") {
+      joinConditions.push(eq(courseOfferingsTable.lecturerId, auth.userId));
+    }
+
+    const baseQuery = db
+      .select({
+        course: coursesTable,
+        offeringId: courseOfferingsTable.id,
+        programId: programsTable.id,
+        programName: programsTable.name,
+        programCode: programsTable.code,
+        lecturerId: usersTable.id,
+        lecturerName: usersTable.fullName,
+      })
+      .from(coursesTable)
+      .leftJoin(courseOfferingsTable, and(...joinConditions))
+      .leftJoin(programsTable, eq(programsTable.id, courseOfferingsTable.programId))
+      .leftJoin(usersTable, eq(usersTable.id, courseOfferingsTable.lecturerId));
+
+    const rows = ids === null
+      ? await baseQuery
+      : await baseQuery.where(inArray(coursesTable.id, ids));
+
+    // Dedupe by course id, preferring rows where we have offering enrichment.
+    const byCourse = new Map<number, (typeof rows)[number]>();
+    for (const r of rows) {
+      const existing = byCourse.get(r.course.id);
+      if (!existing || (!existing.offeringId && r.offeringId)) {
+        byCourse.set(r.course.id, r);
+      }
+    }
+    const courses = Array.from(byCourse.values()).map((r) => ({
+      ...r.course,
+      offeringId: r.offeringId,
+      programId: r.programId,
+      programName: r.programName,
+      programCode: r.programCode,
+      lecturerId: r.lecturerId,
+      lecturerName: r.lecturerName,
+    }));
     res.json(ListCoursesResponse.parse(courses));
   },
 );
@@ -63,25 +145,108 @@ router.post(
       return;
     }
     const auth = req.auth!;
-    const [course] = await db
-      .insert(coursesTable)
-      .values({
-        courseCode: parsed.data.courseCode,
-        courseName: parsed.data.courseName,
-        semester: parsed.data.semester ?? null,
-        academicYear: parsed.data.academicYear ?? null,
-      })
-      .returning();
-    // Auto-assign the creating lecturer to the new course so they can see/manage it.
-    if (auth.role === "lecturer") {
-      await db
-        .insert(enrollmentsTable)
-        .values({ userId: auth.userId, courseId: course.id })
-        .onConflictDoNothing();
+
+    // Resolve lecturer: caller-default for lecturers, explicit for admins.
+    const lecturerId =
+      parsed.data.lecturerId ??
+      (auth.role === "lecturer" ? auth.userId : null);
+    if (!lecturerId) {
+      res
+        .status(400)
+        .json({ error: "lecturerId is required when an admin creates a course" });
+      return;
     }
-    res.status(201).json(GetCourseResponse.parse(course));
+    // Validate program exists.
+    const [program] = await db
+      .select({ id: programsTable.id })
+      .from(programsTable)
+      .where(eq(programsTable.id, parsed.data.programId));
+    if (!program) {
+      res.status(400).json({ error: "Unknown programId" });
+      return;
+    }
+    // Validate lecturer exists and is a lecturer.
+    const [lecturer] = await db
+      .select({ id: usersTable.id, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, lecturerId));
+    if (!lecturer || lecturer.role !== "lecturer") {
+      res.status(400).json({ error: "lecturerId must reference a lecturer" });
+      return;
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const [course] = await tx
+        .insert(coursesTable)
+        .values({
+          courseCode: parsed.data.courseCode,
+          courseName: parsed.data.courseName,
+          semester: parsed.data.semester ?? null,
+          academicYear: parsed.data.academicYear ?? null,
+        })
+        .returning();
+      const [offering] = await tx
+        .insert(courseOfferingsTable)
+        .values({
+          courseId: course.id,
+          programId: parsed.data.programId,
+          lecturerId,
+          semester: parsed.data.semester ?? null,
+          academicYear: parsed.data.academicYear ?? null,
+        })
+        .returning();
+      return { course, offering };
+    });
+
+    res.status(201).json(
+      GetCourseResponse.parse({
+        ...result.course,
+        offeringId: result.offering.id,
+        programId: parsed.data.programId,
+        lecturerId,
+      }),
+    );
   },
 );
+
+/**
+ * Checks if the caller can access this course. Used by GET /courses/:id
+ * and GET /courses/:id/topics.
+ */
+async function canAccessCourse(
+  auth: { role: string; userId: number },
+  courseId: number,
+): Promise<boolean> {
+  if (auth.role === "admin") return true;
+  if (auth.role === "student") {
+    const [me] = await db
+      .select({ programId: usersTable.programId })
+      .from(usersTable)
+      .where(eq(usersTable.id, auth.userId));
+    if (!me?.programId) return false;
+    const [off] = await db
+      .select({ id: courseOfferingsTable.id })
+      .from(courseOfferingsTable)
+      .where(
+        and(
+          eq(courseOfferingsTable.courseId, courseId),
+          eq(courseOfferingsTable.programId, me.programId),
+        ),
+      );
+    return !!off;
+  }
+  // lecturer
+  const [off] = await db
+    .select({ id: courseOfferingsTable.id })
+    .from(courseOfferingsTable)
+    .where(
+      and(
+        eq(courseOfferingsTable.courseId, courseId),
+        eq(courseOfferingsTable.lecturerId, auth.userId),
+      ),
+    );
+  return !!off;
+}
 
 router.get(
   "/courses/:id",
@@ -93,20 +258,9 @@ router.get(
       return;
     }
     const auth = req.auth!;
-    if (auth.role === "student" || auth.role === "lecturer") {
-      const [enr] = await db
-        .select()
-        .from(enrollmentsTable)
-        .where(
-          and(
-            eq(enrollmentsTable.userId, auth.userId),
-            eq(enrollmentsTable.courseId, params.data.id),
-          ),
-        );
-      if (!enr) {
-        res.status(403).json({ error: "Not assigned to this course" });
-        return;
-      }
+    if (!(await canAccessCourse(auth, params.data.id))) {
+      res.status(403).json({ error: "Not assigned to this course" });
+      return;
     }
     const [course] = await db
       .select()
@@ -158,20 +312,9 @@ router.get(
       return;
     }
     const auth = req.auth!;
-    if (auth.role === "student" || auth.role === "lecturer") {
-      const [enr] = await db
-        .select()
-        .from(enrollmentsTable)
-        .where(
-          and(
-            eq(enrollmentsTable.userId, auth.userId),
-            eq(enrollmentsTable.courseId, params.data.id),
-          ),
-        );
-      if (!enr) {
-        res.status(403).json({ error: "Not assigned to this course" });
-        return;
-      }
+    if (!(await canAccessCourse(auth, params.data.id))) {
+      res.status(403).json({ error: "Not assigned to this course" });
+      return;
     }
     const topics = await db
       .select()

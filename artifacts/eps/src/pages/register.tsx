@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useRegister } from "@workspace/api-client-react";
+import { useRegister, useListPrograms } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import logoUrl from "@/assets/ep-logo.png";
 
 export default function Register() {
@@ -13,9 +20,11 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [programId, setProgramId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const register = useRegister();
+  const { data: programs } = useListPrograms();
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +37,19 @@ export default function Register() {
       setError("Passwords do not match.");
       return;
     }
+    if (!programId) {
+      setError("Please select your program / track.");
+      return;
+    }
     register.mutate(
-      { data: { fullName, email, password } },
+      {
+        data: {
+          fullName,
+          email,
+          password,
+          programId: Number(programId),
+        },
+      },
       {
         onSuccess: () => setSuccess(true),
         onError: (err: unknown) => {
@@ -103,6 +123,21 @@ export default function Register() {
                   required
                   data-testid="input-email"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="program">Program / track</Label>
+                <Select value={programId} onValueChange={setProgramId}>
+                  <SelectTrigger id="program" data-testid="select-program">
+                    <SelectValue placeholder="Select your program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programs?.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name} ({p.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

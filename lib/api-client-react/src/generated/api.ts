@@ -25,6 +25,7 @@ import type {
   ChangePasswordRequest,
   Course,
   CreateCourseRequest,
+  CreateProgramRequest,
   CreateQuestionRequest,
   CreateTopicRequest,
   CreateUserRequest,
@@ -44,6 +45,7 @@ import type {
   Message,
   NotFoundResponse,
   Notification,
+  Program,
   Question,
   RegisterRequest,
   RegisterResponse,
@@ -1199,6 +1201,167 @@ export function useGetMe<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List active programs (any authenticated user)
+ */
+export const getListProgramsUrl = () => {
+  return `/api/programs`;
+};
+
+export const listPrograms = async (
+  options?: RequestInit,
+): Promise<Program[]> => {
+  return customFetch<Program[]>(getListProgramsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProgramsQueryKey = () => {
+  return [`/api/programs`] as const;
+};
+
+export const getListProgramsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPrograms>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPrograms>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListProgramsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPrograms>>> = ({
+    signal,
+  }) => listPrograms({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPrograms>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProgramsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPrograms>>
+>;
+export type ListProgramsQueryError = ErrorType<UnauthorizedResponse>;
+
+/**
+ * @summary List active programs (any authenticated user)
+ */
+
+export function useListPrograms<
+  TData = Awaited<ReturnType<typeof listPrograms>>,
+  TError = ErrorType<UnauthorizedResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPrograms>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProgramsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new program (admin only)
+ */
+export const getCreateProgramUrl = () => {
+  return `/api/programs`;
+};
+
+export const createProgram = async (
+  createProgramRequest: CreateProgramRequest,
+  options?: RequestInit,
+): Promise<Program> => {
+  return customFetch<Program>(getCreateProgramUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProgramRequest),
+  });
+};
+
+export const getCreateProgramMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProgram>>,
+    TError,
+    { data: BodyType<CreateProgramRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProgram>>,
+  TError,
+  { data: BodyType<CreateProgramRequest> },
+  TContext
+> => {
+  const mutationKey = ["createProgram"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProgram>>,
+    { data: BodyType<CreateProgramRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProgram(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProgramMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProgram>>
+>;
+export type CreateProgramMutationBody = BodyType<CreateProgramRequest>;
+export type CreateProgramMutationError = ErrorType<ForbiddenResponse | void>;
+
+/**
+ * @summary Create a new program (admin only)
+ */
+export const useCreateProgram = <
+  TError = ErrorType<ForbiddenResponse | void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProgram>>,
+    TError,
+    { data: BodyType<CreateProgramRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProgram>>,
+  TError,
+  { data: BodyType<CreateProgramRequest> },
+  TContext
+> => {
+  return useMutation(getCreateProgramMutationOptions(options));
+};
 
 /**
  * @summary List all courses (lecturer/admin) or current user's enrolled courses (student)

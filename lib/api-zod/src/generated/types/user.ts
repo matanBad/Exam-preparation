@@ -14,4 +14,10 @@ export interface User {
   role: Role;
   accountStatus: string;
   profileImageUrl?: string | null;
+  /** Student's program (null for admins/lecturers) */
+  programId?: number | null;
+  programName?: string | null;
+  programCode?: string | null;
+  /** Programs a lecturer teaches in (only populated for lecturers) */
+  programIds?: number[];
 }

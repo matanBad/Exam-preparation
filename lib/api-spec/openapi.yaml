@@ -16,6 +16,7 @@ tags:
   - name: exams
   - name: users
   - name: admin
+  - name: programs
 paths:
   /healthz:
     get:
@@ -280,6 +281,42 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /programs:
+    get:
+      operationId: listPrograms
+      tags: [programs]
+      summary: List active programs (any authenticated user)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Program" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createProgram
+      tags: [programs]
+      summary: Create a new program (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgramRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Program" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Program code already in use
 
   /courses:
     get:
@@ -938,7 +975,31 @@ components:
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
         profileImageUrl: { type: string, nullable: true }
+        programId: { type: integer, nullable: true, description: "Student's program (null for admins/lecturers)" }
+        programName: { type: string, nullable: true }
+        programCode: { type: string, nullable: true }
+        programIds:
+          type: array
+          description: "Programs a lecturer teaches in (only populated for lecturers)"
+          items: { type: integer }
       required: [id, fullName, email, role, accountStatus]
+
+    Program:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        status: { type: string }
+      required: [id, name, code, status]
+
+    CreateProgramRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: string, minLength: 1 }
+        status: { type: string }
+      required: [name, code]
 
     CreateUserRequest:
       type: object
@@ -948,6 +1009,14 @@ components:
         password: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
+        programId:
+          type: integer
+          nullable: true
+          description: "For role=student: the program they study in"
+        programIds:
+          type: array
+          description: "For role=lecturer: programs they teach in"
+          items: { type: integer }
       required: [fullName, email, password, role]
 
     UpdateUserRequest:
@@ -1052,7 +1121,10 @@ components:
         fullName: { type: string, minLength: 1 }
         email: { type: string, format: email }
         password: { type: string, minLength: 6 }
-      required: [fullName, email, password]
+        programId:
+          type: integer
+          description: "Program/track the student is enrolling in"
+      required: [fullName, email, password, programId]
 
     RegisterResponse:
       type: object
@@ -1076,6 +1148,12 @@ components:
         semester: { type: string, nullable: true }
         academicYear: { type: string, nullable: true }
         status: { type: string }
+        offeringId: { type: integer, nullable: true, description: "Set when row represents a specific course offering" }
+        programId: { type: integer, nullable: true }
+        programName: { type: string, nullable: true }
+        programCode: { type: string, nullable: true }
+        lecturerId: { type: integer, nullable: true }
+        lecturerName: { type: string, nullable: true }
       required: [id, courseCode, courseName, status]
 
     CreateCourseRequest:
@@ -1085,7 +1163,14 @@ components:
         courseName: { type: string }
         semester: { type: string, nullable: true }
         academicYear: { type: string, nullable: true }
-      required: [courseCode, courseName]
+        programId:
+          type: integer
+          description: "Program/track this offering belongs to"
+        lecturerId:
+          type: integer
+          nullable: true
+          description: "Lecturer teaching this offering. Defaults to the caller when they are a lecturer."
+      required: [courseCode, courseName, programId]
 
     UpdateCourseRequest:
       type: object

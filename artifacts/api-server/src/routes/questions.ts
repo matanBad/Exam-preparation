@@ -6,7 +6,8 @@ import {
   answerOptionsTable,
   coursesTable,
   topicsTable,
-  enrollmentsTable,
+  usersTable,
+  courseOfferingsTable,
 } from "@workspace/db";
 import {
   ListQuestionsQueryParams,
@@ -27,20 +28,51 @@ import { createNotification, notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
+/**
+ * Strategy A: a lecturer "owns" a course if they teach any offering of it.
+ */
 async function lecturerOwnsCourse(
   userId: number,
   courseId: number,
 ): Promise<boolean> {
   const [row] = await db
-    .select({ id: enrollmentsTable.id })
-    .from(enrollmentsTable)
+    .select({ id: courseOfferingsTable.id })
+    .from(courseOfferingsTable)
     .where(
       and(
-        eq(enrollmentsTable.userId, userId),
-        eq(enrollmentsTable.courseId, courseId),
+        eq(courseOfferingsTable.lecturerId, userId),
+        eq(courseOfferingsTable.courseId, courseId),
       ),
     );
   return !!row;
+}
+
+/**
+ * Returns the set of course ids the caller can see questions for.
+ * - student: courses with an offering in their program.
+ * - lecturer: courses they teach an offering of.
+ */
+async function visibleCourseIdsForQuestions(scope: {
+  kind: "student" | "lecturer";
+  userId: number;
+}): Promise<number[]> {
+  if (scope.kind === "student") {
+    const [me] = await db
+      .select({ programId: usersTable.programId })
+      .from(usersTable)
+      .where(eq(usersTable.id, scope.userId));
+    if (!me?.programId) return [];
+    const rows = await db
+      .selectDistinct({ courseId: courseOfferingsTable.courseId })
+      .from(courseOfferingsTable)
+      .where(eq(courseOfferingsTable.programId, me.programId));
+    return rows.map((r) => r.courseId);
+  }
+  const rows = await db
+    .selectDistinct({ courseId: courseOfferingsTable.courseId })
+    .from(courseOfferingsTable)
+    .where(eq(courseOfferingsTable.lecturerId, scope.userId));
+  return rows.map((r) => r.courseId);
 }
 
 async function loadQuestionsWithOptions(
@@ -55,11 +87,7 @@ async function loadQuestionsWithOptions(
     if (scope.kind === "student") {
       allFilters.push(eq(questionsTable.status, "approved"));
     }
-    const enrolled = await db
-      .select({ courseId: enrollmentsTable.courseId })
-      .from(enrollmentsTable)
-      .where(eq(enrollmentsTable.userId, scope.userId));
-    const courseIds = enrolled.map((e) => e.courseId);
+    const courseIds = await visibleCourseIdsForQuestions(scope);
     if (courseIds.length === 0) return [];
     allFilters.push(inArray(questionsTable.courseId, courseIds));
   }

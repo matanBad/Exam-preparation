@@ -9,6 +9,8 @@ import {
   coursesTable,
   topicsTable,
   enrollmentsTable,
+  usersTable,
+  courseOfferingsTable,
 } from "@workspace/db";
 import {
   GenerateExamBody,
@@ -129,17 +131,28 @@ router.post(
       res.status(403).json({ error: "Only students can generate exams" });
       return;
     }
-    const [enr] = await db
-      .select({ id: enrollmentsTable.id })
-      .from(enrollmentsTable)
+    // Strategy A: students access courses through course_offerings in their program.
+    const [me] = await db
+      .select({ programId: usersTable.programId })
+      .from(usersTable)
+      .where(eq(usersTable.id, auth.userId));
+    if (!me?.programId) {
+      res.status(403).json({ error: "Student is not assigned to a program" });
+      return;
+    }
+    const [off] = await db
+      .select({ id: courseOfferingsTable.id })
+      .from(courseOfferingsTable)
       .where(
         and(
-          eq(enrollmentsTable.userId, auth.userId),
-          eq(enrollmentsTable.courseId, courseId),
+          eq(courseOfferingsTable.courseId, courseId),
+          eq(courseOfferingsTable.programId, me.programId),
         ),
       );
-    if (!enr) {
-      res.status(403).json({ error: "Not enrolled in this course" });
+    if (!off) {
+      res
+        .status(403)
+        .json({ error: "This course is not offered in your program" });
       return;
     }
 

@@ -11,4 +11,8 @@ export interface CreateCourseRequest {
   courseName: string;
   semester?: string | null;
   academicYear?: string | null;
+  /** Program/track this offering belongs to */
+  programId: number;
+  /** Lecturer teaching this offering. Defaults to the caller when they are a lecturer. */
+  lecturerId?: number | null;
 }

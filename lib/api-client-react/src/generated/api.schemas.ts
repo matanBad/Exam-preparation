@@ -60,6 +60,27 @@ export interface User {
   role: Role;
   accountStatus: string;
   profileImageUrl?: string | null;
+  /** Student's program (null for admins/lecturers) */
+  programId?: number | null;
+  programName?: string | null;
+  programCode?: string | null;
+  /** Programs a lecturer teaches in (only populated for lecturers) */
+  programIds?: number[];
+}
+
+export interface Program {
+  id: number;
+  name: string;
+  code: string;
+  status: string;
+}
+
+export interface CreateProgramRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  code: string;
+  status?: string;
 }
 
 export interface CreateUserRequest {
@@ -68,6 +89,10 @@ export interface CreateUserRequest {
   password: string;
   role: Role;
   accountStatus?: string;
+  /** For role=student: the program they study in */
+  programId?: number | null;
+  /** For role=lecturer: programs they teach in */
+  programIds?: number[];
 }
 
 export interface UpdateUserRequest {
@@ -170,6 +195,8 @@ export interface RegisterRequest {
   email: string;
   /** @minLength 6 */
   password: string;
+  /** Program/track the student is enrolling in */
+  programId: number;
 }
 
 export interface RegisterResponse {
@@ -188,6 +215,13 @@ export interface Course {
   semester?: string | null;
   academicYear?: string | null;
   status: string;
+  /** Set when row represents a specific course offering */
+  offeringId?: number | null;
+  programId?: number | null;
+  programName?: string | null;
+  programCode?: string | null;
+  lecturerId?: number | null;
+  lecturerName?: string | null;
 }
 
 export interface CreateCourseRequest {
@@ -195,6 +229,10 @@ export interface CreateCourseRequest {
   courseName: string;
   semester?: string | null;
   academicYear?: string | null;
+  /** Program/track this offering belongs to */
+  programId: number;
+  /** Lecturer teaching this offering. Defaults to the caller when they are a lecturer. */
+  lecturerId?: number | null;
 }
 
 export interface UpdateCourseRequest {

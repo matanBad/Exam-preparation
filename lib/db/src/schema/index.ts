@@ -11,6 +11,21 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
+export const programsTable = pgTable(
+  "programs",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    code: text("code").notNull(),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    codeIdx: uniqueIndex("programs_code_idx").on(t.code),
+  }),
+);
+
 export const usersTable = pgTable(
   "users",
   {
@@ -21,11 +36,65 @@ export const usersTable = pgTable(
     role: text("role").notNull(), // student | lecturer | admin
     accountStatus: text("account_status").notNull().default("active"),
     profileImageUrl: text("profile_image_url"),
+    // For students: the single program they study in. Null for admins/lecturers
+    // (lecturers use lecturerProgramsTable for their many-to-many program links).
+    programId: integer("program_id").references(() => programsTable.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     emailIdx: uniqueIndex("users_email_idx").on(t.email),
+  }),
+);
+
+export const lecturerProgramsTable = pgTable(
+  "lecturer_programs",
+  {
+    id: serial("id").primaryKey(),
+    lecturerId: integer("lecturer_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    programId: integer("program_id")
+      .notNull()
+      .references(() => programsTable.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    uniq: uniqueIndex("lecturer_programs_uniq_idx").on(t.lecturerId, t.programId),
+  }),
+);
+
+export const courseOfferingsTable = pgTable(
+  "course_offerings",
+  {
+    id: serial("id").primaryKey(),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => coursesTable.id, { onDelete: "cascade" }),
+    programId: integer("program_id")
+      .notNull()
+      .references(() => programsTable.id, { onDelete: "cascade" }),
+    lecturerId: integer("lecturer_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    semester: text("semester"),
+    academicYear: text("academic_year"),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    courseIdx: index("course_offerings_course_idx").on(t.courseId),
+    programIdx: index("course_offerings_program_idx").on(t.programId),
+    lecturerIdx: index("course_offerings_lecturer_idx").on(t.lecturerId),
+    uniq: uniqueIndex("course_offerings_uniq_idx").on(
+      t.courseId,
+      t.programId,
+      t.lecturerId,
+    ),
   }),
 );
 

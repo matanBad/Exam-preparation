@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -8,6 +8,8 @@ import {
   questionsTable,
   mockExamsTable,
   accountDeletionRequestsTable,
+  lecturerProgramsTable,
+  programsTable,
 } from "@workspace/db";
 import {
   ListUsersQueryParams,
@@ -55,7 +57,8 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const { fullName, email, password, role, accountStatus } = parsed.data;
+    const { fullName, email, password, role, accountStatus, programId, programIds } =
+      parsed.data;
     const [existing] = await db
       .select({ id: usersTable.id })
       .from(usersTable)
@@ -64,17 +67,50 @@ router.post(
       res.status(409).json({ error: "Email already in use" });
       return;
     }
+    // Validate program references (if provided) before creating the user.
+    const programIdsToLink =
+      role === "lecturer" && programIds ? programIds : [];
+    const programIdsToCheck = [
+      ...(role === "student" && programId != null ? [programId] : []),
+      ...programIdsToLink,
+    ];
+    if (programIdsToCheck.length > 0) {
+      const rows = await db
+        .select({ id: programsTable.id })
+        .from(programsTable)
+        .where(inArray(programsTable.id, programIdsToCheck));
+      const found = new Set(rows.map((r) => r.id));
+      const missing = programIdsToCheck.filter((id) => !found.has(id));
+      if (missing.length > 0) {
+        res
+          .status(400)
+          .json({ error: `Unknown program id(s): ${missing.join(", ")}` });
+        return;
+      }
+    }
     const passwordHash = await hashPassword(password);
-    const [created] = await db
-      .insert(usersTable)
-      .values({
-        fullName,
-        email,
-        passwordHash,
-        role,
-        accountStatus: accountStatus ?? "active",
-      })
-      .returning();
+    const created = await db.transaction(async (tx) => {
+      const [u] = await tx
+        .insert(usersTable)
+        .values({
+          fullName,
+          email,
+          passwordHash,
+          role,
+          accountStatus: accountStatus ?? "active",
+          programId: role === "student" ? (programId ?? null) : null,
+        })
+        .returning();
+      if (programIdsToLink.length > 0) {
+        await tx.insert(lecturerProgramsTable).values(
+          programIdsToLink.map((pid) => ({
+            lecturerId: u.id,
+            programId: pid,
+          })),
+        );
+      }
+      return u;
+    });
     const { passwordHash: _ph, ...safe } = created;
     res.status(201).json(safe);
   },

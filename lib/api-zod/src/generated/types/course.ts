@@ -13,4 +13,11 @@ export interface Course {
   semester?: string | null;
   academicYear?: string | null;
   status: string;
+  /** Set when row represents a specific course offering */
+  offeringId?: number | null;
+  programId?: number | null;
+  programName?: string | null;
+  programCode?: string | null;
+  lecturerId?: number | null;
+  lecturerName?: string | null;
 }

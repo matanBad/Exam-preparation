@@ -31,6 +31,18 @@ export const LoginResponse = zod.object({
     role: zod.enum(["student", "lecturer", "admin"]),
     accountStatus: zod.string(),
     profileImageUrl: zod.string().nullish(),
+    programId: zod
+      .number()
+      .nullish()
+      .describe("Student's program (null for admins\/lecturers)"),
+    programName: zod.string().nullish(),
+    programCode: zod.string().nullish(),
+    programIds: zod
+      .array(zod.number())
+      .optional()
+      .describe(
+        "Programs a lecturer teaches in (only populated for lecturers)",
+      ),
   }),
 });
 
@@ -46,6 +58,9 @@ export const RegisterBody = zod.object({
   fullName: zod.string().min(1),
   email: zod.string().email(),
   password: zod.string().min(registerBodyPasswordMin),
+  programId: zod
+    .number()
+    .describe("Program\/track the student is enrolling in"),
 });
 
 export const changeMyPasswordBodyNewPasswordMin = 6;
@@ -67,6 +82,16 @@ export const ChangeMyEmailResponse = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
 });
 
 /**
@@ -172,6 +197,16 @@ export const UpdateMyProfileImageResponse = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
 });
 
 /**
@@ -200,6 +235,37 @@ export const GetMeResponse = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+});
+
+/**
+ * @summary List active programs (any authenticated user)
+ */
+export const ListProgramsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string(),
+  status: zod.string(),
+});
+export const ListProgramsResponse = zod.array(ListProgramsResponseItem);
+
+/**
+ * @summary Create a new program (admin only)
+ */
+
+export const CreateProgramBody = zod.object({
+  name: zod.string().min(1),
+  code: zod.string().min(1),
+  status: zod.string().optional(),
 });
 
 /**
@@ -212,6 +278,15 @@ export const ListCoursesResponseItem = zod.object({
   semester: zod.string().nullish(),
   academicYear: zod.string().nullish(),
   status: zod.string(),
+  offeringId: zod
+    .number()
+    .nullish()
+    .describe("Set when row represents a specific course offering"),
+  programId: zod.number().nullish(),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  lecturerId: zod.number().nullish(),
+  lecturerName: zod.string().nullish(),
 });
 export const ListCoursesResponse = zod.array(ListCoursesResponseItem);
 
@@ -223,6 +298,13 @@ export const CreateCourseBody = zod.object({
   courseName: zod.string(),
   semester: zod.string().nullish(),
   academicYear: zod.string().nullish(),
+  programId: zod.number().describe("Program\/track this offering belongs to"),
+  lecturerId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Lecturer teaching this offering. Defaults to the caller when they are a lecturer.",
+    ),
 });
 
 export const GetCourseParams = zod.object({
@@ -236,6 +318,15 @@ export const GetCourseResponse = zod.object({
   semester: zod.string().nullish(),
   academicYear: zod.string().nullish(),
   status: zod.string(),
+  offeringId: zod
+    .number()
+    .nullish()
+    .describe("Set when row represents a specific course offering"),
+  programId: zod.number().nullish(),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  lecturerId: zod.number().nullish(),
+  lecturerName: zod.string().nullish(),
 });
 
 export const UpdateCourseParams = zod.object({
@@ -257,6 +348,15 @@ export const UpdateCourseResponse = zod.object({
   semester: zod.string().nullish(),
   academicYear: zod.string().nullish(),
   status: zod.string(),
+  offeringId: zod
+    .number()
+    .nullish()
+    .describe("Set when row represents a specific course offering"),
+  programId: zod.number().nullish(),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  lecturerId: zod.number().nullish(),
+  lecturerName: zod.string().nullish(),
 });
 
 export const ListCourseTopicsParams = zod.object({
@@ -318,6 +418,15 @@ export const GetUserCoursesResponseItem = zod.object({
   semester: zod.string().nullish(),
   academicYear: zod.string().nullish(),
   status: zod.string(),
+  offeringId: zod
+    .number()
+    .nullish()
+    .describe("Set when row represents a specific course offering"),
+  programId: zod.number().nullish(),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  lecturerId: zod.number().nullish(),
+  lecturerName: zod.string().nullish(),
 });
 export const GetUserCoursesResponse = zod.array(GetUserCoursesResponseItem);
 
@@ -716,6 +825,16 @@ export const ListUsersResponseItem = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
@@ -725,6 +844,14 @@ export const CreateUserBody = zod.object({
   password: zod.string(),
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string().optional(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("For role=student: the program they study in"),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("For role=lecturer: programs they teach in"),
 });
 
 export const UpdateUserParams = zod.object({
@@ -744,6 +871,16 @@ export const UpdateUserResponse = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
 });
 
 export const DeleteUserParams = zod.object({
@@ -761,6 +898,16 @@ export const ListCourseMembersResponseItem = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]),
   accountStatus: zod.string(),
   profileImageUrl: zod.string().nullish(),
+  programId: zod
+    .number()
+    .nullish()
+    .describe("Student's program (null for admins\/lecturers)"),
+  programName: zod.string().nullish(),
+  programCode: zod.string().nullish(),
+  programIds: zod
+    .array(zod.number())
+    .optional()
+    .describe("Programs a lecturer teaches in (only populated for lecturers)"),
 });
 export const ListCourseMembersResponse = zod.array(
   ListCourseMembersResponseItem,

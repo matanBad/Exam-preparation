@@ -7,6 +7,7 @@ import {
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
+  useListPrograms,
   getListUsersQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +72,10 @@ export default function AdminUsers() {
     password: "",
     role: "student" as Role,
   });
+  const [programId, setProgramId] = useState<string>("");
+  const [lecturerProgramIds, setLecturerProgramIds] = useState<number[]>([]);
   const [createError, setCreateError] = useState<string | null>(null);
+  const { data: programs } = useListPrograms();
 
   const refresh = () =>
     queryClient.invalidateQueries({
@@ -86,12 +90,30 @@ export default function AdminUsers() {
       setCreateError("Full name, email, and a 6+ char password are required.");
       return;
     }
+    if (form.role === "student" && !programId) {
+      setCreateError("Please select a program for the student.");
+      return;
+    }
+    const payload: Record<string, unknown> = {
+      ...form,
+      fullName: form.fullName.trim(),
+      email: form.email.trim(),
+    };
+    if (form.role === "student" && programId) {
+      payload.programId = Number(programId);
+    }
+    if (form.role === "lecturer" && lecturerProgramIds.length > 0) {
+      payload.programIds = lecturerProgramIds;
+    }
     createUser.mutate(
-      { data: { ...form, fullName: form.fullName.trim(), email: form.email.trim() } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { data: payload as any },
       {
         onSuccess: () => {
           refresh();
           setForm({ fullName: "", email: "", password: "", role: "student" });
+          setProgramId("");
+          setLecturerProgramIds([]);
           setShowCreate(false);
         },
         onError: (err: unknown) => {
@@ -204,6 +226,56 @@ export default function AdminUsers() {
                 ))}
               </SelectContent>
             </Select>
+            {form.role === "student" && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Program</p>
+                <Select value={programId} onValueChange={setProgramId}>
+                  <SelectTrigger
+                    className="w-64"
+                    data-testid="select-create-program"
+                  >
+                    <SelectValue placeholder="Select program" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programs?.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.name} ({p.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {form.role === "lecturer" && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Programs taught</p>
+                <div className="flex flex-wrap gap-3">
+                  {programs?.map((p) => {
+                    const checked = lecturerProgramIds.includes(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setLecturerProgramIds((prev) =>
+                              e.target.checked
+                                ? [...prev, p.id]
+                                : prev.filter((x) => x !== p.id),
+                            );
+                          }}
+                          data-testid={`checkbox-program-${p.code}`}
+                        />
+                        {p.code}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {createError && (
               <p className="text-sm text-destructive">{createError}</p>
             )}

@@ -12,4 +12,6 @@ export interface RegisterRequest {
   email: string;
   /** @minLength 6 */
   password: string;
+  /** Program/track the student is enrolling in */
+  programId: number;
 }
