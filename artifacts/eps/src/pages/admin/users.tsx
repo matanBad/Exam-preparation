@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "wouter";
+import { Link, useSearchParams } from "wouter";
+import { UserX } from "lucide-react";
 import {
   useListUsers,
   useCreateUser,
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+
 import {
   Select,
   SelectContent,
@@ -142,7 +144,13 @@ export default function AdminUsers() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href="/admin/deletion-requests">
+            <Button variant="outline" data-testid="btn-deletion-requests">
+              <UserX className="w-4 h-4 mr-2" />
+              Account deletion requests
+            </Button>
+          </Link>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger className="w-48" data-testid="select-role-filter">
               <SelectValue />

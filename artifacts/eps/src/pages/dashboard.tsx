@@ -5,7 +5,6 @@ import {
   useListCourses,
   useListQuestions,
   useGetAdminOverview,
-  useListDeletionRequests,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -233,62 +232,7 @@ function AdminDashboardView() {
         </CardContent>
       </Card>
 
-      <DeletionRequestsCard />
     </div>
-  );
-}
-
-function DeletionRequestsCard() {
-  const { data, isLoading } = useListDeletionRequests();
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Account deletion requests</CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">
-          Submitted by students who chose to delete their account.
-        </p>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : !data || data.length === 0 ? (
-          <p
-            className="text-sm text-muted-foreground"
-            data-testid="empty-deletion-requests"
-          >
-            No deletion requests yet.
-          </p>
-        ) : (
-          <ul className="space-y-3" data-testid="list-deletion-requests">
-            {data.slice(0, 10).map((r) => (
-              <li
-                key={r.id}
-                className="border-b last:border-0 pb-3 last:pb-0 text-sm"
-                data-testid={`deletion-request-${r.id}`}
-              >
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <span className="font-semibold">{r.formerFullName}</span>{" "}
-                    <span className="text-muted-foreground">
-                      &lt;{r.formerEmail}&gt;
-                    </span>{" "}
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                      ({r.formerRole})
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(r.deletedAt).toLocaleString()}
-                  </span>
-                </div>
-                <p className="mt-1 text-muted-foreground whitespace-pre-wrap">
-                  {r.reason}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
