@@ -59,7 +59,6 @@ export default function Login() {
               className="w-64 h-auto object-contain"
             />
             <CardTitle className="sr-only">Exam Preparation System</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Sign in to continue</p>
           </div>
         </CardHeader>
         <CardContent>
