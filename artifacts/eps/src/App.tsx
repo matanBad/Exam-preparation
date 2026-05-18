@@ -32,10 +32,14 @@ setAuthTokenGetter(() => getAuthToken());
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: any) => {
-      if (error?.status === 401) {
-        clearAuth();
-        window.location.href = "/login";
-      }
+      if (error?.status !== 401) return;
+      // Don't bounce the user off public auth pages — a 401 there is
+      // expected (e.g. an unauthenticated user landing on /register) and
+      // redirecting would prevent them from ever submitting the form.
+      const path = window.location.pathname;
+      if (path === "/login" || path === "/register") return;
+      clearAuth();
+      window.location.href = "/login";
     },
   }),
 });

@@ -10,7 +10,9 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-router.get("/programs", requireAuth, async (_req, res): Promise<void> => {
+// Public: the registration page needs the program list before the user has a
+// token. The data returned is non-sensitive (program name + code).
+router.get("/programs", async (_req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(programsTable)
