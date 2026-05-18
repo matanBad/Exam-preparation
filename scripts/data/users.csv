@@ -1,0 +1,8 @@
+id,full_name,email,password_hash,role,account_status,created_at,updated_at,profile_image_url
+1,Sam Fisher,student@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,student,active,"""2026-05-18T09:26:47.695Z""","""2026-05-18T09:26:47.695Z""",
+2,Dr. Liat Levi,lecturer@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,lecturer,active,"""2026-05-18T09:26:47.695Z""","""2026-05-18T09:26:47.695Z""",
+3,Alex Adam,admin@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,admin,active,"""2026-05-18T09:26:47.695Z""","""2026-05-18T09:26:47.695Z""",
+4,Noa Cohen,noa.student@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,student,active,"""2026-05-18T12:30:00.000Z""","""2026-05-18T12:30:00.000Z""",
+5,Daniel Mizrahi,daniel.student@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,student,active,"""2026-05-18T12:30:00.000Z""","""2026-05-18T12:30:00.000Z""",
+6,Maya Levi,maya.student@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,student,active,"""2026-05-18T12:30:00.000Z""","""2026-05-18T12:30:00.000Z""",
+7,Dr. Amir Barak,amir.lecturer@eps.com,$2b$10$O5RjiLZZRJg0UfiaE/4YhOSK06tiygXbxrWafZ.vnOxX/KJVkpn9i,lecturer,active,"""2026-05-18T12:30:00.000Z""","""2026-05-18T12:30:00.000Z""",

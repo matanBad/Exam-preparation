@@ -1,0 +1,46 @@
+I want you to update ONLY the project database seed/data files according to the CSV files I provide.
+
+Important rules:
+1. Do not change the application logic.
+2. Do not change the frontend design.
+3. Do not change routes, components, API endpoints, authentication logic, or permissions logic.
+4. Do not rename existing database fields unless the CSV headers require the exact same names already used in the project.
+5. Keep the current database schema structure as much as possible.
+6. Replace the existing sample/mock database data with the data from the new CSV files.
+7. Preserve all relationships between tables:
+   - users.id → enrollments.user_id
+   - courses.id → enrollments.course_id
+   - courses.id → topics.course_id
+   - courses.id → questions.course_id
+   - topics.id → questions.topic_id
+   - questions.id → answer_options.question_id
+
+Files I will provide:
+- users.csv
+- courses.csv
+- topics.csv
+- enrollments.csv
+- questions.csv
+- answer_options.csv
+
+Your task:
+1. Locate where the project currently stores or seeds database data.
+2. Replace the existing data with the data from the uploaded CSV files.
+3. Make sure the course “Project Management” is replaced with “Computer Networks 2”.
+4. Make sure all questions and answer options are displayed in English.
+5. Make sure every question has its correct answer options connected properly.
+6. Make sure students only see courses assigned to them through enrollments.
+7. Make sure lecturers only manage courses assigned to them through enrollments or the existing course-user relation logic.
+8. Keep role-based access working for student, lecturer, and admin.
+9. After updating the data, run the project and verify that:
+   - Login still works.
+   - Courses are displayed correctly.
+   - Topics are connected to the correct courses.
+   - Questions are connected to the correct course and topic.
+   - Answer options are connected to the correct question.
+   - Mock exam generation still works.
+   - Exam submission and grading still work.
+   - No unrelated files or features were changed.
+
+Before making changes, briefly explain which files you plan to edit.
+After making changes, summarize exactly what was changed and confirm that no unrelated logic was modified.

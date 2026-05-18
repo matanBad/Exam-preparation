@@ -1,0 +1,5 @@
+id,course_code,course_name,semester,academic_year,status,created_at,updated_at
+1,CS101,Introduction to Computer Science,Fall,2025-2026,active,"""2026-05-18T09:26:47.787Z""","""2026-05-18T09:26:47.787Z"""
+2,DB201,Database Systems,Spring,2025-2026,active,"""2026-05-18T09:26:47.787Z""","""2026-05-18T09:26:47.787Z"""
+3,AI301,Intro to AI,Fall,2025-2026,active,"""2026-05-18T09:27:09.518Z""","""2026-05-18T09:27:09.518Z"""
+4,CN202,Computer Networks 2,Spring,2025-2026,active,"""2026-05-18T09:31:55.082Z""","""2026-05-18T12:45:00.000Z"""

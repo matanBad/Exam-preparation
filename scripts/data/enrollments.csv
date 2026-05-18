@@ -1,0 +1,16 @@
+id,user_id,course_id,enrollment_status
+1,1,1,active
+2,1,2,active
+3,2,1,active
+4,2,2,active
+5,2,3,active
+6,2,4,active
+7,4,1,active
+8,4,3,active
+9,5,2,active
+10,5,4,active
+11,6,1,active
+12,6,2,active
+13,6,3,active
+14,7,2,active
+15,7,3,active
