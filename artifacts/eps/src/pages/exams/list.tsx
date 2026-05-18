@@ -45,9 +45,6 @@ export default function ExamsList() {
       <div className="flex justify-between items-start gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">My Exams</h1>
-          <p className="text-muted-foreground mt-1">
-            All practice and mock exams
-          </p>
           {statusFilter && (
             <button
               type="button"
