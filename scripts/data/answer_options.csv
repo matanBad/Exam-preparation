@@ -107,10 +107,6 @@ id,question_id,answer_text,is_correct,display_order
 106,27,No model training,false,1
 107,27,Perfect generalization always,false,2
 108,27,Using too little data storage,false,3
-109,28,Fairness,true,0
-110,28,Privacy,true,1
-111,28,Transparency,true,2
-112,28,Hard-coded passwords,false,3
 113,29,It may create unfair predictions,true,0
 114,29,It always improves accuracy,false,1
 115,29,It removes the need for testing,false,2
@@ -118,48 +114,88 @@ id,question_id,answer_text,is_correct,display_order
 117,30,TCP,false,0
 118,30,UDP,true,1
 119,30,Both TCP and UDP,false,2
-120,30,ICMP,false,3
+120,30,IP,false,3
 121,31,At the final destination,true,0
-122,31,At every router,false,1
-123,31,At the router before the destination,false,2
-124,31,At the router where the MTU is large enough,false,3
-125,32,The packet is duplicated,false,0
-126,32,The packet is discarded,true,1
-127,32,The packet is encrypted,false,2
+122,31,At the router before the destination,false,1
+123,31,At every router,false,2
+124,31,At the router where enough fragments are available,false,3
+125,32,The packet is dropped to prevent endless circulation,true,0
+126,32,The destination learns the exact return path,false,1
+127,32,The packet size is reduced,false,2
 128,32,The packet is converted to IPv6,false,3
-129,33,"Discover, Offer, Request, Ack",true,0
-130,33,"Request, Ack, Discover, Offer",false,1
-131,33,"Offer, Discover, Ack, Request",false,2
-132,33,"DNS Query, Offer, Request, Ack",false,3
-133,34,To let many internal devices share one public IP address,true,0
-134,34,To replace DNS name resolution,false,1
-135,34,To guarantee packet delivery,false,2
-136,34,To increase the MTU of every link,false,3
+129,33,"Discover, Offer, Request, ACK",true,0
+130,33,"Request, Offer, Discover, ACK",false,1
+131,33,"Offer, Discover, ACK, Request",false,2
+132,33,"ACK, Discover, Request, Offer",false,3
+133,34,Allow many internal devices to access the Internet using a shared public IP address,true,0
+134,34,Encrypt all internal network traffic,false,1
+135,34,Replace routing tables in routers,false,2
+136,34,Increase the physical bandwidth of the local network,false,3
 137,35,32 bits,false,0
 138,35,64 bits,false,1
 139,35,128 bits,true,2
 140,35,256 bits,false,3
-141,36,Forwarding packets from input ports to output ports,false,0
-142,36,Deciding the route packets should take through the network,true,1
-143,36,Detecting bit errors in Ethernet frames,false,2
-144,36,Assigning MAC addresses to switches,false,3
-145,37,UDP,false,0
-146,37,TCP,true,1
-147,37,ICMP,false,2
-148,37,DHCP,false,3
-149,38,Bellman-Ford,false,0
-150,38,Dijkstra,true,1
-151,38,Distance Vector only,false,2
-152,38,CRC division,false,3
-153,39,RIP sends messages over UDP,true,0
-154,39,RIP is based on distance-vector routing,true,1
-155,39,RIP uses TCP for all routing updates,false,2
-156,39,RIP has no hop-count limitation,false,3
-157,40,The remainder from polynomial division,true,0
-158,40,The divisor polynomial itself,false,1
-159,40,The quotient from the division,false,2
-160,40,The original message before encoding,false,3
-161,41,Framing,true,0
-162,41,Flow control,true,1
-163,41,Error detection and correction,true,2
-164,41,HTML rendering,false,3
+141,36,4 bits,false,0
+142,36,8 bits,false,1
+143,36,16 bits,false,2
+144,36,32 bits,true,3
+145,37,Only at the input ports,false,0
+146,37,Only at the output ports,false,1
+147,37,At both input and output ports,true,2
+148,37,Only in the routing table,false,3
+149,38,Moving packets from an input port to the appropriate output port,true,0
+150,38,Calculating the complete end-to-end route,false,1
+151,38,Sending packets to the transport layer,false,2
+152,38,Guaranteeing reliable packet delivery,false,3
+153,39,Determine routes and decide which paths packets should use,true,0
+154,39,Move packets from input ports to output ports,false,1
+155,39,Correct bit errors in frames,false,2
+156,39,Assign IP addresses to hosts,false,3
+157,40,Forward packets according to forwarding tables,true,0
+158,40,Run Dijkstra to learn the topology,false,1
+159,40,Assign users to VLANs,false,2
+160,40,Translate domain names to IP addresses,false,3
+161,41,UDP,false,0
+162,41,TCP,true,1
+163,41,ICMP,false,2
+164,41,DHCP,false,3
+165,42,NEXT_HOP,false,0
+166,42,AS_PATH,true,1
+167,42,LOCAL_PREF,false,2
+168,42,MED,false,3
+169,43,Bellman-Ford,false,0
+170,43,Dijkstra,true,1
+171,43,Distance Vector,false,2
+172,43,Flooding only,false,3
+173,44,Distance-vector,false,0
+174,44,Link-state,true,1
+175,44,Path-vector,false,2
+176,44,Static routing,false,3
+177,45,Hop count,true,0
+178,45,Bandwidth only,false,1
+179,45,Delay only,false,2
+180,45,Packet loss rate,false,3
+181,46,8,false,0
+182,46,15,true,1
+183,46,30,false,2
+184,46,120,false,3
+185,47,Every 10 seconds,false,0
+186,47,Every 30 seconds,true,1
+187,47,Every 90 seconds,false,2
+188,47,Every 180 seconds,false,3
+189,48,Application layer,false,0
+190,48,Transport layer,false,1
+191,48,Network layer,true,2
+192,48,Link layer,false,3
+193,49,The remainder of the division,true,0
+194,49,The divisor polynomial,false,1
+195,49,The quotient of the division,false,2
+196,49,The original message length,false,3
+197,50,Point-to-point between neighboring nodes,true,0
+198,50,End-to-end between applications,false,1
+199,50,Only inside DNS,false,2
+200,50,Only across autonomous systems,false,3
+201,51,IP address,false,0
+202,51,MAC address,true,1
+203,51,Port number,false,2
+204,51,AS number,false,3
