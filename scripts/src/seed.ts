@@ -65,10 +65,12 @@ async function main() {
     ])
     .returning();
 
-  console.log("Enrolling student...");
+  console.log("Enrolling student and lecturer...");
   await db.insert(enrollmentsTable).values([
     { userId: student.id, courseId: cs101.id },
     { userId: student.id, courseId: db201.id },
+    { userId: lecturer.id, courseId: cs101.id },
+    { userId: lecturer.id, courseId: db201.id },
   ]);
 
   console.log("Seeding topics...");

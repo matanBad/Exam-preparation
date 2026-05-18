@@ -62,6 +62,7 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
+    const auth = req.auth!;
     const [course] = await db
       .insert(coursesTable)
       .values({
@@ -71,6 +72,13 @@ router.post(
         academicYear: parsed.data.academicYear ?? null,
       })
       .returning();
+    // Auto-assign the creating lecturer to the new course so they can see/manage it.
+    if (auth.role === "lecturer") {
+      await db
+        .insert(enrollmentsTable)
+        .values({ userId: auth.userId, courseId: course.id })
+        .onConflictDoNothing();
+    }
     res.status(201).json(GetCourseResponse.parse(course));
   },
 );
