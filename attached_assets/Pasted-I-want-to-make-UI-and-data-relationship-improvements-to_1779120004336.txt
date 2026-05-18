@@ -1,0 +1,186 @@
+I want to make UI and data-relationship improvements to the EPS system.
+
+Important:
+Do NOT start changing files immediately.
+First, analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any database/schema change is required.
+3. How you will implement the changes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change the login logic.
+2. Do not change existing role-based permissions.
+3. Do not delete existing DB/data files.
+4. Do not change questions.course_id.
+5. Do not change topics.course_id.
+6. We chose Strategy A: courses + course_offerings coexist.
+7. Keep topics.course_id and questions.course_id connected to the parent course.
+8. Use course_offerings to identify which lecturer teaches a course in a specific program.
+9. A student should see courses based on the student’s program + enrollment.
+10. A lecturer should see/manage courses based on course_offerings.lecturer_id.
+11. Do not move topics/questions to course_offerings.
+12. Do not rewrite the exam generation logic unless absolutely required.
+13. Do not modify unrelated UI, routes, components, APIs, authentication, or permissions.
+
+Context:
+The system now uses programs/tracks and course offerings.
+
+A course is a shared catalog item.
+A course_offering represents a course taught by a specific lecturer in a specific program.
+
+Example:
+- CN202 - Computer Networks 2
+- Offering 1: CN202 + Software Engineering + Dr. Liat Levi
+- Offering 2: CN202 + Industrial Engineering and Management + Dr. Amir Barak
+
+Student visibility:
+A student should see a course only if:
+1. The student belongs to the relevant program.
+2. The course has an active course_offering for that program.
+3. The student is enrolled in that course.
+
+Lecturer visibility:
+A lecturer should see/manage only courses where:
+course_offerings.lecturer_id = current lecturer id.
+
+Now implement the following 10 changes:
+
+1. Show lecturer name inside student course page
+When a student opens a course page, display the lecturer name who teaches that course offering in the student’s program.
+The lecturer should be resolved using course_offerings, not enrollments.
+
+2. Add subtopic search inside student course page
+When a student enters a course, add a search option that allows searching subtopics by name.
+The search should filter the displayed topics/subtopics without changing the data.
+
+3. Add course search for students
+When a student clicks Courses or views the course list, add a search option.
+The student should be able to search courses by:
+- course name
+- course code
+- lecturer name
+
+The results must still respect student visibility rules:
+student program + enrollment + active course offering.
+
+4. Add unfinished exams section to student dashboard
+On the student dashboard, add a separate card/section for unfinished exams.
+This section should show exams with a status such as in_progress / not_submitted / unfinished, based on the current project data model.
+Do not remove the existing Recent Exams section.
+
+5. Allow optional topics/subtopics during course creation
+When a lecturer creates a course, allow the lecturer to optionally add topics/subtopics during course creation.
+Also allow managing topics/subtopics later from the course details page.
+
+Important:
+Topics/subtopics are optional during course creation.
+The lecturer must still be able to create a course even without adding topics immediately.
+
+Use this wording as the intended behavior:
+“Allow the lecturer to optionally add topics/subtopics during course creation, and also allow managing them later from the course details page.”
+
+6. Improve lecturer question bank structure
+In the lecturer Question Bank page, do not show all questions immediately as one long list.
+Instead, first show course cards.
+
+Each course card should show:
+- course code
+- course name
+- program/track if relevant
+- lecturer name if relevant
+- total number of questions in that course
+
+Only after clicking a course card, open the list of questions for that course.
+
+Inside the selected course question list, add filters/search by:
+- subtopic
+- difficulty
+- status
+- question title/text
+
+Keep questions connected through questions.course_id according to Strategy A.
+
+7. Add pending approval section for lecturer question bank
+In the lecturer Question Bank area, add a clear card/section for questions waiting for approval.
+This section should show draft/pending questions created by the lecturer or relevant to the lecturer’s courses, depending on the existing project logic.
+
+Do not change approval permissions.
+If only admin can approve questions, keep it that way.
+
+8. Improve admin question bank structure
+In the admin Question Bank page, first show course cards instead of immediately showing all questions.
+
+Each admin course card should show:
+- course code
+- course name
+- total number of questions
+- number of approved questions
+- number of draft/pending questions
+- number of archived questions if supported
+
+After clicking a course card, show all questions for that course with filters.
+
+9. Add user details view in admin users page
+When the admin clicks on a user name in the users table, open a user details view/modal/page.
+
+The user details should show all relevant user information:
+- full name
+- email
+- role
+- account status
+- program for student
+- programs taught for lecturer
+- related courses if available
+- created_at / updated_at if available
+
+The details view must include a clear Back button or Close button that returns to the previous users list without losing context.
+
+10. Keep Create User form visually consistent
+Keep the Create User form visually consistent for all user roles.
+
+When the admin creates a student:
+- Show a Program dropdown for selecting the student’s program.
+
+When the admin creates a lecturer:
+- Show a Programs taught selection component, but style it consistently with the student Program field.
+- Prefer a clean multi-select dropdown or a visually aligned selection component instead of scattered checkboxes.
+- The lecturer must still be able to select multiple programs.
+
+The layout, spacing, input width, labels, and button style should remain consistent between student and lecturer creation forms.
+Do not change the user creation logic except for improving the program/programs selection UI consistency.
+
+Validation and testing after changes:
+After implementation, verify the following:
+
+1. Login still works for student, lecturer, and admin.
+2. Existing role-based permissions still work.
+3. Student sees only courses allowed by program + enrollment + active course offering.
+4. Lecturer sees only courses where course_offerings.lecturer_id equals the logged-in lecturer.
+5. Admin can still manage users.
+6. Student course page shows the correct lecturer name.
+7. Student can search courses by course name/code/lecturer name.
+8. Student can search subtopics inside a course.
+9. Student dashboard shows unfinished exams separately.
+10. Lecturer can create a course without topics/subtopics.
+11. Lecturer can optionally add topics/subtopics during course creation.
+12. Lecturer can manage topics/subtopics later from course details.
+13. Lecturer question bank shows course cards first.
+14. Lecturer question bank filters work by subtopic, difficulty, status, and text.
+15. Pending approval section appears correctly.
+16. Admin question bank shows course cards with question counts.
+17. Admin can click user names and view full user details.
+18. Create User form stays visually consistent for student and lecturer.
+19. Existing questions and topics remain connected by course_id.
+20. No unrelated files, logic, UI, routes, authentication, or permissions were modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly what was changed, which files were edited, and confirm that:
+- Login logic was not changed.
+- Existing permissions were not changed.
+- Existing DB files were not deleted.
+- questions.course_id and topics.course_id were not changed.
+- Strategy A was preserved.
