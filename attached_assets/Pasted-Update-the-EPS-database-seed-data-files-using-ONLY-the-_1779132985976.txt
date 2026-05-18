@@ -1,0 +1,46 @@
+Update the EPS database seed/data files using ONLY the new CSV files I upload with this prompt.
+
+Important rules:
+1. Ignore any old DB/CSV files from previous versions.
+2. Use only the new files I provide now as the source of truth.
+3. Do not change login logic.
+4. Do not change existing role-based permissions.
+5. Do not delete unrelated project files.
+6. Preserve Strategy A: keep questions.course_id and topics.course_id pointing to the parent course.
+7. Do not move questions or topics to course_offerings.
+8. Use course_offerings only to determine which lecturer teaches a course in a specific program.
+
+Files to replace/import:
+- programs.csv
+- users.csv
+- courses.csv
+- course_offerings.csv
+- enrollments.csv
+- topics.csv
+- questions.csv
+- answer_options.csv
+
+Enrollment model to enforce:
+- enrollments.csv contains students only.
+- Each student is enrolled in all active courses that belong to the student's program through active course_offerings.
+- Lecturers must not be linked to courses through enrollments.
+- Lecturers are linked to courses only through course_offerings.lecturer_id.
+
+Lecturer/course/program model:
+- A course can have many offerings.
+- A lecturer can teach the same course in more than one program through multiple course_offerings rows.
+- Use course_offerings.course_id + course_offerings.program_id + course_offerings.lecturer_id to identify a taught course instance.
+
+Question rules:
+- Every question is single_choice only.
+- Every question has exactly 4 answer options.
+- Exactly one answer option per question has is_correct = true.
+- Do not create multiple_choice questions.
+
+After importing, verify:
+1. Login still works.
+2. Student course visibility uses student program + enrollment + active course_offering.
+3. Lecturer course visibility uses course_offerings.lecturer_id.
+4. topics.course_id and questions.course_id are unchanged and still point to courses.id.
+5. answer_options.question_id points to valid questions.id.
+6. No old DB files are being used by the app.

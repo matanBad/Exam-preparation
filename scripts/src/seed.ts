@@ -116,9 +116,9 @@ async function main() {
   );
 
   // ---- users ----
-  // All existing students get the Software Engineering program by default
-  // (per migration plan). Admin and lecturers keep program_id null; lecturers
-  // get their program links via lecturer_programs below.
+  // password_hash, account_status, and program_id all come straight from the
+  // CSV (the hashes are already bcrypt-hashed for "123456"). Fall back to a
+  // freshly hashed default password if a row ever omits it.
   const userRows = readCsv("users.csv");
   console.log(`Seeding ${userRows.length} users...`);
   await db.insert(usersTable).values(
@@ -126,11 +126,11 @@ async function main() {
       id: Number(u.id),
       fullName: u.full_name,
       email: u.email,
-      passwordHash,
+      passwordHash: u.password_hash || passwordHash,
       role: u.role,
       accountStatus: u.account_status || "active",
       profileImageUrl: nullable(u.profile_image_url ?? ""),
-      programId: u.role === "student" ? seProgramId : null,
+      programId: intOrNull(u.program_id ?? ""),
     })),
   );
 
@@ -207,33 +207,38 @@ async function main() {
     })),
   );
 
-  // ---- lecturer_programs ----
-  // Demo lecturer (lecturer@eps.com) teaches in Software Engineering so all
-  // existing offerings can be linked to them.
-  const lecturerRow0 = userRows.find((u) => u.email === "lecturer@eps.com")!;
-  console.log("Seeding lecturer_programs...");
-  await db.insert(lecturerProgramsTable).values([
-    { lecturerId: Number(lecturerRow0.id), programId: seProgramId },
-  ]);
-
   // ---- course_offerings ----
-  // Each existing course becomes one offering under Software Engineering,
-  // taught by the demo lecturer. This preserves the legacy behavior while
-  // wiring everything into the new program/offering layer.
-  const courseRowsForOfferings = courseRows;
-  console.log(
-    `Seeding ${courseRowsForOfferings.length} course_offerings...`,
-  );
+  // Read directly from CSV — this is now the source of truth for which
+  // lecturer teaches which course in which program. Strategy A: questions
+  // and topics stay on the parent course; offerings only carry the
+  // lecturer ↔ course ↔ program link.
+  const offeringRows = readCsv("course_offerings.csv");
+  console.log(`Seeding ${offeringRows.length} course_offerings...`);
   await db.insert(courseOfferingsTable).values(
-    courseRowsForOfferings.map((c) => ({
-      courseId: Number(c.id),
-      programId: seProgramId,
-      lecturerId: Number(lecturerRow0.id),
-      semester: nullable(c.semester),
-      academicYear: nullable(c.academic_year),
-      status: "active" as const,
+    offeringRows.map((o) => ({
+      id: Number(o.id),
+      courseId: Number(o.course_id),
+      programId: Number(o.program_id),
+      lecturerId: Number(o.lecturer_id),
+      semester: nullable(o.semester),
+      academicYear: nullable(o.academic_year),
+      status: o.status || "active",
     })),
   );
+
+  // ---- lecturer_programs ----
+  // Derived from the offerings: every (lecturer_id, program_id) pair a
+  // lecturer actually teaches in becomes a row. Keeps this link table in
+  // sync with the offerings CSV without requiring a separate file.
+  const lpPairs = new Map<string, { lecturerId: number; programId: number }>();
+  for (const o of offeringRows) {
+    const lecturerId = Number(o.lecturer_id);
+    const programId = Number(o.program_id);
+    const key = `${lecturerId}:${programId}`;
+    if (!lpPairs.has(key)) lpPairs.set(key, { lecturerId, programId });
+  }
+  console.log(`Seeding ${lpPairs.size} lecturer_programs...`);
+  await db.insert(lecturerProgramsTable).values([...lpPairs.values()]);
 
   // Bump serial sequences past the largest explicit id we inserted, so future
   // inserts (registration, lecturer-created questions, etc.) don't collide.
