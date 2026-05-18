@@ -210,9 +210,6 @@ export default function Account() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-3xl font-bold">Account Mangement</h1>
-        <p className="text-muted-foreground mt-1">
-          Update your email or password.
-        </p>
       </div>
       <Card>
         <CardHeader>
