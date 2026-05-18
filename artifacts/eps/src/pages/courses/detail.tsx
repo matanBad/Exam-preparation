@@ -89,6 +89,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editParent, setEditParent] = useState<number | "">("");
+  const [topicSearch, setTopicSearch] = useState("");
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getListCourseTopicsQueryKey(id) });
@@ -147,8 +148,45 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   if (!course) return <p>Course not found.</p>;
 
   const all = (topics ?? []) as Topic[];
-  const roots = all.filter((t) => !t.parentTopicId);
   const childrenOf = (pid: number) => all.filter((t) => t.parentTopicId === pid);
+
+  // Filter topics by search: a topic matches if its name contains the query OR
+  // any descendant matches (so the parent chain stays visible).
+  const q = topicSearch.trim().toLowerCase();
+  const subtreeMatches = (t: Topic): boolean => {
+    if (t.topicName.toLowerCase().includes(q)) return true;
+    return childrenOf(t.id).some(subtreeMatches);
+  };
+  const visibleIds = new Set<number>();
+  if (q) {
+    for (const t of all) {
+      if (t.topicName.toLowerCase().includes(q)) {
+        // walk up parents to keep the chain visible
+        let cur: Topic | undefined = t;
+        while (cur) {
+          visibleIds.add(cur.id);
+          cur = cur.parentTopicId
+            ? all.find((x) => x.id === cur!.parentTopicId)
+            : undefined;
+        }
+        // include descendants of a directly matching topic
+        const stack = [t.id];
+        while (stack.length) {
+          const pid = stack.pop()!;
+          for (const c of childrenOf(pid)) {
+            visibleIds.add(c.id);
+            stack.push(c.id);
+          }
+        }
+      }
+    }
+  }
+  const isVisible = (t: Topic) => !q || visibleIds.has(t.id);
+  const roots = all.filter((t) => !t.parentTopicId).filter(isVisible);
+  // Helper for filtered children
+  const visibleChildrenOf = (pid: number) =>
+    childrenOf(pid).filter(isVisible);
+  void subtreeMatches;
 
   const renderTopic = (t: Topic, depth: number) => (
     <li
@@ -204,9 +242,9 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           )}
         </div>
       )}
-      {childrenOf(t.id).length > 0 && (
+      {visibleChildrenOf(t.id).length > 0 && (
         <ul className="space-y-2 mt-2">
-          {childrenOf(t.id).map((c) => renderTopic(c, depth + 1))}
+          {visibleChildrenOf(t.id).map((c) => renderTopic(c, depth + 1))}
         </ul>
       )}
     </li>
@@ -218,6 +256,25 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
         <h1 className="text-3xl font-bold">
           {course.courseCode}: {course.courseName}
         </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          {course.programCode && (
+            <span data-testid="text-course-program">
+              Program:{" "}
+              <span className="font-medium text-foreground">
+                {course.programCode}
+                {course.programName ? ` — ${course.programName}` : ""}
+              </span>
+            </span>
+          )}
+          {course.lecturerName && (
+            <span data-testid="text-course-lecturer">
+              Lecturer:{" "}
+              <span className="font-medium text-foreground">
+                {course.lecturerName}
+              </span>
+            </span>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -225,10 +282,22 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           <CardTitle>Topics</CardTitle>
         </CardHeader>
         <CardContent>
+          <Input
+            placeholder="Search topics or subtopics..."
+            value={topicSearch}
+            onChange={(e) => setTopicSearch(e.target.value)}
+            className="max-w-md mb-4"
+            data-testid="input-search-topics"
+          />
           <ul className="space-y-2 mb-6">
             {roots.map((t) => renderTopic(t, 0))}
             {all.length === 0 && (
               <p className="text-muted-foreground">No topics yet.</p>
+            )}
+            {all.length > 0 && roots.length === 0 && (
+              <p className="text-muted-foreground">
+                No topics match "{topicSearch}".
+              </p>
             )}
           </ul>
 

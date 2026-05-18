@@ -53,25 +53,64 @@ function StudentDashboard({ userId }: { userId: number }) {
             <CardTitle>Recent Exams</CardTitle>
           </CardHeader>
           <CardContent>
-            {exams?.length ? (
+            {exams?.filter((e) => e.status === "submitted").length ? (
               <ul className="space-y-2">
-                {exams.slice(0, 5).map((e) => (
-                  <li key={e.id} className="border-b pb-2 last:border-0">
-                    <Link
-                      href={`/exams/${e.id}/${e.status === "submitted" ? "review" : "take"}`}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Exam {e.id} - Score: {e.score ?? "-"}
-                    </Link>
-                  </li>
-                ))}
+                {exams
+                  .filter((e) => e.status === "submitted")
+                  .slice(0, 5)
+                  .map((e) => (
+                    <li key={e.id} className="border-b pb-2 last:border-0">
+                      <Link
+                        href={`/exams/${e.id}/review`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        Exam {e.id} - Score: {e.score ?? "-"}
+                      </Link>
+                    </li>
+                  ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No recent exams.</p>
+              <p className="text-muted-foreground">No completed exams.</p>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Card data-testid="card-unfinished-exams">
+        <CardHeader>
+          <CardTitle>Unfinished exams</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {exams?.filter((e) => e.status !== "submitted").length ? (
+            <ul className="space-y-2">
+              {exams
+                .filter((e) => e.status !== "submitted")
+                .map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex justify-between items-center border-b pb-2 last:border-0"
+                  >
+                    <span className="text-sm">
+                      Exam {e.id}
+                      <span className="ml-2 text-xs uppercase text-muted-foreground">
+                        {e.status === "in_progress" ? "in progress" : "not started"}
+                      </span>
+                    </span>
+                    <Link
+                      href={`/exams/${e.id}/take`}
+                      className="text-primary hover:underline text-sm"
+                      data-testid={`link-resume-exam-${e.id}`}
+                    >
+                      Resume
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">No exams in progress.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

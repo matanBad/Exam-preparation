@@ -2,8 +2,10 @@ import {
   useListCourses,
   useCreateCourse,
   useListPrograms,
+  useListUsers,
   getListCoursesQueryKey,
   getListProgramsQueryKey,
+  getListUsersQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getAuthUser } from "@/lib/auth";
@@ -24,10 +26,13 @@ export default function CoursesList() {
   const { data: courses, isLoading } = useListCourses();
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
+  const isAdmin = user?.role === "admin";
+  const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [programId, setProgramId] = useState<string>("");
+  const [lecturerId, setLecturerId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const createCourse = useCreateCourse();
   const queryClient = useQueryClient();
@@ -37,6 +42,15 @@ export default function CoursesList() {
       enabled: isPrivileged,
     },
   });
+  const { data: lecturers } = useListUsers(
+    { role: "lecturer" },
+    {
+      query: {
+        queryKey: getListUsersQueryKey({ role: "lecturer" }),
+        enabled: isAdmin && showNew,
+      },
+    },
+  );
 
   const handleCreate = async () => {
     setError(null);
@@ -48,12 +62,17 @@ export default function CoursesList() {
       setError("Please select a program for this offering.");
       return;
     }
+    if (!lecturerId) {
+      setError("Please select a lecturer to teach this offering.");
+      return;
+    }
     createCourse.mutate(
       {
         data: {
           courseCode: code,
           courseName: name,
           programId: Number(programId),
+          lecturerId: Number(lecturerId),
         },
       },
       {
@@ -63,6 +82,7 @@ export default function CoursesList() {
           setCode("");
           setName("");
           setProgramId("");
+          setLecturerId("");
         },
         onError: (err: unknown) => {
           const e = err as { response?: { data?: { error?: string } } };
@@ -76,12 +96,20 @@ export default function CoursesList() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Courses</h1>
-        {isPrivileged && (
+        {isAdmin && (
           <Button onClick={() => setShowNew(!showNew)}>
             {showNew ? "Cancel" : "Create Course"}
           </Button>
         )}
       </div>
+
+      <Input
+        placeholder="Search by course code, name, or lecturer..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-md"
+        data-testid="input-search-courses"
+      />
 
       {showNew && (
         <Card>
@@ -114,6 +142,26 @@ export default function CoursesList() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={lecturerId} onValueChange={setLecturerId}>
+              <SelectTrigger
+                className="w-64"
+                data-testid="select-course-lecturer"
+              >
+                <SelectValue placeholder="Select lecturer" />
+              </SelectTrigger>
+              <SelectContent>
+                {lecturers?.map((l) => (
+                  <SelectItem key={l.id} value={String(l.id)}>
+                    {l.fullName}
+                  </SelectItem>
+                ))}
+                {lecturers?.length === 0 && (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    No lecturers available.
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button onClick={handleCreate} disabled={createCourse.isPending}>
               Save Course
@@ -126,7 +174,17 @@ export default function CoursesList() {
         <p>Loading...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses?.map((c) => (
+          {courses
+            ?.filter((c) => {
+              if (!search.trim()) return true;
+              const q = search.trim().toLowerCase();
+              return (
+                c.courseCode.toLowerCase().includes(q) ||
+                c.courseName.toLowerCase().includes(q) ||
+                (c.lecturerName ?? "").toLowerCase().includes(q)
+              );
+            })
+            .map((c) => (
             <Card key={c.id}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
@@ -156,7 +214,7 @@ export default function CoursesList() {
                 </Link>
               </CardContent>
             </Card>
-          ))}
+            ))}
         </div>
       )}
     </div>

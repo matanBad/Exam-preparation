@@ -155,6 +155,23 @@ router.post(
         .json({ error: "This course is not offered in your program" });
       return;
     }
+    // Must also be enrolled in this specific course offering.
+    const [enr] = await db
+      .select({ id: enrollmentsTable.id })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, auth.userId),
+          eq(enrollmentsTable.courseId, courseId),
+          eq(enrollmentsTable.enrollmentStatus, "active"),
+        ),
+      );
+    if (!enr) {
+      res
+        .status(403)
+        .json({ error: "You are not enrolled in this course" });
+      return;
+    }
 
     const filters = [
       eq(questionsTable.courseId, courseId),

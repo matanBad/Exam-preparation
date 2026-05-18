@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, ChevronLeft } from "lucide-react";
+import { getAuthUser } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ import {
 const ALL = "_all";
 const STATUSES = ["draft", "approved", "archived"] as const;
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
+const PENDING_STATUSES = ["draft", "pending"] as const;
 
 export default function QuestionsList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,8 +68,33 @@ export default function QuestionsList() {
 
   const { data: courses } = useListCourses();
   const { data: questions, isLoading } = useListQuestions(params);
+  // Unfiltered set, used to populate the course-overview index for lecturer/admin.
+  const { data: allQuestions } = useListQuestions();
   const archive = useArchiveQuestion();
   const queryClient = useQueryClient();
+  const me = getAuthUser();
+  const isPrivileged = me?.role === "lecturer" || me?.role === "admin";
+  const isLecturer = me?.role === "lecturer";
+
+  // When no course is selected and no other filters are active, show the
+  // course-cards overview + pending approval shortcut for lecturers/admins.
+  // Any active filter (status/difficulty/search) leaves overview so users can
+  // see the resulting filtered list (e.g. pending-approval shortcut).
+  const showOverview =
+    isPrivileged &&
+    courseId === ALL &&
+    status === ALL &&
+    difficulty === ALL &&
+    !q;
+
+  // Per-course question counts derived from the unfiltered query.
+  const countsByCourse = new Map<number, number>();
+  for (const q of allQuestions ?? []) {
+    countsByCourse.set(q.courseId, (countsByCourse.get(q.courseId) ?? 0) + 1);
+  }
+  const pendingCount = (allQuestions ?? []).filter((q) =>
+    (PENDING_STATUSES as readonly string[]).includes(q.status),
+  ).length;
 
   const handleArchive = (id: number) => {
     archive.mutate(
@@ -130,6 +157,83 @@ export default function QuestionsList() {
         </Link>
       </div>
 
+      {showOverview && (
+        <div className="space-y-4">
+          {isLecturer && (
+            <Card
+              className="cursor-pointer transition hover:shadow-md hover:border-primary/40 border-l-4 border-l-amber-500"
+              onClick={() => {
+                setStatus("draft");
+              }}
+              data-testid="card-pending-approval"
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>Pending approval</span>
+                  <Badge variant="secondary">{pendingCount}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Questions you've authored that are still awaiting approval.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courses?.map((c) => (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => setCourseId(c.id.toString())}
+                className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+                data-testid={`card-course-questions-${c.id}`}
+              >
+                <Card className="cursor-pointer transition hover:shadow-md hover:border-primary/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center justify-between gap-2">
+                      <span>{c.courseCode}</span>
+                      <Badge variant="outline">
+                        {countsByCourse.get(c.id) ?? 0}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      {c.courseName}
+                    </p>
+                    {c.lecturerName && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Lecturer: {c.lecturerName}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </button>
+            ))}
+            {courses?.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No courses available.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!showOverview && courseId !== ALL && (
+        <button
+          type="button"
+          onClick={() => setCourseId(ALL)}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          data-testid="btn-back-to-courses"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back to courses
+        </button>
+      )}
+
+      {!showOverview && (
       <Card>
         <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-3">
           <Input
@@ -175,9 +279,11 @@ export default function QuestionsList() {
           </Select>
         </CardContent>
       </Card>
+      )}
 
-      {isLoading && <p>Loading...</p>}
+      {!showOverview && isLoading && <p>Loading...</p>}
 
+      {!showOverview && (
       <div className="space-y-3">
         {questions?.map((q) => (
           <Card key={q.id} data-testid={`card-question-${q.id}`}>
@@ -243,6 +349,7 @@ export default function QuestionsList() {
           </Card>
         )}
       </div>
+      )}
     </div>
   );
 }

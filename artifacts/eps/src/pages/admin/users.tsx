@@ -8,13 +8,28 @@ import {
   useUpdateUser,
   useDeleteUser,
   useListPrograms,
+  useGetUserCourses,
   getListUsersQueryKey,
+  getGetUserCoursesQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ChevronDown, X } from "lucide-react";
 
 import {
   Select,
@@ -66,6 +81,11 @@ export default function AdminUsers() {
   const deleteUser = useDeleteUser();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const selectedUser =
+    selectedUserId != null
+      ? (users ?? []).find((u) => u.id === selectedUserId) ?? null
+      : null;
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -249,31 +269,95 @@ export default function AdminUsers() {
             {form.role === "lecturer" && (
               <div className="space-y-1">
                 <p className="text-sm font-medium">Programs taught</p>
-                <div className="flex flex-wrap gap-3">
-                  {programs?.map((p) => {
-                    const checked = lecturerProgramIds.includes(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        className="flex items-center gap-2 text-sm cursor-pointer"
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-64 justify-between font-normal"
+                      data-testid="select-lecturer-programs"
+                    >
+                      <span
+                        className={
+                          lecturerProgramIds.length === 0
+                            ? "text-muted-foreground"
+                            : ""
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setLecturerProgramIds((prev) =>
-                              e.target.checked
-                                ? [...prev, p.id]
-                                : prev.filter((x) => x !== p.id),
-                            );
-                          }}
-                          data-testid={`checkbox-program-${p.code}`}
-                        />
-                        {p.code}
-                      </label>
-                    );
-                  })}
-                </div>
+                        {lecturerProgramIds.length === 0
+                          ? "Select programs"
+                          : `${lecturerProgramIds.length} program${lecturerProgramIds.length === 1 ? "" : "s"} selected`}
+                      </span>
+                      <ChevronDown className="w-4 h-4 opacity-60" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="start">
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
+                      {programs?.map((p) => {
+                        const checked = lecturerProgramIds.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className="flex items-center gap-2 text-sm cursor-pointer rounded-sm px-2 py-1.5 hover:bg-accent"
+                            data-testid={`option-program-${p.code}`}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                setLecturerProgramIds((prev) =>
+                                  v
+                                    ? [...prev, p.id]
+                                    : prev.filter((x) => x !== p.id),
+                                );
+                              }}
+                            />
+                            <span>
+                              {p.code}
+                              <span className="text-muted-foreground ml-2">
+                                {p.name}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                      {programs?.length === 0 && (
+                        <p className="text-sm text-muted-foreground px-2 py-1">
+                          No programs available.
+                        </p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {lecturerProgramIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {lecturerProgramIds.map((pid) => {
+                      const p = programs?.find((x) => x.id === pid);
+                      if (!p) return null;
+                      return (
+                        <Badge
+                          key={p.id}
+                          variant="secondary"
+                          className="gap-1"
+                          data-testid={`pill-program-${p.code}`}
+                        >
+                          {p.code}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLecturerProgramIds((prev) =>
+                                prev.filter((x) => x !== p.id),
+                              )
+                            }
+                            className="ml-0.5 hover:text-foreground"
+                            aria-label={`Remove ${p.code}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
             {createError && (
@@ -306,7 +390,16 @@ export default function AdminUsers() {
                 const isSelf = me?.id === u.id;
                 return (
                   <TableRow key={u.id} data-testid={`row-user-${u.id}`}>
-                    <TableCell className="font-medium">{u.fullName}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUserId(u.id)}
+                        className="text-left hover:text-primary hover:underline focus:outline-none focus-visible:underline"
+                        data-testid={`btn-view-user-${u.id}`}
+                      >
+                        {u.fullName}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
                       <Select
@@ -360,6 +453,136 @@ export default function AdminUsers() {
           </Table>
         </CardContent>
       </Card>
+
+      <UserDetailsDialog
+        user={selectedUser}
+        programs={programs ?? []}
+        onClose={() => setSelectedUserId(null)}
+      />
     </div>
+  );
+}
+
+type UserRow = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  accountStatus: string;
+  programId?: number | null;
+  programCode?: string | null;
+  programIds?: number[] | null;
+  createdAt?: string | null;
+};
+
+function UserDetailsDialog({
+  user,
+  programs,
+  onClose,
+}: {
+  user: UserRow | null;
+  programs: { id: number; code: string; name: string }[];
+  onClose: () => void;
+}) {
+  const open = !!user;
+  const targetId = user?.id ?? 0;
+  const { data: courses } = useGetUserCourses(targetId, {
+    query: { enabled: !!user, queryKey: getGetUserCoursesQueryKey(targetId) },
+  });
+  const programLookup = (id: number) =>
+    programs.find((p) => p.id === id);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg" data-testid="dialog-user-details">
+        {user && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{user.fullName}</DialogTitle>
+              <DialogDescription>{user.email}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-muted-foreground">Role</span>
+                <span className="col-span-2 capitalize font-medium">
+                  {user.role}
+                </span>
+                <span className="text-muted-foreground">Status</span>
+                <span className="col-span-2">
+                  <Badge
+                    variant={
+                      user.accountStatus === "active" ? "default" : "secondary"
+                    }
+                  >
+                    {user.accountStatus}
+                  </Badge>
+                </span>
+                {user.role === "student" && (
+                  <>
+                    <span className="text-muted-foreground">Program</span>
+                    <span className="col-span-2">
+                      {user.programCode ??
+                        (user.programId
+                          ? programLookup(user.programId)?.code
+                          : null) ??
+                        "—"}
+                    </span>
+                  </>
+                )}
+                {user.role === "lecturer" && (
+                  <>
+                    <span className="text-muted-foreground">Programs</span>
+                    <span className="col-span-2 flex flex-wrap gap-1">
+                      {(user.programIds ?? []).length === 0 && "—"}
+                      {(user.programIds ?? []).map((pid) => {
+                        const p = programLookup(pid);
+                        return (
+                          <Badge key={pid} variant="outline">
+                            {p?.code ?? pid}
+                          </Badge>
+                        );
+                      })}
+                    </span>
+                  </>
+                )}
+                {user.createdAt && (
+                  <>
+                    <span className="text-muted-foreground">Joined</span>
+                    <span className="col-span-2">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div>
+                <p className="font-medium mb-2">
+                  Courses{" "}
+                  <span className="text-muted-foreground font-normal">
+                    ({courses?.length ?? 0})
+                  </span>
+                </p>
+                {courses && courses.length > 0 ? (
+                  <ul className="space-y-1 max-h-48 overflow-y-auto">
+                    {courses.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex justify-between items-center border-b py-1 last:border-0"
+                      >
+                        <span className="font-medium">{c.courseCode}</span>
+                        <span className="text-muted-foreground text-xs truncate ml-2">
+                          {c.courseName}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No courses.</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

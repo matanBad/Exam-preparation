@@ -32,7 +32,10 @@ const router: IRouter = Router();
 /**
  * Returns the set of course ids the caller can access.
  * - admin: all courses (returns null meaning "no filter").
- * - student: any course with an offering in the student's program.
+ * - student: courses that satisfy ALL of:
+ *     (a) the student belongs to a program,
+ *     (b) the course has an active offering in that program,
+ *     (c) the student is enrolled in that course.
  * - lecturer: any course with an offering they teach.
  */
 async function visibleCourseIds(auth: {
@@ -46,11 +49,24 @@ async function visibleCourseIds(auth: {
       .from(usersTable)
       .where(eq(usersTable.id, auth.userId));
     if (!me?.programId) return [];
-    const rows = await db
+    const offered = await db
       .selectDistinct({ courseId: courseOfferingsTable.courseId })
       .from(courseOfferingsTable)
       .where(eq(courseOfferingsTable.programId, me.programId));
-    return rows.map((r) => r.courseId);
+    const offeredIds = new Set(offered.map((r) => r.courseId));
+    if (offeredIds.size === 0) return [];
+    const enrolled = await db
+      .select({ courseId: enrollmentsTable.courseId })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, auth.userId),
+          eq(enrollmentsTable.enrollmentStatus, "active"),
+        ),
+      );
+    return enrolled
+      .map((e) => e.courseId)
+      .filter((cid) => offeredIds.has(cid));
   }
   // lecturer
   const rows = await db
@@ -58,6 +74,26 @@ async function visibleCourseIds(auth: {
     .from(courseOfferingsTable)
     .where(eq(courseOfferingsTable.lecturerId, auth.userId));
   return rows.map((r) => r.courseId);
+}
+
+/**
+ * Returns true when `userId` teaches an offering of `courseId`.
+ * Used to gate topic management for lecturers.
+ */
+async function lecturerTeachesCourse(
+  userId: number,
+  courseId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: courseOfferingsTable.id })
+    .from(courseOfferingsTable)
+    .where(
+      and(
+        eq(courseOfferingsTable.lecturerId, userId),
+        eq(courseOfferingsTable.courseId, courseId),
+      ),
+    );
+  return !!row;
 }
 
 router.get(
@@ -137,23 +173,20 @@ router.get(
 router.post(
   "/courses",
   requireAuth,
-  requireRole("lecturer", "admin"),
+  requireRole("admin"),
   async (req, res): Promise<void> => {
     const parsed = CreateCourseBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const auth = req.auth!;
 
-    // Resolve lecturer: caller-default for lecturers, explicit for admins.
-    const lecturerId =
-      parsed.data.lecturerId ??
-      (auth.role === "lecturer" ? auth.userId : null);
+    // Admin-only: lecturerId must be provided explicitly.
+    const lecturerId = parsed.data.lecturerId ?? null;
     if (!lecturerId) {
       res
         .status(400)
-        .json({ error: "lecturerId is required when an admin creates a course" });
+        .json({ error: "lecturerId is required when creating a course" });
       return;
     }
     // Validate program exists.
@@ -233,19 +266,22 @@ async function canAccessCourse(
           eq(courseOfferingsTable.programId, me.programId),
         ),
       );
-    return !!off;
+    if (!off) return false;
+    // Also require an active enrollment in this course.
+    const [enr] = await db
+      .select({ id: enrollmentsTable.id })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, auth.userId),
+          eq(enrollmentsTable.courseId, courseId),
+          eq(enrollmentsTable.enrollmentStatus, "active"),
+        ),
+      );
+    return !!enr;
   }
   // lecturer
-  const [off] = await db
-    .select({ id: courseOfferingsTable.id })
-    .from(courseOfferingsTable)
-    .where(
-      and(
-        eq(courseOfferingsTable.courseId, courseId),
-        eq(courseOfferingsTable.lecturerId, auth.userId),
-      ),
-    );
-  return !!off;
+  return lecturerTeachesCourse(auth.userId, courseId);
 }
 
 router.get(
@@ -262,15 +298,56 @@ router.get(
       res.status(403).json({ error: "Not assigned to this course" });
       return;
     }
-    const [course] = await db
-      .select()
+    // Pick the offering that matches the caller (student: same program,
+    // lecturer: same lecturer id, admin: any) for enrichment.
+    const [me] = auth.role === "student"
+      ? await db
+          .select({ programId: usersTable.programId })
+          .from(usersTable)
+          .where(eq(usersTable.id, auth.userId))
+      : [{ programId: null as number | null }];
+
+    const joinConditions: SQL[] = [
+      eq(courseOfferingsTable.courseId, coursesTable.id),
+    ];
+    if (auth.role === "student" && me.programId) {
+      joinConditions.push(eq(courseOfferingsTable.programId, me.programId));
+    } else if (auth.role === "lecturer") {
+      joinConditions.push(eq(courseOfferingsTable.lecturerId, auth.userId));
+    }
+
+    const rows = await db
+      .select({
+        course: coursesTable,
+        offeringId: courseOfferingsTable.id,
+        programId: programsTable.id,
+        programName: programsTable.name,
+        programCode: programsTable.code,
+        lecturerId: usersTable.id,
+        lecturerName: usersTable.fullName,
+      })
       .from(coursesTable)
+      .leftJoin(courseOfferingsTable, and(...joinConditions))
+      .leftJoin(programsTable, eq(programsTable.id, courseOfferingsTable.programId))
+      .leftJoin(usersTable, eq(usersTable.id, courseOfferingsTable.lecturerId))
       .where(eq(coursesTable.id, params.data.id));
-    if (!course) {
+    if (rows.length === 0) {
       res.status(404).json({ error: "Course not found" });
       return;
     }
-    res.json(GetCourseResponse.parse(course));
+    // Prefer a row that has offering enrichment if multiple exist.
+    const row = rows.find((r) => r.offeringId != null) ?? rows[0];
+    res.json(
+      GetCourseResponse.parse({
+        ...row.course,
+        offeringId: row.offeringId,
+        programId: row.programId,
+        programName: row.programName,
+        programCode: row.programCode,
+        lecturerId: row.lecturerId,
+        lecturerName: row.lecturerName,
+      }),
+    );
   },
 );
 
@@ -324,6 +401,19 @@ router.get(
   },
 );
 
+/**
+ * Lecturers may only manage topics on courses they teach an offering of.
+ * Admin bypass. Returns true if the action is allowed.
+ */
+async function canManageTopicsForCourse(
+  auth: { role: string; userId: number },
+  courseId: number,
+): Promise<boolean> {
+  if (auth.role === "admin") return true;
+  if (auth.role !== "lecturer") return false;
+  return lecturerTeachesCourse(auth.userId, courseId);
+}
+
 router.post(
   "/courses/:id/topics",
   requireAuth,
@@ -337,6 +427,13 @@ router.post(
     const parsed = CreateTopicBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const auth = req.auth!;
+    if (!(await canManageTopicsForCourse(auth, params.data.id))) {
+      res
+        .status(403)
+        .json({ error: "You can only manage topics for courses you teach" });
       return;
     }
     const [topic] = await db
@@ -365,6 +462,21 @@ router.put(
     const parsed = UpdateTopicBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const auth = req.auth!;
+    const [existingTopic] = await db
+      .select({ courseId: topicsTable.courseId })
+      .from(topicsTable)
+      .where(eq(topicsTable.id, params.data.id));
+    if (!existingTopic) {
+      res.status(404).json({ error: "Topic not found" });
+      return;
+    }
+    if (!(await canManageTopicsForCourse(auth, existingTopic.courseId))) {
+      res
+        .status(403)
+        .json({ error: "You can only manage topics for courses you teach" });
       return;
     }
     const updateValues: Record<string, unknown> = { updatedAt: new Date() };
@@ -398,6 +510,21 @@ router.delete(
     const params = UpdateTopicParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const auth = req.auth!;
+    const [existingTopic] = await db
+      .select({ courseId: topicsTable.courseId })
+      .from(topicsTable)
+      .where(eq(topicsTable.id, params.data.id));
+    if (!existingTopic) {
+      res.status(404).json({ error: "Topic not found" });
+      return;
+    }
+    if (!(await canManageTopicsForCourse(auth, existingTopic.courseId))) {
+      res
+        .status(403)
+        .json({ error: "You can only manage topics for courses you teach" });
       return;
     }
     // Reparent any subtopics to null so we don't orphan/cascade-destroy them

@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   db,
   coursesTable,
   courseOfferingsTable,
+  enrollmentsTable,
   usersTable,
 } from "@workspace/db";
 
@@ -21,7 +22,9 @@ router.get(
       res.status(400).json({ error: "Invalid id" });
       return;
     }
-    if (req.auth!.role === "student" && req.auth!.userId !== id) {
+    // Only the user themself or an admin may read another user's course list.
+    // Lecturers may look up their own enrollments/courses but not arbitrary users.
+    if (req.auth!.role !== "admin" && req.auth!.userId !== id) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }
@@ -40,11 +43,28 @@ router.get(
         res.json([]);
         return;
       }
-      const rows = await db
+      // Student visibility = program offering ∩ enrolled.
+      const offered = await db
         .selectDistinct({ courseId: courseOfferingsTable.courseId })
         .from(courseOfferingsTable)
         .where(eq(courseOfferingsTable.programId, target.programId));
-      courseIds = rows.map((r) => r.courseId);
+      const offeredSet = new Set(offered.map((r) => r.courseId));
+      if (offeredSet.size === 0) {
+        res.json([]);
+        return;
+      }
+      const enrolled = await db
+        .select({ courseId: enrollmentsTable.courseId })
+        .from(enrollmentsTable)
+        .where(
+          and(
+            eq(enrollmentsTable.userId, target.id),
+            eq(enrollmentsTable.enrollmentStatus, "active"),
+          ),
+        );
+      courseIds = enrolled
+        .map((e) => e.courseId)
+        .filter((cid) => offeredSet.has(cid));
     } else if (target.role === "lecturer") {
       const rows = await db
         .selectDistinct({ courseId: courseOfferingsTable.courseId })

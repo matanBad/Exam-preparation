@@ -8,6 +8,7 @@ import {
   topicsTable,
   usersTable,
   courseOfferingsTable,
+  enrollmentsTable,
 } from "@workspace/db";
 import {
   ListQuestionsQueryParams,
@@ -62,11 +63,26 @@ async function visibleCourseIdsForQuestions(scope: {
       .from(usersTable)
       .where(eq(usersTable.id, scope.userId));
     if (!me?.programId) return [];
-    const rows = await db
+    const offered = await db
       .selectDistinct({ courseId: courseOfferingsTable.courseId })
       .from(courseOfferingsTable)
       .where(eq(courseOfferingsTable.programId, me.programId));
-    return rows.map((r) => r.courseId);
+    const offeredIds = new Set(offered.map((r) => r.courseId));
+    if (offeredIds.size === 0) return [];
+    // Intersect with active enrollments — students only see questions for
+    // courses they are actively enrolled in *and* that are offered in their program.
+    const enrolled = await db
+      .select({ courseId: enrollmentsTable.courseId })
+      .from(enrollmentsTable)
+      .where(
+        and(
+          eq(enrollmentsTable.userId, scope.userId),
+          eq(enrollmentsTable.enrollmentStatus, "active"),
+        ),
+      );
+    return enrolled
+      .map((e) => e.courseId)
+      .filter((cid) => offeredIds.has(cid));
   }
   const rows = await db
     .selectDistinct({ courseId: courseOfferingsTable.courseId })
@@ -90,6 +106,10 @@ async function loadQuestionsWithOptions(
     const courseIds = await visibleCourseIdsForQuestions(scope);
     if (courseIds.length === 0) return [];
     allFilters.push(inArray(questionsTable.courseId, courseIds));
+    // Lecturers must additionally only see questions they themselves created.
+    if (scope.kind === "lecturer") {
+      allFilters.push(eq(questionsTable.createdBy, scope.userId));
+    }
   }
   const where = allFilters.length ? and(...allFilters) : undefined;
 
@@ -315,11 +335,20 @@ router.put(
     const auth = req.auth!;
     if (auth.role === "lecturer") {
       const [existing] = await db
-        .select({ courseId: questionsTable.courseId })
+        .select({
+          courseId: questionsTable.courseId,
+          createdBy: questionsTable.createdBy,
+        })
         .from(questionsTable)
         .where(eq(questionsTable.id, params.data.id));
       if (!existing) {
         res.status(404).json({ error: "Question not found" });
+        return;
+      }
+      if (existing.createdBy !== auth.userId) {
+        res
+          .status(403)
+          .json({ error: "You can only edit questions you authored" });
         return;
       }
       const targetCourseId = data.courseId ?? existing.courseId;
@@ -396,11 +425,20 @@ router.patch(
     const auth = req.auth!;
     if (auth.role === "lecturer") {
       const [existing] = await db
-        .select({ courseId: questionsTable.courseId })
+        .select({
+          courseId: questionsTable.courseId,
+          createdBy: questionsTable.createdBy,
+        })
         .from(questionsTable)
         .where(eq(questionsTable.id, params.data.id));
       if (!existing) {
         res.status(404).json({ error: "Question not found" });
+        return;
+      }
+      if (existing.createdBy !== auth.userId) {
+        res
+          .status(403)
+          .json({ error: "You can only archive questions you authored" });
         return;
       }
       const owns = await lecturerOwnsCourse(auth.userId, existing.courseId);
