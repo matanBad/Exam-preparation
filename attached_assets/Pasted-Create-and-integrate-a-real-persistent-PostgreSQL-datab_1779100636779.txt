@@ -1,0 +1,332 @@
+Create and integrate a real persistent PostgreSQL database for the EPS (Exam Preparation System) project.
+
+Context:
+The system already has a working frontend and backend for Sprint 2, but currently some data is temporary, static, or not fully persisted.
+
+Goal:
+Implement a complete persistent database layer so all important system data is saved permanently and survives refreshes, server restarts, and new sessions.
+
+The system must support:
+- persistent users
+- persistent authentication data
+- persistent courses/topics/subtopics
+- persistent enrollments
+- persistent questions and answers
+- persistent exams and exam results
+- persistent notifications/messages
+- persistent profile images and account data
+
+Use PostgreSQL and connect it properly to the existing backend.
+
+====================================
+DATABASE REQUIREMENTS
+====================================
+
+Use PostgreSQL.
+
+Use environment variable:
+DATABASE_URL
+
+Example:
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+
+Do not use local in-memory arrays or fake JSON storage anymore.
+
+====================================
+CORE TABLES
+====================================
+
+Create or update these tables properly with relationships and foreign keys.
+
+1. users
+- id
+- full_name
+- email UNIQUE
+- password_hash
+- role (student / lecturer / admin)
+- profile_image_url nullable
+- account_status
+- created_at
+- updated_at
+
+2. courses
+- id
+- course_code
+- course_name
+- semester
+- academic_year
+- status
+- created_at
+- updated_at
+
+3. enrollments
+- id
+- user_id FK -> users.id
+- course_id FK -> courses.id
+- enrollment_status
+- created_at
+
+4. topics
+- id
+- course_id FK
+- topic_name
+- parent_topic_id nullable
+- weight
+- status
+- created_at
+- updated_at
+
+5. questions
+- id
+- course_id FK
+- topic_id FK
+- subtopic_id nullable
+- title
+- question_text
+- question_type
+- difficulty_level
+- explanation_text
+- status
+- created_by FK -> users.id
+- created_at
+- updated_at
+
+6. answer_options
+- id
+- question_id FK
+- answer_text
+- is_correct
+- display_order
+
+7. mock_exams
+- id
+- user_id FK
+- course_id FK
+- total_questions
+- score nullable
+- started_at
+- submitted_at nullable
+- status
+- created_at
+- updated_at
+
+8. mock_exam_questions
+- id
+- exam_id FK
+- question_id FK
+- selected_answer_option_id nullable
+- is_correct nullable
+- created_at
+
+9. notifications
+- id
+- user_id FK
+- type
+- title
+- message
+- status (read/unread)
+- read_at nullable
+- created_at
+
+10. messages
+- id
+- sender_id nullable FK
+- recipient_id FK
+- subject
+- body
+- status (read/unread)
+- read_at nullable
+- created_at
+
+====================================
+PERSISTENT FUNCTIONALITY
+====================================
+
+1. User Registration Persistence
+When creating a new user:
+- Save user permanently in database.
+- Email must be unique.
+- Password must be hashed using bcrypt.
+- User must remain after server restart.
+
+2. Authentication Persistence
+- Login must validate against database users.
+- JWT authentication remains working.
+- Auth middleware must fetch real users from DB.
+
+3. Profile Persistence
+- Profile image updates must persist.
+- Account updates must persist.
+- Sidebar avatar must remain after refresh.
+
+4. Course Persistence
+When admin creates a course:
+- Save permanently in DB.
+- Course remains after restart.
+- Course appears for enrolled users.
+
+5. Enrollment Persistence
+When assigning students or lecturers to courses:
+- Save in enrollments table.
+- Relationship must persist.
+- Students must see only enrolled courses.
+
+6. Question Bank Persistence
+When lecturer:
+- creates question
+- edits question
+- archives question
+- adds answers
+- changes difficulty
+
+Everything must persist in DB.
+
+7. Exam Persistence
+When student:
+- generates exam
+- starts exam
+- answers questions
+- submits exam
+
+Save:
+- exam session
+- selected answers
+- correctness
+- final score
+- timestamps
+
+Exam history must remain permanently.
+
+8. Exam Review Persistence
+Students must be able to:
+- refresh page
+- log out
+- return later
+- still see previous exams and results
+
+9. Notification Persistence
+Notifications must:
+- belong to specific users
+- persist read/unread status
+- remain after refresh/relogin
+
+10. Message Persistence
+Messages must:
+- persist permanently
+- open correctly
+- preserve read state
+
+====================================
+API REQUIREMENTS
+====================================
+
+Ensure backend APIs use PostgreSQL instead of temporary arrays.
+
+Examples:
+
+Auth:
+POST /api/auth/register
+POST /api/auth/login
+GET /api/auth/me
+
+Users:
+GET /api/users
+GET /api/users/:id
+PATCH /api/users/:id
+
+Courses:
+POST /api/courses
+GET /api/courses
+PUT /api/courses/:id
+
+Enrollments:
+POST /api/enrollments
+GET /api/users/:id/courses
+
+Questions:
+POST /api/questions
+PUT /api/questions/:id
+GET /api/questions
+PATCH /api/questions/:id/archive
+
+Exams:
+POST /api/exams/generate
+POST /api/exams/:id/start
+POST /api/exams/:id/submit
+GET /api/users/:id/exams
+GET /api/exams/:id/review
+
+Notifications:
+GET /api/notifications
+PATCH /api/notifications/:id/read
+
+Messages:
+GET /api/messages
+GET /api/messages/:id
+
+====================================
+DATABASE QUALITY
+====================================
+
+Requirements:
+- Use foreign keys properly.
+- Use indexes where needed.
+- Add timestamps.
+- Use cascade or restrict rules correctly.
+- Prevent duplicate enrollments.
+- Prevent invalid references.
+- Validate inputs.
+- Handle DB errors safely.
+
+====================================
+SEED DATA
+====================================
+
+Create seed/demo data:
+- admin user
+- lecturer user
+- student user
+- demo courses
+- demo topics
+- demo questions
+- demo enrollments
+- demo notifications/messages
+
+But after that:
+ALL newly created data must persist in PostgreSQL.
+
+====================================
+MIGRATIONS / SETUP
+====================================
+
+Add:
+- DB schema setup
+- migration scripts
+- seed script
+- README instructions
+
+Add npm scripts:
+- npm run db:migrate
+- npm run db:seed
+
+====================================
+IMPORTANT
+====================================
+
+Do not break existing UI.
+
+Refactor the current backend carefully so existing frontend pages continue working.
+
+Inspect current code before changing anything.
+
+Replace temporary/mock storage with real database persistence safely.
+
+The final result should behave like a real production system:
+- users persist
+- courses persist
+- enrollments persist
+- exams persist
+- scores persist
+- notifications persist
+- messages persist
+- everything survives refresh and restart
