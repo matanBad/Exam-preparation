@@ -209,12 +209,11 @@ export default function Account() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold">Manage my account</h1>
+        <h1 className="text-3xl font-bold">Account Mangement</h1>
         <p className="text-muted-foreground mt-1">
           Update your email or password.
         </p>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
@@ -286,7 +285,6 @@ export default function Account() {
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Change email</CardTitle>
@@ -325,7 +323,6 @@ export default function Account() {
           </form>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Change password</CardTitle>
@@ -381,7 +378,6 @@ export default function Account() {
           </form>
         </CardContent>
       </Card>
-
       {user.role === "student" && (
         <Card className="border-destructive/40">
           <CardHeader>
