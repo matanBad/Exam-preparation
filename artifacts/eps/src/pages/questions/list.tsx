@@ -87,9 +87,6 @@ export default function QuestionsList() {
       <div className="flex justify-between items-start gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">Question Bank</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage all approved, draft, and archived questions
-          </p>
           {(status !== ALL || difficulty !== ALL || courseId !== ALL) && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {status !== ALL && (
