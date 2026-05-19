@@ -256,9 +256,16 @@ export default function QuestionsList() {
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {c.courseName}
                     </p>
-                    {c.lecturerName && (
+                    {/* Lecturer view: show Program only.
+                        Admin view: show Lecturer + Program. */}
+                    {!isLecturer && c.lecturerName && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Lecturer: {c.lecturerName}
+                      </p>
+                    )}
+                    {c.programName && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Program: {c.programName}
                       </p>
                     )}
                   </CardContent>

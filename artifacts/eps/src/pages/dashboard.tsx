@@ -23,7 +23,7 @@ function StudentDashboard({ user }: { user: EpsUser }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-end">
         <Link
           href="/exams/new"
@@ -33,7 +33,7 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           Start Mock Exam
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -132,57 +132,94 @@ function StudentDashboard({ user }: { user: EpsUser }) {
   );
 }
 
-function LecturerDashboard() {
+function LecturerDashboard({ user }: { user: EpsUser }) {
   const { data: courses } = useListCourses();
   const { data: questions } = useListQuestions();
 
+  // Visible courses are already restricted server-side to this lecturer's
+  // course_offerings, so intersecting question.courseId with this set
+  // satisfies "course taught by this lecturer".
+  const myCourseIds = new Set((courses ?? []).map((c) => c.id));
+  const waitingApproval = (questions ?? []).filter(
+    (q) =>
+      q.createdBy === user.id &&
+      myCourseIds.has(q.courseId) &&
+      q.status === "draft",
+  ).length;
+
+  const visibleCourses = (courses ?? []).slice(0, 3);
+  const hasMoreCourses = (courses ?? []).length > visibleCourses.length;
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Courses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {courses?.length ? (
-              <ul className="space-y-2">
-                {courses.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      href={`/courses/${c.id}`}
-                      className="hover:text-primary transition-colors"
-                    >
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link
+          href="/courses"
+          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+          data-testid="card-lecturer-your-courses"
+        >
+          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Your Courses</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                {(courses ?? []).length} total
+              </span>
+            </CardHeader>
+            <CardContent>
+              {visibleCourses.length ? (
+                <ul className="space-y-1 text-sm">
+                  {visibleCourses.map((c) => (
+                    <li key={c.id} className="truncate">
                       {c.courseCode} - {c.courseName}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground">No courses found.</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Question Bank Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Total Questions:{" "}
-              <Link href="/lecturer/questions" className="text-primary hover:underline">
-                {questions?.length || 0}
-              </Link>
-            </p>
-            <div className="mt-4">
-              <Link
-                href="/lecturer/questions/new"
-                className="text-primary hover:underline"
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No courses found.
+                </p>
+              )}
+              {hasMoreCourses && (
+                <p className="mt-3 text-xs font-medium text-primary">
+                  View all courses →
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link
+          href="/lecturer/questions"
+          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+          data-testid="card-lecturer-question-bank"
+        >
+          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Question Bank</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                Total Questions:{" "}
+                <span className="font-semibold">{questions?.length ?? 0}</span>
+              </p>
+              <p
+                className="mt-2 text-sm"
+                data-testid="text-waiting-approval"
               >
-                Add New Question
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+                Waiting for approval:{" "}
+                <span
+                  className={
+                    waitingApproval > 0
+                      ? "font-semibold text-destructive"
+                      : "font-semibold"
+                  }
+                >
+                  {waitingApproval}
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
@@ -293,15 +330,13 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome, {user.fullName}
-        </h1>
-      </div>
+    <div className="space-y-4">
+      <h1 className="text-3xl font-bold tracking-tight">
+        Welcome, {user.fullName}
+      </h1>
 
       {user.role === "student" && <StudentDashboard user={user} />}
-      {user.role === "lecturer" && <LecturerDashboard />}
+      {user.role === "lecturer" && <LecturerDashboard user={user} />}
       {user.role === "admin" && <AdminDashboardView />}
     </div>
   );

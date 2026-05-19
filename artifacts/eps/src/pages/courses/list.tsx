@@ -117,10 +117,10 @@ export default function CoursesList() {
           placeholder="Search by course code, name, or lecturer..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="flex-1 min-w-[220px] max-w-sm"
           data-testid="input-search-courses"
         />
-        {!isLecturer && (
+        {!isStudent && (
           <Select value={filterProgram} onValueChange={setFilterProgram}>
             <SelectTrigger
               className="w-48"
@@ -130,11 +130,26 @@ export default function CoursesList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All programs</SelectItem>
-              {programs?.map((p) => (
-                <SelectItem key={p.id} value={String(p.id)}>
-                  {p.name}
-                </SelectItem>
-              ))}
+              {isLecturer
+                ? // For lecturers, only show programs that appear in their
+                  // visible (server-scoped) course offerings, so the filter
+                  // never exposes programs of other lecturers' courses.
+                  Array.from(
+                    new Map(
+                      (courses ?? [])
+                        .filter((c) => c.programId && c.programName)
+                        .map((c) => [c.programId!, c.programName!]),
+                    ).entries(),
+                  ).map(([id, nm]) => (
+                    <SelectItem key={id} value={String(id)}>
+                      {nm}
+                    </SelectItem>
+                  ))
+                : programs?.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
             </SelectContent>
           </Select>
         )}
