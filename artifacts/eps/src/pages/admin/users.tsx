@@ -435,7 +435,7 @@ export default function AdminUsers() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Program / Track</TableHead>
+                <TableHead>Program </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -533,7 +533,6 @@ export default function AdminUsers() {
           </Table>
         </CardContent>
       </Card>
-
       <UserDetailsDialog
         user={selectedUser}
         programs={programs ?? []}
