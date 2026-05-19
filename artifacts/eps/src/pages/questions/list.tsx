@@ -283,7 +283,7 @@ export default function QuestionsList() {
             <Button
               type="button"
               onClick={returnToOverview}
-              className="bg-blue-900 hover:bg-blue-950 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               data-testid="btn-return"
             >
               Return
@@ -293,7 +293,7 @@ export default function QuestionsList() {
             <Button
               type="button"
               onClick={exitApproval}
-              className="bg-blue-900 hover:bg-blue-950 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               data-testid="btn-return"
             >
               Return
