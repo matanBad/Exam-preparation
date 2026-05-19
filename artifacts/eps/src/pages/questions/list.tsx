@@ -171,7 +171,7 @@ export default function QuestionsList() {
     : isPrivilegedSearch
       ? (allQuestions ?? [])
       : (serverQuestions ?? []);
-  const questions =
+  const questions = (
     approval || isPrivilegedSearch
       ? baseList.filter((qu) => {
           if (
@@ -198,7 +198,18 @@ export default function QuestionsList() {
             .toLowerCase();
           return hay.includes(needle);
         })
-      : baseList;
+      : baseList
+  ).filter((qu) => {
+    // Outside approval mode, the Question Bank (overview + selected-course
+    // view) hides draft/pending items for privileged users — drafts are only
+    // reachable through the "Questions for approval" flow. Students go through
+    // their own queries (server already filters to approved), so this is a
+    // no-op for them.
+    if (approval) return true;
+    if (isPrivileged && (PENDING_STATUSES as readonly string[]).includes(qu.status))
+      return false;
+    return true;
+  });
   const archive = useArchiveQuestion();
   const queryClient = useQueryClient();
 
