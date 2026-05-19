@@ -1,0 +1,411 @@
+I want to refine the existing EPS product code and DB seed data.
+
+Important:
+Do NOT start changing files immediately.
+First analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any DB/schema change is required.
+3. How you will implement the changes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change the existing login logic except for the explicitly requested lecturer first-login password-change flow.
+2. Do not break existing role-based permissions.
+3. Do not delete existing DB/data files.
+4. Treat only the newest DB files I upload as the source of truth.
+5. Ignore old DB files if they conflict with the new uploaded DB files.
+6. Keep Strategy A:
+   - courses = shared course catalog
+   - course_offerings = course taught by a specific lecturer in a specific program
+   - topics.course_id and questions.course_id stay connected to the parent course
+7. Do not change questions.course_id.
+8. Do not change topics.course_id.
+9. Do not move topics/questions to course_offerings.
+10. Use course_offerings to know which lecturer teaches a course in a specific program.
+11. Students should see courses based on:
+    student program + course offering + enrollment.
+12. Lecturers should see/manage courses based on:
+    course_offerings.lecturer_id = current logged-in lecturer id.
+13. Do not expose courses, topics, questions, or users to roles that should not access them.
+14. Do not modify unrelated UI, routes, APIs, authentication, or permissions.
+
+Now implement the following changes:
+
+1. Student first-time registration requirements
+
+When a student registers for the first time, require the following fields:
+- Full name
+- College email
+- Password
+- Program / Track
+- Current study year
+- Current semester
+
+The email must be a college student email ending with:
+
+@ac.sce.ac.il
+
+Show helper text near the email field:
+“Use your college email address as proof that you study at the college.”
+
+Do not allow personal email domains such as Gmail, Outlook, Yahoo, etc.
+
+Do not change existing login behavior.
+
+2. Lecturer first login must require password change
+
+When an admin creates a lecturer account, the lecturer must be required to change the initial password on first login.
+
+Add/use a flag such as:
+
+must_change_password = true
+
+for lecturer accounts created by admin.
+
+On first lecturer login:
+- If must_change_password = true, redirect the lecturer to a Change Password screen.
+- Do not allow access to the lecturer dashboard before password change.
+- After successful password change, set must_change_password = false.
+- Then allow access to the lecturer dashboard.
+
+Do not apply this requirement to students or admins.
+
+Do not break the demo accounts:
+- Sam Fisher
+- Dr. Liat Levi
+- Alex Adam
+
+3. Update user email domains in the DB seed data
+
+Update the users DB seed/data so that all users except the demo accounts use role-based email domains.
+
+Do not change these demo accounts:
+- Sam Fisher
+- Dr. Liat Levi
+- Alex Adam
+
+For all other users:
+- lecturers must have emails ending with @sce.ac.il
+- students must have emails ending with @ac.sce.ac.il
+- admins must have emails ending with @eps.com
+
+Keep emails unique.
+Do not change user ids.
+Do not change roles.
+Do not change passwords unless required.
+
+4. Add current study year and current semester for students
+
+Students must have:
+- current_study_year
+- current_semester
+
+Allowed values:
+
+current_study_year:
+- First
+- Second
+- Third
+- Fourth
+
+current_semester:
+- A
+- B
+
+During student registration, require the student to select:
+- Program / Track
+- Current study year
+- Current semester
+
+Use A/B consistently in the DB and UI.
+
+5. Update DB semester values
+
+Update the DB seed/data semester values:
+- Replace semester = fall with semester = A
+- Replace semester = spring with semester = B
+
+Do not keep fall/spring values in the new DB seed data.
+Do not create a duplicate semester field.
+Do not change academic_year values.
+Keep academic_year as 2025-2026 or the existing academic year value.
+
+6. Add study_year to course_offerings
+
+Add a field to course_offerings if it does not already exist:
+
+study_year
+
+Allowed values:
+- First
+- Second
+- Third
+- Fourth
+
+Do not add study_year only to courses, because the same course may appear in different programs and different study years.
+
+course_offerings should include the context:
+- course_id
+- program_id
+- lecturer_id
+- study_year
+- semester
+- academic_year
+
+Use the syllabus/course-plan data already reflected in the uploaded DB seed data to assign each course offering to the correct study_year and semester.
+
+7. Backfill existing non-demo users
+
+For all non-demo existing users, update them to match the new rules.
+
+Demo users that must remain unchanged:
+- Sam Fisher
+- Dr. Liat Levi
+- Alex Adam
+
+For non-demo students:
+- Keep their existing program_id if present.
+- Add current_study_year and current_semester.
+- Distribute them across First/Second/Third/Fourth and A/B so all filters can be tested.
+- Update their email domain to @ac.sce.ac.il.
+- Ensure they have enrollments for all courses in their program.
+- Dashboard visibility should still use their current_study_year and current_semester.
+
+For non-demo lecturers:
+- Do not assign current_study_year or current_semester.
+- Update their email domain to @sce.ac.il.
+- Their programs and courses should be determined from course_offerings.
+
+For non-demo admins:
+- Update their email domain to @eps.com.
+
+8. Student dashboard course visibility by current year and semester
+
+In the student dashboard course card/section, show only courses matching:
+- student program
+- student current_study_year
+- student current_semester
+- enrollment
+- course offering context
+
+Example:
+If a student is:
+Program: Software Engineering
+current_study_year: Second
+current_semester: A
+
+Then the dashboard should show only Software Engineering courses from Second year, Semester A, where the student is enrolled.
+
+9. Student full Courses page behavior
+
+In the student Courses page, show all enrolled courses from the student’s program across all study years and semesters.
+
+Add filters by:
+- Study year: First, Second, Third, Fourth
+- Semester: A, B
+- Lecturer name
+- Course name
+- Course code
+
+Important:
+Dashboard = only current year and current semester.
+Courses page = all enrolled courses in the student’s program, with filters.
+
+10. Lecturer Courses page filters
+
+In the Lecturer Courses page, add filters by:
+- Program / Track
+- Study Year: First, Second, Third, Fourth
+- Semester: A, B
+
+The lecturer must still see only courses where:
+
+course_offerings.lecturer_id = current logged-in lecturer id
+
+The filters must only filter within the lecturer’s own courses.
+Do not show courses taught by other lecturers.
+
+11. Course card display and click behavior by role
+
+Update course cards for Student, Lecturer, and Admin views.
+
+For Student and Admin course cards, show:
+
+Course Name
+Lecturer: lecturer full name
+Program: full program name
+
+Example:
+Computer Networks 2
+Lecturer: Dr. Liat Levi
+Program: Software Engineering
+
+For Lecturer course cards, show:
+
+Course Name
+Program: full program name
+
+Example:
+Computer Networks 2
+Program: Software Engineering
+
+Do not show the lecturer name on lecturer course cards.
+
+Make the entire course card clickable and route to the same course details page/action that the old View Details button opened.
+
+The old View Details button can be removed or replaced by this card-click behavior.
+
+Do not change access permissions.
+Do not expose courses a user should not see.
+Do not change the destination logic.
+
+12. Admin and Lecturer course details topics UI
+
+For Admin and Lecturer course details pages, display topics using the same collapsed/expandable structure used in the student course page.
+
+Default view:
+- Show only main topics initially.
+- Do not show all subtopics expanded by default.
+- Show the number of subtopics next to each main topic, for example:
+  Programming Basics (2)
+- Allow clicking the topic row or expand arrow to reveal its subtopics.
+- Show only an Edit button next to each main topic.
+- Do not show Edit/Delete buttons next to subtopics in default view.
+
+Edit mode:
+When clicking Edit on a main topic:
+- Expand that topic if needed.
+- Enter edit mode for that topic.
+- Show Delete Topic next to the main topic.
+- Show Delete next to each subtopic.
+- Show Add new subtopic under the last subtopic.
+- Include Save and Cancel actions if needed.
+
+Deletion safety:
+- Ask for confirmation before deleting a main topic or subtopic.
+- Do not break existing topic-question relationships.
+- If a topic/subtopic has related questions and deletion is unsafe, prevent deletion or archive instead, depending on the existing project behavior.
+
+Apply this to Admin and Lecturer course details pages.
+Keep the student collapsed topic behavior as it is.
+Do not change topics.course_id.
+Keep Strategy A.
+
+13. Questions for approval button with red badge
+
+In both Admin and Lecturer Question Bank pages, add a compact button/card next to the New Question button labeled:
+
+Questions for approval
+
+The button must have a small red notification-style badge in the top-right corner showing the number of questions waiting for approval, similar to the existing notification badge style.
+
+If the count is 0, hide the red badge or show no red number.
+
+When the user clicks Questions for approval, navigate to a page or filtered view that shows the questions waiting for approval.
+
+For Admin:
+Show all pending/draft questions from all courses.
+
+For Lecturer:
+Show only pending/draft questions that satisfy BOTH:
+- questions.created_by = current lecturer id
+- questions.course_id belongs to a course taught by the lecturer through course_offerings.lecturer_id
+
+Do not change approval permissions.
+Lecturers may view their own pending questions, but should not gain admin approval permissions if approval is admin-only.
+
+14. Admin Users Accounts layout
+
+In the Admin Users Accounts page, arrange the header layout exactly like this:
+
+Users Accounts                    [deletion requests] [New user]
+
+[All roles]
+
+Meaning:
+Top row:
+- Left side: Users Accounts title
+- Right side: deletion requests button and New user button
+
+Second row:
+- Place the role filter dropdown, for example All roles
+
+Do not place the role filter in the same row as the action buttons.
+Do not change the filtering logic.
+Only change the layout/placement.
+
+15. Profile page program display for students and lecturers
+
+Update the Profile page for students and lecturers to show Program/Track.
+
+For Student profile, show fields in this exact order:
+1. Name
+2. Role
+3. Program
+4. Email
+5. Upload picture
+
+For Lecturer profile, show fields in this exact order:
+1. Name
+2. Role
+3. Program
+4. Email
+5. Upload picture
+
+For students:
+Program should show the full program name the student studies in.
+
+For lecturers:
+Program should show the full program name or names where the lecturer teaches, based on course_offerings.
+
+Do not show program abbreviations such as SE, CS, EE, ME.
+Use full program names.
+
+Do not add Program to admin profile unless it already exists.
+Keep the same vertical layout style as the original profile page.
+
+Validation after implementation:
+After changes, verify:
+
+1. Login still works for student, lecturer, and admin.
+2. Existing role-based permissions still work.
+3. Demo accounts still work:
+   - Sam Fisher
+   - Dr. Liat Levi
+   - Alex Adam
+4. Student registration requires name, college email, password, program, study year, and semester.
+5. Student registration rejects non-college email domains.
+6. Student emails use @ac.sce.ac.il.
+7. Lecturer emails use @sce.ac.il.
+8. Admin emails use @eps.com.
+9. Lecturer created by admin must change password on first login.
+10. fall/spring values were replaced with A/B in the new DB seed data.
+11. course_offerings includes study_year.
+12. Student dashboard shows only current study year + current semester courses.
+13. Student Courses page shows all enrolled program courses with filters.
+14. Lecturer Courses page filters work by program, study year, and semester.
+15. Course cards show the correct format for Student/Admin and Lecturer.
+16. Whole course card click opens the same page/action as View Details.
+17. Admin/Lecturer topic UI is collapsed by default like the student UI.
+18. Topic edit mode allows Delete Topic, Delete subtopic, and Add new subtopic.
+19. Questions for approval button appears next to New Question with a red badge.
+20. Admin Users Accounts layout matches the requested format.
+21. Student and Lecturer profile pages show Program in the correct order.
+22. questions.course_id was not changed.
+23. topics.course_id was not changed.
+24. Strategy A was preserved.
+25. No unrelated logic, UI, routes, APIs, authentication, or permissions were modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly:
+- Which files were edited.
+- What was changed.
+- Whether any DB/schema change was required.
+- Confirm login logic was not changed except the lecturer first-login password change flow.
+- Confirm existing permissions were not changed.
+- Confirm demo accounts were not broken.
+- Confirm questions.course_id and topics.course_id were not changed.
+- Confirm Strategy A was preserved.
