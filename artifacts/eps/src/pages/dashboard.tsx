@@ -8,6 +8,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 
+// Student dashboard uses a tighter vertical rhythm than the others so the
+// welcome title sits closer to the action row and the cards below it.
 function StudentDashboard({ user }: { user: EpsUser }) {
   // Use the enriched courses list so we have offering studyYear/semester,
   // then filter to the student's current term only.
@@ -23,7 +25,7 @@ function StudentDashboard({ user }: { user: EpsUser }) {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 -mt-2">
       <div className="flex justify-end">
         <Link
           href="/exams/new"

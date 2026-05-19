@@ -190,26 +190,24 @@ export default function AdminUsers() {
           <Link href="/admin/deletion-requests">
             <Button variant="outline" data-testid="btn-deletion-requests">
               <UserX className="w-4 h-4 mr-2" />
-              Account deletion requests
+              deletion requests
             </Button>
           </Link>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="w-40" data-testid="select-role-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All roles</SelectItem>
+              <SelectItem value="student">Students</SelectItem>
+              <SelectItem value="lecturer">Lecturers</SelectItem>
+              <SelectItem value="admin">Admins</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={() => setShowCreate((v) => !v)}>
             {showCreate ? "Cancel" : "New user"}
           </Button>
         </div>
-      </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <Select value={role} onValueChange={setRole}>
-          <SelectTrigger className="w-48" data-testid="select-role-filter">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All roles</SelectItem>
-            <SelectItem value="student">Students</SelectItem>
-            <SelectItem value="lecturer">Lecturers</SelectItem>
-            <SelectItem value="admin">Admins</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       {showCreate && (
         <Card>
