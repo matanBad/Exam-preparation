@@ -151,7 +151,7 @@ export default function Register() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="program">Program / track</Label>
+                <Label htmlFor="program">Program</Label>
                 <Select value={programId} onValueChange={setProgramId}>
                   <SelectTrigger id="program" data-testid="select-program">
                     <SelectValue placeholder="Select your program" />
