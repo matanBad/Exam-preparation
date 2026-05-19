@@ -1,0 +1,223 @@
+I want to fix and refine the Question Bank and Questions for approval flows.
+
+Important:
+Do NOT start changing files immediately.
+First analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any DB/schema change is required.
+3. How you will implement the fixes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change login logic.
+2. Do not change existing role-based permissions.
+3. Do not delete or replace DB files.
+4. Do not change questions.course_id.
+5. Do not change topics.course_id.
+6. Keep Strategy A:
+   - courses = shared course catalog
+   - course_offerings = course taught by a specific lecturer in a specific program
+   - topics.course_id and questions.course_id stay connected to the parent course
+7. Do not move topics/questions to course_offerings.
+8. Use course_offerings to identify lecturer, program, study_year, and semester context.
+9. Do not modify unrelated UI, routes, APIs, authentication, or permissions.
+
+Implement the following fixes:
+
+1. Questions for approval page structure
+
+When Admin or Lecturer clicks the “Questions for approval” button, do not show a direct flat list of questions immediately.
+
+Instead, show a course-card view similar to the regular Question Bank course-card structure.
+
+Page title:
+Change the title from “Question Bank” to:
+
+Questions for approval
+
+Only show courses that have questions waiting for approval.
+
+Each course should appear as a separate card using this format:
+
+[Course code]                         [number of questions waiting for approval]
+[Course name]
+[Program]
+
+Example:
+
+CS101                                  3
+Introduction to Computer Science
+Software Engineering
+
+For Admin:
+Show all courses that have pending/draft questions.
+
+For Lecturer:
+Show only courses that have pending/draft questions satisfying BOTH:
+- questions.created_by = current lecturer id
+- questions.course_id belongs to a course taught by the lecturer through course_offerings.lecturer_id
+
+Do not change approval permissions.
+Lecturers should not gain admin approval permissions.
+
+2. Questions for approval page buttons
+
+On the Questions for approval page:
+- Remove the “Questions for approval” button because the user is already on that page.
+- Remove the “New Question” button from this page.
+- In the same top-right action area where “New Question” normally appears, show a “Return” button.
+
+The Return button should navigate back to the regular Question Bank page.
+
+Do not show Return as a small link under the title.
+Do not show extra chips like Course: X, clear all, or Back to courses between the title and filters.
+
+3. Clicking a course card in Questions for approval
+
+When the user clicks a course card in the Questions for approval page:
+- Open a page/view showing only the questions waiting for approval for that selected course.
+- The page should look like the selected-course question list view.
+- The title should be the selected course name or course code + course name.
+- Show only pending/draft questions for that course.
+
+For Admin:
+Show pending/draft questions for that selected course.
+
+For Lecturer:
+Show only pending/draft questions for that selected course that were created by the logged-in lecturer and belong to courses taught by that lecturer.
+
+4. Selected course view inside regular Question Bank
+
+When Admin or Lecturer clicks a course card inside the regular Question Bank, the selected-course page currently still shows “Question Bank” as the title.
+
+Change the title to the selected course name.
+
+Example:
+Instead of:
+Question Bank
+
+Show:
+CS101 - Introduction to Computer Science
+
+or:
+Introduction to Computer Science
+
+5. Selected course view buttons
+
+Inside a selected course view in the regular Question Bank:
+- Remove the “New Question” button.
+- Show a “Return” button in the exact same top-right action area where “New Question” normally appears.
+- The Return button should navigate back to the regular Question Bank course-card page.
+
+Do not show:
+- Course filter chips such as “Course: 1 ×”
+- clear all
+- Back to courses links between the title and search/filter area
+
+6. Selected course view cleanup
+
+When a user is already inside a selected course:
+- Remove everything displayed between the title and the search input/filter row, such as Course chips, clear all, and Back to courses.
+- Remove the course filter dropdown, because the course is already selected.
+
+Keep the search input.
+
+Keep difficulty filtering if it already exists.
+
+7. Status filter in selected course view
+
+In the selected course view inside the regular Question Bank, update the Status filter so it has only these two options:
+
+- Approved
+- Archived
+
+Do not show Draft/Pending in the regular selected-course Question Bank view.
+
+Draft/Pending questions should be handled only through the Questions for approval flow.
+
+Do not change the actual question statuses in the DB.
+This is a UI/filter behavior change only.
+
+8. Apply to both Admin and Lecturer
+
+Apply changes 1–7 to both:
+- Admin Question Bank
+- Lecturer Question Bank
+
+The UI behavior should be consistent, but the data scope must remain role-specific:
+
+Admin:
+- Can see all courses/questions according to admin permissions.
+- Questions for approval includes all pending/draft questions.
+
+Lecturer:
+- Can see only courses/questions connected to the lecturer.
+- Questions for approval includes only pending/draft questions created by that lecturer in courses the lecturer teaches.
+
+9. Course details topic/subtopic UI fix
+
+In Admin and Lecturer course details pages, fix the topic/subtopic UI to match the collapsed behavior previously requested.
+
+Default view:
+- Show only main topics initially.
+- Do not show all subtopics expanded by default.
+- Show the number of subtopics next to each main topic, for example:
+  Linear Structures (2)
+- Allow clicking the topic row or expand arrow to reveal its subtopics.
+- Show only an Edit button next to each main topic.
+- Do not show Edit/Delete buttons next to subtopics in default view.
+
+Edit mode:
+When clicking Edit on a main topic:
+- Expand that topic if needed.
+- Enter edit mode for that topic.
+- Show Delete Topic next to the main topic.
+- Show Delete next to each subtopic.
+- Show Add new subtopic under the last subtopic.
+- Include Save and Cancel actions if needed.
+
+Deletion safety:
+- Ask for confirmation before deleting a main topic or subtopic.
+- Do not break existing topic-question relationships.
+- If a topic/subtopic has related questions and deletion is unsafe, prevent deletion or archive instead, depending on existing project behavior.
+
+Apply this to both Admin and Lecturer course details pages.
+Keep the student collapsed topic behavior as it is.
+
+Validation after implementation:
+Verify the following:
+1. Login still works.
+2. Role-based permissions still work.
+3. Questions for approval opens a course-card view, not a flat question list.
+4. Questions for approval title is correct.
+5. Questions for approval page does not show New Question.
+6. Questions for approval page does not show Questions for approval button.
+7. Questions for approval page shows Return in the top-right action area.
+8. Clicking Return goes back to the regular Question Bank.
+9. Questions for approval course cards show only courses with pending/draft questions.
+10. Clicking a course card opens only pending/draft questions for that course.
+11. Regular selected-course Question Bank view title shows the selected course name.
+12. Regular selected-course Question Bank view shows Return instead of New Question.
+13. Regular selected-course Question Bank view has no Course chip, no clear all, and no Back to courses text between title and filters.
+14. Course filter dropdown is removed in selected-course view.
+15. Status filter in selected-course regular view contains only Approved and Archived.
+16. Lecturer does not see pending questions created by other lecturers.
+17. Admin can still see all pending/draft questions.
+18. Admin/Lecturer course details topics are collapsed by default.
+19. Subtopics do not show Edit/Delete in default view.
+20. Edit mode shows Delete Topic, Delete subtopic, and Add new subtopic.
+21. questions.course_id and topics.course_id were not changed.
+22. Strategy A was preserved.
+23. No unrelated logic, routes, APIs, authentication, permissions, or DB structure were modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly:
+- Which files were edited.
+- What was changed.
+- Whether any DB/schema change was required.
+- Confirm login logic was not changed.
+- Confirm permissions were not changed.
+- Confirm Strategy A was preserved.
