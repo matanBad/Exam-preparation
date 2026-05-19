@@ -10,6 +10,9 @@ export type EpsUser = {
   programId?: number | null;
   programName?: string | null;
   programCode?: string | null;
+  // For lecturers: ids of programs they teach in. The server already
+  // includes this on /auth/me; the field is optional for other roles.
+  programIds?: number[] | null;
   currentStudyYear?: "First" | "Second" | "Third" | "Fourth" | null;
   currentSemester?: "A" | "B" | null;
   mustChangePassword?: boolean;

@@ -185,20 +185,7 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Users Accounts</h1>
-          {role !== ALL && (
-            <button
-              type="button"
-              onClick={() => setRole(ALL)}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 hover:bg-primary/20 transition-colors"
-              data-testid="chip-active-filter"
-            >
-              Role: <span className="capitalize font-medium">{role}</span>
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
+        <h1 className="text-3xl font-bold">Users Accounts</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <Link href="/admin/deletion-requests">
             <Button variant="outline" data-testid="btn-deletion-requests">
@@ -206,21 +193,23 @@ export default function AdminUsers() {
               Account deletion requests
             </Button>
           </Link>
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="w-48" data-testid="select-role-filter">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All roles</SelectItem>
-              <SelectItem value="student">Students</SelectItem>
-              <SelectItem value="lecturer">Lecturers</SelectItem>
-              <SelectItem value="admin">Admins</SelectItem>
-            </SelectContent>
-          </Select>
           <Button onClick={() => setShowCreate((v) => !v)}>
             {showCreate ? "Cancel" : "New user"}
           </Button>
         </div>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={role} onValueChange={setRole}>
+          <SelectTrigger className="w-48" data-testid="select-role-filter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All roles</SelectItem>
+            <SelectItem value="student">Students</SelectItem>
+            <SelectItem value="lecturer">Lecturers</SelectItem>
+            <SelectItem value="admin">Admins</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       {showCreate && (
         <Card>

@@ -54,6 +54,16 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   const role = user.role as "student" | "lecturer" | "admin";
   const token = signToken({ userId: user.id, email: user.email, role });
+  // For lecturers, include the list of programs they teach in so the
+  // frontend can render their profile without an extra /auth/me round-trip.
+  let programIds: number[] | undefined;
+  if (role === "lecturer") {
+    const rows = await db
+      .select({ programId: lecturerProgramsTable.programId })
+      .from(lecturerProgramsTable)
+      .where(eq(lecturerProgramsTable.lecturerId, user.id));
+    programIds = rows.map((r) => r.programId);
+  }
   res.json(
     LoginResponse.parse({
       token,
@@ -68,6 +78,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         currentStudyYear: user.currentStudyYear ?? null,
         currentSemester: user.currentSemester ?? null,
         mustChangePassword: !!user.mustChangePassword,
+        ...(programIds !== undefined ? { programIds } : {}),
       },
     }),
   );

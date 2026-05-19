@@ -57,6 +57,7 @@ export default function QuestionsList() {
   const me = getAuthUser();
   const isPrivileged = me?.role === "lecturer" || me?.role === "admin";
   const isLecturer = me?.role === "lecturer";
+  const isAdmin = me?.role === "admin";
 
   const params = {
     ...(courseId !== ALL ? { courseId: parseInt(courseId, 10) } : {}),
@@ -226,9 +227,11 @@ export default function QuestionsList() {
               )}
             </Button>
           )}
-          <Link href="/lecturer/questions/new">
-            <Button data-testid="btn-new-question">New Question</Button>
-          </Link>
+          {!isAdmin && (
+            <Link href="/lecturer/questions/new">
+              <Button data-testid="btn-new-question">New Question</Button>
+            </Link>
+          )}
         </div>
       </div>
 

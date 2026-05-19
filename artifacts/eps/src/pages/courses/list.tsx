@@ -153,32 +153,36 @@ export default function CoursesList() {
             </SelectContent>
           </Select>
         )}
-        <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger className="w-36" data-testid="filter-year">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All years</SelectItem>
-            {STUDY_YEARS.map((y) => (
-              <SelectItem key={y} value={y}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterSemester} onValueChange={setFilterSemester}>
-          <SelectTrigger className="w-36" data-testid="filter-semester">
-            <SelectValue placeholder="Semester" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All semesters</SelectItem>
-            {SEMESTERS.map((s) => (
-              <SelectItem key={s} value={s}>
-                Semester {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isAdmin && (
+          <>
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-36" data-testid="filter-year">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All years</SelectItem>
+                {STUDY_YEARS.map((y) => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterSemester} onValueChange={setFilterSemester}>
+              <SelectTrigger className="w-36" data-testid="filter-semester">
+                <SelectValue placeholder="Semester" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All semesters</SelectItem>
+                {SEMESTERS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    Semester {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
         {isAdmin && (
           <Select value={filterLecturer} onValueChange={setFilterLecturer}>
             <SelectTrigger className="w-48" data-testid="filter-lecturer">
@@ -283,10 +287,14 @@ export default function CoursesList() {
               ) {
                 return false;
               }
-              if (filterYear !== ALL && c.studyYear !== filterYear) {
+              // Admin page intentionally omits year/semester filters; the
+              // state values stay at ALL by default but we also guard
+              // defensively here so a stale URL/state can't filter them out.
+              if (!isAdmin && filterYear !== ALL && c.studyYear !== filterYear) {
                 return false;
               }
               if (
+                !isAdmin &&
                 filterSemester !== ALL &&
                 c.offeringSemester !== filterSemester
               ) {

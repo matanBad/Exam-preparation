@@ -6,6 +6,8 @@ import {
   useDeleteMyAccount,
   useUpdateMyProfileImage,
   useListPrograms,
+  useGetUserCourses,
+  getGetUserCoursesQueryKey,
 } from "@workspace/api-client-react";
 import { useAuthUser, setAuthUser, clearAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +33,24 @@ export default function Account() {
        programs?.find((p) => p.id === user.programId)?.name ??
        null)
     : null;
+
+  // Lecturer-only: resolve full program names from the user's programIds
+  // (already returned by /auth/me) and count taught offerings via the
+  // existing /users/:id/courses endpoint, which is server-scoped to
+  // course_offerings.lecturer_id = me.
+  const isLecturer = user?.role === "lecturer";
+  const lecturerProgramNames = isLecturer
+    ? ((user?.programIds ?? [])
+        .map((id) => programs?.find((p) => p.id === id)?.name)
+        .filter((n): n is string => Boolean(n)))
+    : [];
+  const { data: lecturerCourses } = useGetUserCourses(user?.id ?? 0, {
+    query: {
+      enabled: isLecturer && !!user?.id,
+      queryKey: getGetUserCoursesQueryKey(user?.id ?? 0),
+    },
+  });
+  const lecturerCoursesTaught = lecturerCourses?.length ?? 0;
 
   const handleImageFile = (file: File) => {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -273,6 +293,24 @@ export default function Account() {
                       : ""}
                   </p>
                 )}
+              {isLecturer && (
+                <>
+                  <p data-testid="text-lecturer-programs">
+                    <span className="text-muted-foreground">
+                      Program(s):{" "}
+                    </span>
+                    {lecturerProgramNames.length > 0
+                      ? lecturerProgramNames.join(", ")
+                      : "—"}
+                  </p>
+                  <p data-testid="text-lecturer-courses-taught">
+                    <span className="text-muted-foreground">
+                      Courses taught:{" "}
+                    </span>
+                    {lecturerCoursesTaught}
+                  </p>
+                </>
+              )}
               <p>
                 <span className="text-muted-foreground">Email: </span>
                 {user.email}
