@@ -1,0 +1,188 @@
+I want to fix and refine several UI issues after the latest implementation.
+
+Important:
+Do NOT start changing files immediately.
+First analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any DB/schema change is required.
+3. How you will implement these fixes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change login logic.
+2. Do not change existing role-based permissions.
+3. Do not delete or replace DB files.
+4. Do not change questions.course_id.
+5. Do not change topics.course_id.
+6. Keep Strategy A:
+   - courses = shared course catalog
+   - course_offerings = course taught by a specific lecturer in a specific program
+   - topics.course_id and questions.course_id stay connected to the parent course
+7. Do not move topics/questions to course_offerings.
+8. Use course_offerings to identify the lecturer, program, study_year, and semester context.
+9. Do not modify unrelated UI, routes, APIs, authentication, or permissions.
+
+Implement the following fixes:
+
+1. Lecturer Question Bank course cards
+
+In the Lecturer Question Bank page, course cards currently show:
+
+Lecturer: Dr. Liat Levi
+
+This is incorrect for the lecturer view.
+
+Replace the lecturer name line with the full program/track name.
+
+Desired format:
+
+CS101                                      8
+Introduction to Computer Science
+Program: Software Engineering
+
+Do not show the lecturer name on lecturer Question Bank course cards.
+
+This is a display-only change.
+Do not change which courses/questions the lecturer can see.
+
+Use:
+course_offerings.program_id → programs.name
+
+The lecturer visibility rule must remain:
+course_offerings.lecturer_id = current logged-in lecturer id.
+
+2. Lecturer Dashboard should be compact and not long
+
+The Lecturer Dashboard currently has long, stretched cards/lists.
+Make the dashboard more compact because more dashboard cards will be added later.
+
+The dashboard should act as a summary page, not a full management page.
+
+2.1 Your Courses card on Lecturer Dashboard
+
+In the lecturer dashboard “Your Courses” card:
+- Show only 3–4 courses.
+- Do not show a long list of all courses.
+- The card should remain compact.
+- Add a clear indication such as “View all courses” if needed.
+- Clicking the card, or clicking “View all courses”, should navigate to the Lecturer Courses page.
+
+Do not change course visibility logic.
+
+2.2 Question Bank card on Lecturer Dashboard
+
+In the lecturer dashboard “Question Bank” card:
+Replace the current “Add New Question” action with:
+
+Waiting for approval: X
+
+Where X is the number of questions waiting for approval.
+
+For lecturer, count only questions that satisfy BOTH:
+- questions.created_by = current lecturer id
+- questions.course_id belongs to a course taught by this lecturer through course_offerings.lecturer_id
+
+Do not change approval permissions.
+If only admin can approve questions, keep it that way.
+
+2.3 Clicking Question Bank dashboard card
+
+When the lecturer clicks the Question Bank card, navigate to the Lecturer Question Bank page.
+
+Do not navigate directly to Add New Question from the dashboard card.
+
+3. Student Courses page filters
+
+In the Student Courses page, remove the Program/Track filter.
+
+Students belong to one program only, so the Program filter is unnecessary and confusing.
+
+Replace the Program filter with a Semester filter.
+
+Desired filters:
+- Search input
+- Study year filter
+- Semester filter
+
+The filters must appear on the same row as the search input, not below it.
+
+Desired layout:
+
+[Search by course code, name, or lecturer] [All years] [All semesters]
+
+Semester filter values:
+- All semesters
+- Semester A
+- Semester B
+
+Keep the search behavior by:
+- course code
+- course name
+- lecturer name
+
+Keep the student visibility logic unchanged:
+student program + enrollment + course offering context.
+
+Do not show courses from other programs.
+
+4. Dashboard spacing
+
+Reduce the excessive vertical spacing between the dashboard welcome/title area and the dashboard cards.
+
+Apply this to dashboards where the spacing issue exists, especially Student and Lecturer dashboards if they share the same layout.
+
+Keep the layout clean and readable, but make it more compact.
+
+Do not change dashboard data logic.
+This is a spacing/layout adjustment only.
+
+5. Lecturer Courses page program filter
+
+In the Lecturer Courses page, add a Program/Track filter.
+
+The lecturer should be able to filter courses by program/track.
+
+Suggested layout:
+
+[Search by course name/code] [All programs] [All years] [All semesters]
+
+The Program filter must filter only within the courses taught by the logged-in lecturer.
+
+Do not expose courses taught by other lecturers.
+
+Keep the lecturer visibility rule:
+course_offerings.lecturer_id = current logged-in lecturer id.
+
+Validation after implementation:
+Verify the following:
+
+1. Login still works.
+2. Role-based permissions still work.
+3. Lecturer Question Bank cards show Program instead of Lecturer.
+4. Lecturer Question Bank still shows only the lecturer’s allowed courses/questions.
+5. Lecturer Dashboard is compact.
+6. Lecturer Dashboard Your Courses shows only 3–4 courses.
+7. Clicking Your Courses card navigates to Lecturer Courses.
+8. Lecturer Dashboard Question Bank card shows Waiting for approval count.
+9. Clicking Question Bank card navigates to Question Bank.
+10. Student Courses page no longer shows Program filter.
+11. Student Courses page shows Semester filter instead.
+12. Student Courses filters are on the same row as the search input.
+13. Dashboard spacing is reduced and visually cleaner.
+14. Lecturer Courses page has Program filter.
+15. Lecturer Program filter does not expose other lecturers’ courses.
+16. questions.course_id and topics.course_id were not changed.
+17. Strategy A was preserved.
+18. No unrelated logic, routes, APIs, authentication, permissions, or DB structure were modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly:
+- Which files were edited.
+- What was changed.
+- Whether any DB/schema change was required.
+- Confirm login logic was not changed.
+- Confirm permissions were not changed.
+- Confirm Strategy A was preserved.
