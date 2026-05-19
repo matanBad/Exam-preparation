@@ -982,6 +982,19 @@ components:
           type: array
           description: "Programs a lecturer teaches in (only populated for lecturers)"
           items: { type: integer }
+        currentStudyYear:
+          type: string
+          nullable: true
+          enum: [First, Second, Third, Fourth, null]
+          description: "Student's current year of study"
+        currentSemester:
+          type: string
+          nullable: true
+          enum: [A, B, null]
+          description: "Student's current semester"
+        mustChangePassword:
+          type: boolean
+          description: "True when the user has a system-assigned temporary password and must change it before using the app"
       required: [id, fullName, email, role, accountStatus]
 
     Program:
@@ -1017,6 +1030,16 @@ components:
           type: array
           description: "For role=lecturer: programs they teach in"
           items: { type: integer }
+        currentStudyYear:
+          type: string
+          nullable: true
+          enum: [First, Second, Third, Fourth, null]
+          description: "For role=student: current year of study"
+        currentSemester:
+          type: string
+          nullable: true
+          enum: [A, B, null]
+          description: "For role=student: current semester"
       required: [fullName, email, password, role]
 
     UpdateUserRequest:
@@ -1124,7 +1147,15 @@ components:
         programId:
           type: integer
           description: "Program/track the student is enrolling in"
-      required: [fullName, email, password, programId]
+        currentStudyYear:
+          type: string
+          enum: [First, Second, Third, Fourth]
+          description: "Student's current year of study"
+        currentSemester:
+          type: string
+          enum: [A, B]
+          description: "Student's current semester"
+      required: [fullName, email, password, programId, currentStudyYear, currentSemester]
 
     RegisterResponse:
       type: object
@@ -1154,6 +1185,16 @@ components:
         programCode: { type: string, nullable: true }
         lecturerId: { type: integer, nullable: true }
         lecturerName: { type: string, nullable: true }
+        studyYear:
+          type: string
+          nullable: true
+          enum: [First, Second, Third, Fourth, null]
+          description: "Study year of the matched offering"
+        offeringSemester:
+          type: string
+          nullable: true
+          enum: [A, B, null]
+          description: "Semester of the matched offering (A/B)"
       required: [id, courseCode, courseName, status]
 
     CreateCourseRequest:

@@ -5,6 +5,8 @@
  * Exam Preparation System (EPS) API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateUserRequestCurrentSemester } from "./createUserRequestCurrentSemester";
+import type { CreateUserRequestCurrentStudyYear } from "./createUserRequestCurrentStudyYear";
 import type { Role } from "./role";
 
 export interface CreateUserRequest {
@@ -17,4 +19,8 @@ export interface CreateUserRequest {
   programId?: number | null;
   /** For role=lecturer: programs they teach in */
   programIds?: number[];
+  /** For role=student: current year of study */
+  currentStudyYear?: CreateUserRequestCurrentStudyYear;
+  /** For role=student: current semester */
+  currentSemester?: CreateUserRequestCurrentSemester;
 }

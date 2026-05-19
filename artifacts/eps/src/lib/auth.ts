@@ -7,6 +7,12 @@ export type EpsUser = {
   role: "student" | "lecturer" | "admin";
   accountStatus: string;
   profileImageUrl?: string | null;
+  programId?: number | null;
+  programName?: string | null;
+  programCode?: string | null;
+  currentStudyYear?: "First" | "Second" | "Third" | "Fourth" | null;
+  currentSemester?: "A" | "B" | null;
+  mustChangePassword?: boolean;
 };
 
 const USER_EVENT = "eps-user-updated";

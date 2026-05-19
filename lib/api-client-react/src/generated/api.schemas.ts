@@ -53,6 +53,32 @@ export const ExamStatus = {
   submitted: "submitted",
 } as const;
 
+/**
+ * Student's current year of study
+ */
+export type UserCurrentStudyYear =
+  | (typeof UserCurrentStudyYear)[keyof typeof UserCurrentStudyYear]
+  | null;
+
+export const UserCurrentStudyYear = {
+  First: "First",
+  Second: "Second",
+  Third: "Third",
+  Fourth: "Fourth",
+} as const;
+
+/**
+ * Student's current semester
+ */
+export type UserCurrentSemester =
+  | (typeof UserCurrentSemester)[keyof typeof UserCurrentSemester]
+  | null;
+
+export const UserCurrentSemester = {
+  A: "A",
+  B: "B",
+} as const;
+
 export interface User {
   id: number;
   fullName: string;
@@ -66,6 +92,12 @@ export interface User {
   programCode?: string | null;
   /** Programs a lecturer teaches in (only populated for lecturers) */
   programIds?: number[];
+  /** Student's current year of study */
+  currentStudyYear?: UserCurrentStudyYear;
+  /** Student's current semester */
+  currentSemester?: UserCurrentSemester;
+  /** True when the user has a system-assigned temporary password and must change it before using the app */
+  mustChangePassword?: boolean;
 }
 
 export interface Program {
@@ -83,6 +115,32 @@ export interface CreateProgramRequest {
   status?: string;
 }
 
+/**
+ * For role=student: current year of study
+ */
+export type CreateUserRequestCurrentStudyYear =
+  | (typeof CreateUserRequestCurrentStudyYear)[keyof typeof CreateUserRequestCurrentStudyYear]
+  | null;
+
+export const CreateUserRequestCurrentStudyYear = {
+  First: "First",
+  Second: "Second",
+  Third: "Third",
+  Fourth: "Fourth",
+} as const;
+
+/**
+ * For role=student: current semester
+ */
+export type CreateUserRequestCurrentSemester =
+  | (typeof CreateUserRequestCurrentSemester)[keyof typeof CreateUserRequestCurrentSemester]
+  | null;
+
+export const CreateUserRequestCurrentSemester = {
+  A: "A",
+  B: "B",
+} as const;
+
 export interface CreateUserRequest {
   fullName: string;
   email: string;
@@ -93,6 +151,10 @@ export interface CreateUserRequest {
   programId?: number | null;
   /** For role=lecturer: programs they teach in */
   programIds?: number[];
+  /** For role=student: current year of study */
+  currentStudyYear?: CreateUserRequestCurrentStudyYear;
+  /** For role=student: current semester */
+  currentSemester?: CreateUserRequestCurrentSemester;
 }
 
 export interface UpdateUserRequest {
@@ -189,6 +251,30 @@ export interface LoginRequest {
   password: string;
 }
 
+/**
+ * Student's current year of study
+ */
+export type RegisterRequestCurrentStudyYear =
+  (typeof RegisterRequestCurrentStudyYear)[keyof typeof RegisterRequestCurrentStudyYear];
+
+export const RegisterRequestCurrentStudyYear = {
+  First: "First",
+  Second: "Second",
+  Third: "Third",
+  Fourth: "Fourth",
+} as const;
+
+/**
+ * Student's current semester
+ */
+export type RegisterRequestCurrentSemester =
+  (typeof RegisterRequestCurrentSemester)[keyof typeof RegisterRequestCurrentSemester];
+
+export const RegisterRequestCurrentSemester = {
+  A: "A",
+  B: "B",
+} as const;
+
 export interface RegisterRequest {
   /** @minLength 1 */
   fullName: string;
@@ -197,6 +283,10 @@ export interface RegisterRequest {
   password: string;
   /** Program/track the student is enrolling in */
   programId: number;
+  /** Student's current year of study */
+  currentStudyYear: RegisterRequestCurrentStudyYear;
+  /** Student's current semester */
+  currentSemester: RegisterRequestCurrentSemester;
 }
 
 export interface RegisterResponse {
@@ -207,6 +297,32 @@ export interface AuthLoginResponse {
   token: string;
   user: User;
 }
+
+/**
+ * Study year of the matched offering
+ */
+export type CourseStudyYear =
+  | (typeof CourseStudyYear)[keyof typeof CourseStudyYear]
+  | null;
+
+export const CourseStudyYear = {
+  First: "First",
+  Second: "Second",
+  Third: "Third",
+  Fourth: "Fourth",
+} as const;
+
+/**
+ * Semester of the matched offering (A/B)
+ */
+export type CourseOfferingSemester =
+  | (typeof CourseOfferingSemester)[keyof typeof CourseOfferingSemester]
+  | null;
+
+export const CourseOfferingSemester = {
+  A: "A",
+  B: "B",
+} as const;
 
 export interface Course {
   id: number;
@@ -222,6 +338,10 @@ export interface Course {
   programCode?: string | null;
   lecturerId?: number | null;
   lecturerName?: string | null;
+  /** Study year of the matched offering */
+  studyYear?: CourseStudyYear;
+  /** Semester of the matched offering (A/B) */
+  offeringSemester?: CourseOfferingSemester;
 }
 
 export interface CreateCourseRequest {

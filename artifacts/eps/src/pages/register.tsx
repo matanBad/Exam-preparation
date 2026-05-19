@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/select";
 import logoUrl from "@/assets/ep-logo.png";
 
+const STUDENT_DOMAIN = "@ac.sce.ac.il";
+type StudyYear = "First" | "Second" | "Third" | "Fourth";
+type Semester = "A" | "B";
+const STUDY_YEARS: StudyYear[] = ["First", "Second", "Third", "Fourth"];
+const SEMESTERS: Semester[] = ["A", "B"];
+
 export default function Register() {
   const [, setLocation] = useLocation();
   const [fullName, setFullName] = useState("");
@@ -21,6 +27,8 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [programId, setProgramId] = useState<string>("");
+  const [studyYear, setStudyYear] = useState<string>("");
+  const [semester, setSemester] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const register = useRegister();
@@ -29,6 +37,10 @@ export default function Register() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!email.trim().toLowerCase().endsWith(STUDENT_DOMAIN)) {
+      setError(`Email must end with ${STUDENT_DOMAIN}`);
+      return;
+    }
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -41,6 +53,14 @@ export default function Register() {
       setError("Please select your program / track.");
       return;
     }
+    if (!studyYear) {
+      setError("Please select your current year of study.");
+      return;
+    }
+    if (!semester) {
+      setError("Please select your current semester.");
+      return;
+    }
     register.mutate(
       {
         data: {
@@ -48,6 +68,8 @@ export default function Register() {
           email,
           password,
           programId: Number(programId),
+          currentStudyYear: studyYear as StudyYear,
+          currentSemester: semester as Semester,
         },
       },
       {
@@ -123,6 +145,10 @@ export default function Register() {
                   required
                   data-testid="input-email"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Use your SCE college email (ends with{" "}
+                  <span className="font-medium">{STUDENT_DOMAIN}</span>).
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="program">Program / track</Label>
@@ -133,11 +159,43 @@ export default function Register() {
                   <SelectContent>
                     {programs?.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} ({p.code})
+                        {p.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="studyYear">Year of study</Label>
+                  <Select value={studyYear} onValueChange={setStudyYear}>
+                    <SelectTrigger id="studyYear" data-testid="select-study-year">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STUDY_YEARS.map((y) => (
+                        <SelectItem key={y} value={y}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="semester">Semester</Label>
+                  <Select value={semester} onValueChange={setSemester}>
+                    <SelectTrigger id="semester" data-testid="select-semester">
+                      <SelectValue placeholder="Semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SEMESTERS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          Semester {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

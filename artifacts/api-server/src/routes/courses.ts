@@ -134,6 +134,8 @@ router.get(
       .select({
         course: coursesTable,
         offeringId: courseOfferingsTable.id,
+        offeringStudyYear: courseOfferingsTable.studyYear,
+        offeringSemester: courseOfferingsTable.semester,
         programId: programsTable.id,
         programName: programsTable.name,
         programCode: programsTable.code,
@@ -160,6 +162,8 @@ router.get(
     const courses = Array.from(byCourse.values()).map((r) => ({
       ...r.course,
       offeringId: r.offeringId,
+      studyYear: r.offeringStudyYear,
+      offeringSemester: r.offeringSemester,
       programId: r.programId,
       programName: r.programName,
       programCode: r.programCode,
@@ -320,6 +324,8 @@ router.get(
       .select({
         course: coursesTable,
         offeringId: courseOfferingsTable.id,
+        offeringStudyYear: courseOfferingsTable.studyYear,
+        offeringSemester: courseOfferingsTable.semester,
         programId: programsTable.id,
         programName: programsTable.name,
         programCode: programsTable.code,
@@ -341,6 +347,8 @@ router.get(
       GetCourseResponse.parse({
         ...row.course,
         offeringId: row.offeringId,
+        studyYear: row.offeringStudyYear,
+        offeringSemester: row.offeringSemester,
         programId: row.programId,
         programName: row.programName,
         programCode: row.programCode,

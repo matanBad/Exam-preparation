@@ -116,12 +116,35 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const { fullName, email, password, role, accountStatus, programId, programIds } =
-      parsed.data;
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      accountStatus,
+      programId,
+      programIds,
+      currentStudyYear,
+      currentSemester,
+    } = parsed.data;
+    // Email domain rules: students -> @ac.sce.ac.il; lecturers -> @sce.ac.il
+    const normalizedEmail = email.trim().toLowerCase();
+    if (role === "student" && !normalizedEmail.endsWith("@ac.sce.ac.il")) {
+      res.status(400).json({
+        error: "Student email must end with @ac.sce.ac.il",
+      });
+      return;
+    }
+    if (role === "lecturer" && !normalizedEmail.endsWith("@sce.ac.il")) {
+      res.status(400).json({
+        error: "Lecturer email must end with @sce.ac.il",
+      });
+      return;
+    }
     const [existing] = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.email, email));
+      .where(eq(usersTable.email, normalizedEmail));
     if (existing) {
       res.status(409).json({ error: "Email already in use" });
       return;
@@ -153,11 +176,18 @@ router.post(
         .insert(usersTable)
         .values({
           fullName,
-          email,
+          email: normalizedEmail,
           passwordHash,
           role,
           accountStatus: accountStatus ?? "active",
           programId: role === "student" ? (programId ?? null) : null,
+          currentStudyYear:
+            role === "student" ? (currentStudyYear ?? null) : null,
+          currentSemester:
+            role === "student" ? (currentSemester ?? null) : null,
+          // Lecturers created by an admin get a temporary password and must
+          // change it on first sign-in. Students and admins do not.
+          mustChangePassword: role === "lecturer",
         })
         .returning();
       if (programIdsToLink.length > 0) {

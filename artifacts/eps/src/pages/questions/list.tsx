@@ -206,34 +206,34 @@ export default function QuestionsList() {
             </div>
           )}
         </div>
-        <Link href="/lecturer/questions/new">
-          <Button data-testid="btn-new-question">New Question</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {isPrivileged && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStatus("draft")}
+              className="relative"
+              data-testid="btn-pending-approval"
+            >
+              Questions for approval
+              {pendingCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold leading-none"
+                  data-testid="badge-pending-count"
+                >
+                  {pendingCount}
+                </span>
+              )}
+            </Button>
+          )}
+          <Link href="/lecturer/questions/new">
+            <Button data-testid="btn-new-question">New Question</Button>
+          </Link>
+        </div>
       </div>
 
       {showOverview && (
         <div className="space-y-4">
-          {isLecturer && (
-            <Card
-              className="cursor-pointer transition hover:shadow-md hover:border-primary/40 border-l-4 border-l-amber-500"
-              onClick={() => {
-                setStatus("draft");
-              }}
-              data-testid="card-pending-approval"
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>Pending approval</span>
-                  <Badge variant="secondary">{pendingCount}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Questions you've authored that are still awaiting approval.
-                </p>
-              </CardContent>
-            </Card>
-          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {courses?.map((c) => (
               <button

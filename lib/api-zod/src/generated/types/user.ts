@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Role } from "./role";
+import type { UserCurrentSemester } from "./userCurrentSemester";
+import type { UserCurrentStudyYear } from "./userCurrentStudyYear";
 
 export interface User {
   id: number;
@@ -20,4 +22,10 @@ export interface User {
   programCode?: string | null;
   /** Programs a lecturer teaches in (only populated for lecturers) */
   programIds?: number[];
+  /** Student's current year of study */
+  currentStudyYear?: UserCurrentStudyYear;
+  /** Student's current semester */
+  currentSemester?: UserCurrentSemester;
+  /** True when the user has a system-assigned temporary password and must change it before using the app */
+  mustChangePassword?: boolean;
 }

@@ -51,6 +51,10 @@ import { getAuthUser } from "@/lib/auth";
 const ALL = "_all";
 type Role = "student" | "lecturer" | "admin";
 const ROLES: Role[] = ["student", "lecturer", "admin"];
+type StudyYear = "First" | "Second" | "Third" | "Fourth";
+type Semester = "A" | "B";
+const STUDY_YEARS: StudyYear[] = ["First", "Second", "Third", "Fourth"];
+const SEMESTERS: Semester[] = ["A", "B"];
 
 export default function AdminUsers() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,6 +97,8 @@ export default function AdminUsers() {
     role: "student" as Role,
   });
   const [programId, setProgramId] = useState<string>("");
+  const [studyYear, setStudyYear] = useState<string>("");
+  const [semester, setSemester] = useState<string>("");
   const [lecturerProgramIds, setLecturerProgramIds] = useState<number[]>([]);
   const [createError, setCreateError] = useState<string | null>(null);
   const { data: programs } = useListPrograms();
@@ -114,6 +120,10 @@ export default function AdminUsers() {
       setCreateError("Please select a program for the student.");
       return;
     }
+    if (form.role === "student" && (!studyYear || !semester)) {
+      setCreateError("Please select year and semester for the student.");
+      return;
+    }
     const payload: Record<string, unknown> = {
       ...form,
       fullName: form.fullName.trim(),
@@ -121,6 +131,8 @@ export default function AdminUsers() {
     };
     if (form.role === "student" && programId) {
       payload.programId = Number(programId);
+      payload.currentStudyYear = studyYear;
+      payload.currentSemester = semester;
     }
     if (form.role === "lecturer" && lecturerProgramIds.length > 0) {
       payload.programIds = lecturerProgramIds;
@@ -133,6 +145,8 @@ export default function AdminUsers() {
           refresh();
           setForm({ fullName: "", email: "", password: "", role: "student" });
           setProgramId("");
+          setStudyYear("");
+          setSemester("");
           setLecturerProgramIds([]);
           setShowCreate(false);
         },
@@ -247,23 +261,63 @@ export default function AdminUsers() {
               </SelectContent>
             </Select>
             {form.role === "student" && (
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Program</p>
-                <Select value={programId} onValueChange={setProgramId}>
-                  <SelectTrigger
-                    className="w-64"
-                    data-testid="select-create-program"
-                  >
-                    <SelectValue placeholder="Select program" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {programs?.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} ({p.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Program</p>
+                  <Select value={programId} onValueChange={setProgramId}>
+                    <SelectTrigger
+                      className="w-64"
+                      data-testid="select-create-program"
+                    >
+                      <SelectValue placeholder="Select program" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {programs?.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name} ({p.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Year of study</p>
+                    <Select value={studyYear} onValueChange={setStudyYear}>
+                      <SelectTrigger
+                        className="w-40"
+                        data-testid="select-create-study-year"
+                      >
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STUDY_YEARS.map((y) => (
+                          <SelectItem key={y} value={y}>
+                            {y}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Semester</p>
+                    <Select value={semester} onValueChange={setSemester}>
+                      <SelectTrigger
+                        className="w-40"
+                        data-testid="select-create-semester"
+                      >
+                        <SelectValue placeholder="Semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SEMESTERS.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            Semester {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             )}
             {form.role === "lecturer" && (

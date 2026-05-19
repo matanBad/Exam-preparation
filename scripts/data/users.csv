@@ -1,32 +1,32 @@
-id,full_name,email,password_hash,role,account_status,created_at,updated_at,profile_image_url,program_id
-1,Sam Fisher,student@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1
-2,Dr. Liat Levi,lecturer@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,
-3,Alex Adam,admin@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,admin,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,
-4,Noa Cohen,noa.student@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1
-5,Daniel Mizrahi,daniel.student@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1
-6,Maya Levi,maya.student@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1
-7,Dr. Amir Barak,amir.lecturer@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,
-10,Sivan Sanvetu,sivan.student@eps.com,$2b$10$tiI0aB1JUFDYXTQowuoMluLErMYeou9qZEyZmyV9XQYicqVWMNAAG,student,active,"""2026-05-18T18:42:47.179Z""","""2026-05-18T18:43:08.693Z""",,1
-11,Dr. Dana Cohen,dana.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
-12,Tal Ben-Ami,tal.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2
-13,Dr. Ron Shalev,ron.mechanical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
-14,Ori Mechanical,ori.mechanical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3
-15,Dr. Yael Katz,yael.chemical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
-16,Rina Chemical,rina.chemical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4
-17,Dr. Eyal Mor,eyal.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
-18,Lior IEM,lior.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5
-19,Dr. Gal Naveh,gal.electrical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,
-20,Eden Electrical,eden.electrical@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
-21,Tamar Computer Science,tamar.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7
-22,Avi Civil,avi.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2
-23,Hila Civil,hila.civil@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2
-24,Yossi Mechanical,yossi.mech@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3
-25,Nava Mechanical,nava.mech@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3
-26,Itai Chemical,itai.chem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4
-27,Shira Chemical,shira.chem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4
-28,Omer IEM,omer.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5
-29,Roni IEM,roni.iem@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5
-30,Tomer Electrical,tomer.ee@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
-31,Maya Electrical,maya.ee@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6
-32,Yuval CS,yuval.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7
-33,Liron CS,liron.cs@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7
+id,full_name,email,password_hash,role,account_status,created_at,updated_at,profile_image_url,program_id,current_study_year,current_semester,must_change_password
+1,Sam Fisher,student@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1.0,First,A,False
+2,Dr. Liat Levi,lecturer@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,,,,False
+3,Alex Adam,admin@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,admin,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,,,,False
+4,Noa Cohen,noa.cohen@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1.0,First,B,False
+5,Daniel Mizrahi,daniel.mizrahi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1.0,Second,A,False
+6,Maya Levi,maya.levi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,1.0,Second,B,False
+7,Dr. Amir Barak,amir.barak@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T15:23:50.304Z""","""2026-05-18T15:23:50.304Z""",,,,,True
+10,Sivan Sanvetu,sivan.sanvetu@ac.sce.ac.il,$2b$10$tiI0aB1JUFDYXTQowuoMluLErMYeou9qZEyZmyV9XQYicqVWMNAAG,student,active,"""2026-05-18T18:42:47.179Z""","""2026-05-18T18:43:08.693Z""",,1.0,Third,A,False
+11,Dr. Dana Cohen,dana.cohen@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,,,,True
+12,Tal Ben-Ami,tal.benami@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,2.0,First,A,False
+13,Dr. Ron Shalev,ron.shalev@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,,,,True
+14,Ori Mechanical,ori.mechanical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,3.0,First,A,False
+15,Dr. Yael Katz,yael.katz@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,,,,True
+16,Rina Chemical,rina.chemical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,4.0,First,A,False
+17,Dr. Eyal Mor,eyal.mor@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,,,,True
+18,Lior IEM,lior.iem@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,5.0,First,A,False
+19,Dr. Gal Naveh,gal.naveh@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,,,,True
+20,Eden Electrical,eden.electrical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,6.0,First,A,False
+21,Tamar Computer Science,tamar.computer.science@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T18:30:00.000Z""","""2026-05-18T18:30:00.000Z""",,7.0,First,A,False
+22,Yael Civil,yael.civil@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,2.0,First,B,False
+23,Omer Civil,omer.civil@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,2.0,Second,A,False
+24,Neta Mechanical,neta.mechanical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,3.0,First,B,False
+25,Amit Mechanical,amit.mechanical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,3.0,Second,A,False
+26,Noam Chemical,noam.chemical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,4.0,First,B,False
+27,Shira Chemical,shira.chemical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,4.0,Second,A,False
+28,Maya IEM,maya.iem@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,5.0,First,B,False
+29,Ido IEM,ido.iem@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,5.0,Second,A,False
+30,Roy Electrical,roy.electrical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,6.0,First,B,False
+31,Hila Electrical,hila.electrical@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,6.0,Second,A,False
+32,Ari Computer Science,ari.computer.science@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,7.0,First,B,False
+33,Dana Computer Science,dana.computer.science@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-18T20:00:00.000Z""","""2026-05-18T20:00:00.000Z""",,7.0,Second,A,False

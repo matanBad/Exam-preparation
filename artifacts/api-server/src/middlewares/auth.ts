@@ -33,6 +33,7 @@ export const requireAuth: RequestHandler = async (
       id: usersTable.id,
       accountStatus: usersTable.accountStatus,
       role: usersTable.role,
+      mustChangePassword: usersTable.mustChangePassword,
     })
     .from(usersTable)
     .where(eq(usersTable.id, payload.userId));
@@ -43,6 +44,22 @@ export const requireAuth: RequestHandler = async (
   if (user.accountStatus !== "active") {
     res.status(401).json({ error: "Account is not active" });
     return;
+  }
+  // When a user has a temporary password, block all protected endpoints
+  // except the ones strictly required to read their own profile and to
+  // change the password.
+  if (user.mustChangePassword) {
+    const allowed =
+      req.path === "/auth/me" ||
+      req.path === "/auth/me/password" ||
+      req.path === "/auth/logout";
+    if (!allowed) {
+      res.status(403).json({
+        error: "Password change required before continuing",
+        code: "password_change_required",
+      });
+      return;
+    }
   }
   req.auth = { ...payload, role: user.role as Role };
   next();

@@ -45,20 +45,28 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ component: Component, allowedRoles, ...rest }: any) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const token = getAuthToken();
   const user = getAuthUser();
   const allowed = !allowedRoles || (user && allowedRoles.includes(user.role));
+  // Force users with a temporary password (e.g. newly created lecturers) to
+  // change it before they can use anything else. They stay pinned to /account
+  // until the change succeeds.
+  const mustChange = !!user?.mustChangePassword;
+  const onAccount = location === "/account";
 
   useEffect(() => {
     if (!token || !user) {
       setLocation("/login");
+    } else if (mustChange && !onAccount) {
+      setLocation("/account");
     } else if (!allowed) {
       setLocation("/unauthorized");
     }
-  }, [token, user, allowed, setLocation]);
+  }, [token, user, allowed, mustChange, onAccount, setLocation]);
 
   if (!token || !user || !allowed) return null;
+  if (mustChange && !onAccount) return null;
 
   return (
     <AuthLayout>

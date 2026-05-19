@@ -22,13 +22,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const STUDY_YEARS = ["First", "Second", "Third", "Fourth"] as const;
+const SEMESTERS = ["A", "B"] as const;
+const ALL = "_all";
+
 export default function CoursesList() {
   const { data: courses, isLoading } = useListCourses();
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
   const isLecturer = user?.role === "lecturer";
+  const isStudent = user?.role === "student";
   const [search, setSearch] = useState("");
+  const [filterProgram, setFilterProgram] = useState<string>(ALL);
+  const [filterYear, setFilterYear] = useState<string>(ALL);
+  const [filterSemester, setFilterSemester] = useState<string>(ALL);
+  const [filterLecturer, setFilterLecturer] = useState<string>(ALL);
   const [showNew, setShowNew] = useState(false);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -40,7 +49,6 @@ export default function CoursesList() {
   const { data: programs } = useListPrograms({
     query: {
       queryKey: getListProgramsQueryKey(),
-      enabled: isPrivileged,
     },
   });
   const { data: lecturers } = useListUsers(
@@ -104,13 +112,80 @@ export default function CoursesList() {
         )}
       </div>
 
-      <Input
-        placeholder="Search by course code, name, or lecturer..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-md"
-        data-testid="input-search-courses"
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Search by course code, name, or lecturer..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+          data-testid="input-search-courses"
+        />
+        {!isLecturer && (
+          <Select value={filterProgram} onValueChange={setFilterProgram}>
+            <SelectTrigger
+              className="w-48"
+              data-testid="filter-program"
+            >
+              <SelectValue placeholder="Program" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All programs</SelectItem>
+              {programs?.map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-36" data-testid="filter-year">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All years</SelectItem>
+            {STUDY_YEARS.map((y) => (
+              <SelectItem key={y} value={y}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSemester} onValueChange={setFilterSemester}>
+          <SelectTrigger className="w-36" data-testid="filter-semester">
+            <SelectValue placeholder="Semester" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All semesters</SelectItem>
+            {SEMESTERS.map((s) => (
+              <SelectItem key={s} value={s}>
+                Semester {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isAdmin && (
+          <Select value={filterLecturer} onValueChange={setFilterLecturer}>
+            <SelectTrigger className="w-48" data-testid="filter-lecturer">
+              <SelectValue placeholder="Lecturer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All lecturers</SelectItem>
+              {Array.from(
+                new Map(
+                  (courses ?? [])
+                    .filter((c) => c.lecturerId && c.lecturerName)
+                    .map((c) => [c.lecturerId!, c.lecturerName!]),
+                ).entries(),
+              ).map(([id, nm]) => (
+                <SelectItem key={id} value={String(id)}>
+                  {nm}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {showNew && (
         <Card>
@@ -177,53 +252,82 @@ export default function CoursesList() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses
             ?.filter((c) => {
-              if (!search.trim()) return true;
-              const q = search.trim().toLowerCase();
-              return (
-                c.courseCode.toLowerCase().includes(q) ||
-                c.courseName.toLowerCase().includes(q) ||
-                (c.lecturerName ?? "").toLowerCase().includes(q)
-              );
+              if (search.trim()) {
+                const q = search.trim().toLowerCase();
+                if (
+                  !c.courseCode.toLowerCase().includes(q) &&
+                  !c.courseName.toLowerCase().includes(q) &&
+                  !(c.lecturerName ?? "").toLowerCase().includes(q)
+                ) {
+                  return false;
+                }
+              }
+              if (
+                filterProgram !== ALL &&
+                String(c.programId ?? "") !== filterProgram
+              ) {
+                return false;
+              }
+              if (filterYear !== ALL && c.studyYear !== filterYear) {
+                return false;
+              }
+              if (
+                filterSemester !== ALL &&
+                c.offeringSemester !== filterSemester
+              ) {
+                return false;
+              }
+              if (
+                filterLecturer !== ALL &&
+                String(c.lecturerId ?? "") !== filterLecturer
+              ) {
+                return false;
+              }
+              return true;
             })
             .map((c) => (
-            <Card key={c.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between gap-2">
-                  <span>{c.courseCode}</span>
-                  {isLecturer
-                    ? c.programName && (
-                        <span
-                          className="text-xs font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5"
-                          data-testid={`badge-program-${c.id}`}
-                        >
-                          {c.programName}
-                        </span>
-                      )
-                    : c.programCode && (
-                        <span
-                          className="text-xs font-medium rounded-full bg-primary/10 text-primary px-2 py-0.5"
-                          data-testid={`badge-program-${c.id}`}
-                        >
-                          {c.programCode}
+              <Link
+                key={c.id}
+                href={`/courses/${c.id}`}
+                data-testid={`card-course-${c.id}`}
+                className="block transition hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+              >
+                <Card className="h-full cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between gap-2">
+                      <span>{c.courseCode}</span>
+                      {c.studyYear && c.offeringSemester && (
+                        <span className="text-xs font-medium rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                          {c.studyYear} · Sem {c.offeringSemester}
                         </span>
                       )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-1">{c.courseName}</p>
-                {!isLecturer && c.lecturerName && (
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Lecturer: {c.lecturerName}
-                  </p>
-                )}
-                <Link
-                  href={`/courses/${c.id}`}
-                  className="text-primary hover:underline"
-                >
-                  View Details
-                </Link>
-              </CardContent>
-            </Card>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-medium mb-2">{c.courseName}</p>
+                    {isLecturer ? (
+                      c.programName && (
+                        <p className="text-xs text-muted-foreground">
+                          Program: {c.programName}
+                        </p>
+                      )
+                    ) : (
+                      <>
+                        {c.programName && (
+                          <p className="text-xs text-muted-foreground">
+                            Program: {c.programName}
+                          </p>
+                        )}
+                        {(isStudent || isAdmin) && c.lecturerName && (
+                          <p className="text-xs text-muted-foreground">
+                            Lecturer: {c.lecturerName}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
         </div>
       )}

@@ -41,6 +41,16 @@ export const usersTable = pgTable(
     programId: integer("program_id").references(() => programsTable.id, {
       onDelete: "set null",
     }),
+    // Students only: current academic year (First/Second/Third/Fourth) and
+    // semester (A/B). Drives the dashboard "current term" course filter.
+    currentStudyYear: text("current_study_year"),
+    currentSemester: text("current_semester"),
+    // Lecturers created by an admin must change the initial password on
+    // their first login. Cleared after a successful password change. Not
+    // used for students or admins.
+    mustChangePassword: boolean("must_change_password")
+      .notNull()
+      .default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -80,6 +90,11 @@ export const courseOfferingsTable = pgTable(
     lecturerId: integer("lecturer_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
+    // The academic year level the offering belongs to within its program
+    // (First/Second/Third/Fourth). Nullable for legacy rows but populated
+    // by the seed CSV. Each offering carries its own context because the
+    // same course can be offered in different programs at different years.
+    studyYear: text("study_year"),
     semester: text("semester"),
     academicYear: text("academic_year"),
     status: text("status").notNull().default("active"),

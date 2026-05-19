@@ -131,6 +131,9 @@ async function main() {
       accountStatus: u.account_status || "active",
       profileImageUrl: nullable(u.profile_image_url ?? ""),
       programId: intOrNull(u.program_id ?? ""),
+      currentStudyYear: nullable(u.current_study_year ?? ""),
+      currentSemester: nullable(u.current_semester ?? ""),
+      mustChangePassword: boolVal(u.must_change_password ?? ""),
     })),
   );
 
@@ -220,6 +223,7 @@ async function main() {
       courseId: Number(o.course_id),
       programId: Number(o.program_id),
       lecturerId: Number(o.lecturer_id),
+      studyYear: nullable(o.study_year ?? ""),
       semester: nullable(o.semester),
       academicYear: nullable(o.academic_year),
       status: o.status || "active",

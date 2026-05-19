@@ -1,6 +1,5 @@
-import { useAuthUser } from "@/lib/auth";
+import { useAuthUser, type EpsUser } from "@/lib/auth";
 import {
-  useGetUserCourses,
   useGetUserExams,
   useListCourses,
   useListQuestions,
@@ -9,9 +8,19 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 
-function StudentDashboard({ userId }: { userId: number }) {
-  const { data: courses } = useGetUserCourses(userId);
-  const { data: exams } = useGetUserExams(userId);
+function StudentDashboard({ user }: { user: EpsUser }) {
+  // Use the enriched courses list so we have offering studyYear/semester,
+  // then filter to the student's current term only.
+  const { data: allCourses } = useListCourses();
+  const { data: exams } = useGetUserExams(user.id);
+  const courses = (allCourses ?? []).filter((c) => {
+    if (!user.currentStudyYear || !user.currentSemester) return true;
+    if (c.studyYear == null || c.offeringSemester == null) return false;
+    return (
+      c.studyYear === user.currentStudyYear &&
+      c.offeringSemester === user.currentSemester
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -27,7 +36,15 @@ function StudentDashboard({ userId }: { userId: number }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Courses</CardTitle>
+            <CardTitle>
+              Current courses
+              {user.currentStudyYear && user.currentSemester && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  {user.currentStudyYear} year · Semester{" "}
+                  {user.currentSemester}
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {courses?.length ? (
@@ -283,7 +300,7 @@ export default function Dashboard() {
         </h1>
       </div>
 
-      {user.role === "student" && <StudentDashboard userId={user.id} />}
+      {user.role === "student" && <StudentDashboard user={user} />}
       {user.role === "lecturer" && <LecturerDashboard />}
       {user.role === "admin" && <AdminDashboardView />}
     </div>

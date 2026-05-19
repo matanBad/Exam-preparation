@@ -43,6 +43,26 @@ export const LoginResponse = zod.object({
       .describe(
         "Programs a lecturer teaches in (only populated for lecturers)",
       ),
+    currentStudyYear: zod
+      .union([
+        zod.literal("First"),
+        zod.literal("Second"),
+        zod.literal("Third"),
+        zod.literal("Fourth"),
+        zod.literal(null),
+      ])
+      .nullish()
+      .describe("Student's current year of study"),
+    currentSemester: zod
+      .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+      .nullish()
+      .describe("Student's current semester"),
+    mustChangePassword: zod
+      .boolean()
+      .optional()
+      .describe(
+        "True when the user has a system-assigned temporary password and must change it before using the app",
+      ),
   }),
 });
 
@@ -61,6 +81,10 @@ export const RegisterBody = zod.object({
   programId: zod
     .number()
     .describe("Program\/track the student is enrolling in"),
+  currentStudyYear: zod
+    .enum(["First", "Second", "Third", "Fourth"])
+    .describe("Student's current year of study"),
+  currentSemester: zod.enum(["A", "B"]).describe("Student's current semester"),
 });
 
 export const changeMyPasswordBodyNewPasswordMin = 6;
@@ -92,6 +116,26 @@ export const ChangeMyEmailResponse = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 
 /**
@@ -207,6 +251,26 @@ export const UpdateMyProfileImageResponse = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 
 /**
@@ -245,6 +309,26 @@ export const GetMeResponse = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 
 /**
@@ -287,6 +371,20 @@ export const ListCoursesResponseItem = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  studyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Study year of the matched offering"),
+  offeringSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Semester of the matched offering (A\/B)"),
 });
 export const ListCoursesResponse = zod.array(ListCoursesResponseItem);
 
@@ -327,6 +425,20 @@ export const GetCourseResponse = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  studyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Study year of the matched offering"),
+  offeringSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Semester of the matched offering (A\/B)"),
 });
 
 export const UpdateCourseParams = zod.object({
@@ -357,6 +469,20 @@ export const UpdateCourseResponse = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  studyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Study year of the matched offering"),
+  offeringSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Semester of the matched offering (A\/B)"),
 });
 
 export const ListCourseTopicsParams = zod.object({
@@ -427,6 +553,20 @@ export const GetUserCoursesResponseItem = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  studyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Study year of the matched offering"),
+  offeringSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Semester of the matched offering (A\/B)"),
 });
 export const GetUserCoursesResponse = zod.array(GetUserCoursesResponseItem);
 
@@ -835,6 +975,26 @@ export const ListUsersResponseItem = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 export const ListUsersResponse = zod.array(ListUsersResponseItem);
 
@@ -852,6 +1012,20 @@ export const CreateUserBody = zod.object({
     .array(zod.number())
     .optional()
     .describe("For role=lecturer: programs they teach in"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("For role=student: current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("For role=student: current semester"),
 });
 
 export const UpdateUserParams = zod.object({
@@ -881,6 +1055,26 @@ export const UpdateUserResponse = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 
 export const DeleteUserParams = zod.object({
@@ -908,6 +1102,26 @@ export const ListCourseMembersResponseItem = zod.object({
     .array(zod.number())
     .optional()
     .describe("Programs a lecturer teaches in (only populated for lecturers)"),
+  currentStudyYear: zod
+    .union([
+      zod.literal("First"),
+      zod.literal("Second"),
+      zod.literal("Third"),
+      zod.literal("Fourth"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe("Student's current year of study"),
+  currentSemester: zod
+    .union([zod.literal("A"), zod.literal("B"), zod.literal(null)])
+    .nullish()
+    .describe("Student's current semester"),
+  mustChangePassword: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when the user has a system-assigned temporary password and must change it before using the app",
+    ),
 });
 export const ListCourseMembersResponse = zod.array(
   ListCourseMembersResponseItem,

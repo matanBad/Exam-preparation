@@ -65,10 +65,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         accountStatus: user.accountStatus,
         profileImageUrl: user.profileImageUrl,
         programId: user.programId ?? null,
+        currentStudyYear: user.currentStudyYear ?? null,
+        currentSemester: user.currentSemester ?? null,
+        mustChangePassword: !!user.mustChangePassword,
       },
     }),
   );
 });
+
+const STUDENT_EMAIL_DOMAIN = "@ac.sce.ac.il";
 
 router.post("/auth/register", async (req, res): Promise<void> => {
   const parsed = RegisterBody.safeParse(req.body);
@@ -83,6 +88,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Full name is required" });
     return;
   }
+  if (!email.endsWith(STUDENT_EMAIL_DOMAIN)) {
+    res.status(400).json({
+      error: `Student email must end with ${STUDENT_EMAIL_DOMAIN}`,
+    });
+    return;
+  }
 
   const passwordHash = await hashPassword(password);
   const inserted = await db
@@ -94,6 +105,9 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       role: "student",
       accountStatus: "pending",
       programId: parsed.data.programId,
+      currentStudyYear: parsed.data.currentStudyYear,
+      currentSemester: parsed.data.currentSemester,
+      mustChangePassword: false,
     })
     .onConflictDoNothing({ target: usersTable.email })
     .returning();
@@ -149,6 +163,9 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       accountStatus: user.accountStatus,
       profileImageUrl: user.profileImageUrl,
       programId: user.programId ?? null,
+      currentStudyYear: user.currentStudyYear ?? null,
+      currentSemester: user.currentSemester ?? null,
+      mustChangePassword: !!user.mustChangePassword,
       ...(programIds !== undefined ? { programIds } : {}),
     }),
   );
@@ -182,7 +199,11 @@ router.patch(
     const passwordHash = await hashPassword(parsed.data.newPassword);
     await db
       .update(usersTable)
-      .set({ passwordHash, updatedAt: new Date() })
+      .set({
+        passwordHash,
+        mustChangePassword: false,
+        updatedAt: new Date(),
+      })
       .where(eq(usersTable.id, user.id));
     res.status(204).end();
   },

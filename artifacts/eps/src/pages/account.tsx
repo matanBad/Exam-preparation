@@ -5,6 +5,7 @@ import {
   useChangeMyPassword,
   useDeleteMyAccount,
   useUpdateMyProfileImage,
+  useListPrograms,
 } from "@workspace/api-client-react";
 import { useAuthUser, setAuthUser, clearAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,12 @@ export default function Account() {
   const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const updateProfileImage = useUpdateMyProfileImage();
+  const { data: programs } = useListPrograms();
+  const programName = user?.programId
+    ? (user.programName ??
+       programs?.find((p) => p.id === user.programId)?.name ??
+       null)
+    : null;
 
   const handleImageFile = (file: File) => {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -190,6 +197,12 @@ export default function Account() {
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
+          // Clear the temporary-password flag locally so the forced-redirect
+          // guard releases without a full reload, and so the warning banner
+          // disappears immediately.
+          if (user?.mustChangePassword) {
+            setAuthUser({ ...user, mustChangePassword: false });
+          }
           toast({ title: "Password updated" });
         },
         onError: (err: unknown) => {
@@ -209,8 +222,19 @@ export default function Account() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold">Account Mangement</h1>
+        <h1 className="text-3xl font-bold">Account Management</h1>
       </div>
+      {user.mustChangePassword && (
+        <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30">
+          <CardContent className="pt-6 text-sm">
+            <p className="font-medium">Please change your temporary password.</p>
+            <p className="text-muted-foreground mt-1">
+              Your account was created with a temporary password. Set a new
+              password below to start using the system.
+            </p>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
@@ -228,12 +252,30 @@ export default function Account() {
                 {user.fullName}
               </p>
               <p>
-                <span className="text-muted-foreground">Email: </span>
-                {user.email}
-              </p>
-              <p>
                 <span className="text-muted-foreground">Role: </span>
                 <span className="capitalize">{user.role}</span>
+              </p>
+              {user.role === "student" && (
+                <p>
+                  <span className="text-muted-foreground">Program: </span>
+                  {programName ?? "—"}
+                </p>
+              )}
+              {user.role === "student" &&
+                (user.currentStudyYear || user.currentSemester) && (
+                  <p>
+                    <span className="text-muted-foreground">
+                      Year / semester:{" "}
+                    </span>
+                    {user.currentStudyYear ?? "—"}
+                    {user.currentSemester
+                      ? ` · Semester ${user.currentSemester}`
+                      : ""}
+                  </p>
+                )}
+              <p>
+                <span className="text-muted-foreground">Email: </span>
+                {user.email}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <input

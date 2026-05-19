@@ -5,6 +5,8 @@
  * Exam Preparation System (EPS) API
  * OpenAPI spec version: 0.1.0
  */
+import type { CourseOfferingSemester } from "./courseOfferingSemester";
+import type { CourseStudyYear } from "./courseStudyYear";
 
 export interface Course {
   id: number;
@@ -20,4 +22,8 @@ export interface Course {
   programCode?: string | null;
   lecturerId?: number | null;
   lecturerName?: string | null;
+  /** Study year of the matched offering */
+  studyYear?: CourseStudyYear;
+  /** Semester of the matched offering (A/B) */
+  offeringSemester?: CourseOfferingSemester;
 }

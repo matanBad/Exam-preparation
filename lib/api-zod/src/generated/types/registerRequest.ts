@@ -5,6 +5,8 @@
  * Exam Preparation System (EPS) API
  * OpenAPI spec version: 0.1.0
  */
+import type { RegisterRequestCurrentSemester } from "./registerRequestCurrentSemester";
+import type { RegisterRequestCurrentStudyYear } from "./registerRequestCurrentStudyYear";
 
 export interface RegisterRequest {
   /** @minLength 1 */
@@ -14,4 +16,8 @@ export interface RegisterRequest {
   password: string;
   /** Program/track the student is enrolling in */
   programId: number;
+  /** Student's current year of study */
+  currentStudyYear: RegisterRequestCurrentStudyYear;
+  /** Student's current semester */
+  currentSemester: RegisterRequestCurrentSemester;
 }
