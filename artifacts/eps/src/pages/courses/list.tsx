@@ -344,7 +344,7 @@ export default function CoursesList() {
                     <CardTitle className="flex items-center justify-between gap-2">
                       <span>{c.courseCode}</span>
                       {c.studyYear && c.offeringSemester && (
-                        <span className="text-xs font-medium rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                        <span className="text-xs font-medium rounded-full border border-border text-foreground px-2 py-0.5">
                           {c.studyYear} · Sem {c.offeringSemester}
                         </span>
                       )}
