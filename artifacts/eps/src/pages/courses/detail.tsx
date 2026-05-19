@@ -294,10 +294,13 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   // subtopic" form and Save/Cancel for the root rename.
   const renderPrivilegedRoot = (t: Topic) => {
     const children = childrenOf(t.id);
+    const hasChildren = children.length > 0;
     const isEditing = editingRootId === t.id;
-    // Privileged users only see subtopics when actively editing a root.
-    // Non-edit rows stay collapsed, displaying just the (n) count.
-    const childrenToRender = children;
+    // Outside edit mode, privileged users can expand/collapse a root to
+    // preview its subtopics (read-only) — same behaviour as students.
+    // Search auto-expands ancestors of matching subtopics.
+    const isOpen = autoExpanded.has(t.id);
+    const childrenToRender = isEditing ? children : visibleChildrenOf(t.id);
     return (
       <li key={t.id} className="p-3 border rounded-md">
         {isEditing ? (
@@ -322,15 +325,36 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </div>
         ) : (
           <div className="flex justify-between items-center">
-            <div
-              className="flex items-center gap-2"
-              data-testid={`row-topic-${t.id}`}
-            >
-              <span>{t.topicName}</span>
-              <span className="text-xs text-muted-foreground">
-                ({children.length})
-              </span>
-            </div>
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={() => toggleExpand(t.id)}
+                className="flex items-center gap-2 text-left hover:text-primary focus:outline-none"
+                data-testid={`btn-toggle-topic-${t.id}`}
+                aria-expanded={isOpen}
+              >
+                <span
+                  className="inline-block w-3 text-xs text-muted-foreground transition-transform"
+                  aria-hidden
+                >
+                  {isOpen ? "▾" : "▸"}
+                </span>
+                <span>{t.topicName}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({children.length})
+                </span>
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-2 ml-5"
+                data-testid={`row-topic-${t.id}`}
+              >
+                <span>{t.topicName}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({children.length})
+                </span>
+              </div>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -342,7 +366,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {isEditing && (
+        {(isEditing || (isOpen && hasChildren)) && (
           <ul className="space-y-2 mt-3 ml-5">
             {childrenToRender.map((c) => (
               <li
@@ -350,17 +374,20 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                 className="p-2 border rounded-md flex justify-between items-center"
               >
                 <span>{c.topicName}</span>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDeleteSubtopic(c.id)}
-                  disabled={deleteTopic.isPending}
-                  data-testid={`btn-delete-subtopic-${c.id}`}
-                >
-                  Delete
-                </Button>
+                {isEditing && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDeleteSubtopic(c.id)}
+                    disabled={deleteTopic.isPending}
+                    data-testid={`btn-delete-subtopic-${c.id}`}
+                  >
+                    Delete
+                  </Button>
+                )}
               </li>
             ))}
+            {isEditing && (
             <li
                 className="p-2 border rounded-md border-dashed"
                 data-testid={`add-subtopic-${t.id}`}
@@ -383,6 +410,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                   </Button>
                 </div>
               </li>
+            )}
           </ul>
         )}
 
