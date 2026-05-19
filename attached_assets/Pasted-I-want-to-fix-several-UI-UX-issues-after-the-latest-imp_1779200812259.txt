@@ -1,0 +1,164 @@
+I want to fix several UI/UX issues after the latest implementation.
+
+Important:
+Do NOT start changing files immediately.
+First analyze the current project and tell me:
+1. Which files you plan to edit.
+2. Whether any DB/schema change is required.
+3. How you will implement the fixes without breaking existing features.
+4. Wait for my approval before applying changes.
+
+Critical rules:
+1. Do not change login logic.
+2. Do not change existing role-based permissions.
+3. Do not delete or replace DB files.
+4. Do not change questions.course_id.
+5. Do not change topics.course_id.
+6. Keep Strategy A:
+   - courses = shared course catalog
+   - course_offerings = course taught by a specific lecturer in a specific program
+   - topics.course_id and questions.course_id stay connected to the parent course
+7. Do not move topics/questions to course_offerings.
+8. Use course_offerings to identify lecturer, program, study_year, and semester context.
+9. Do not modify unrelated UI, routes, APIs, authentication, or permissions.
+
+Implement these fixes:
+
+1. Admin Users Accounts layout
+
+In the Admin Users Accounts page, fix the header layout.
+
+Desired layout:
+
+Users Accounts                    [deletion requests] [New user]
+
+[All roles]
+
+Meaning:
+- Top row left side: “Users Accounts” title
+- Top row right side: “deletion requests” button and “New user” button
+- Second row: role filter dropdown, for example “All roles”, “Students”, “Lecturers”, “Admins”
+
+Do not place the role filter in the same row as the action buttons.
+
+Also remove the redundant active filter chip under the title, for example:
+Role: Student ×
+
+The selected role is already visible inside the dropdown, so this chip is unnecessary.
+
+Do not change the filtering logic.
+Only change layout and remove the redundant active role chip display.
+
+2. Admin Courses page layout cleanup
+
+The Admin Courses page is currently too cluttered.
+
+Simplify the filters.
+
+Remove these filters from the Admin Courses page:
+- Study year filter / All years
+- Semester filter / All semesters
+
+Keep only:
+- Search input
+- Program filter
+- Lecturer filter
+- Create Course button
+
+Desired layout:
+
+Courses                                      [Create Course]
+
+[Search by course code, name, or lecturer]  [All programs] [All lecturers]
+
+Keep Create Course as the primary action in the page header.
+
+The search and remaining filters should be placed together in one clean, compact filter row below the header.
+
+Do not remove year/semester data from DB.
+Do not remove year/semester filters from Student or Lecturer pages if they are used there.
+This change applies only to the Admin Courses page.
+
+3. Admin Question Bank: remove New Question button
+
+In the Admin Question Bank page, remove the “New Question” button.
+
+Admins should not create new questions from the Admin Question Bank page.
+
+Keep the “Questions for approval” button with the red badge.
+
+Do not remove “New Question” from the Lecturer Question Bank page.
+Lecturers should still be able to create questions according to the existing permissions.
+
+Do not change approval permissions.
+
+4. Lecturer Profile page: add programs and courses taught count
+
+In the Lecturer Profile page, show the lecturer’s program context and number of courses taught.
+
+Use this exact order:
+
+1. Name
+2. Role
+3. Program(s)
+4. Courses taught
+5. Email
+6. Upload picture
+
+Program(s):
+Show the full names of the programs where the lecturer teaches, based on:
+course_offerings.program_id → programs.name
+
+Do not show only abbreviations such as SE, CS, EE, or ME.
+
+Courses taught:
+Show only the number of courses/course offerings taught by the lecturer.
+Do not show the full course list in the profile page.
+
+Count courses taught using:
+course_offerings.lecturer_id = current logged-in lecturer id
+
+If the same course is taught by the same lecturer in multiple programs, count each course offering separately.
+
+Example:
+Name: Dr. Amir Barak
+Role: Lecturer
+Program(s): Software Engineering, Computer Science
+Courses taught: 6
+Email: amir.barak@sce.ac.il
+Upload picture
+
+Do not expose courses or programs not connected to the logged-in lecturer.
+
+Validation after implementation:
+Verify the following:
+
+1. Login still works.
+2. Role-based permissions still work.
+3. Admin Users Accounts header matches the requested layout.
+4. The redundant “Role: Student ×” chip no longer appears.
+5. Role filtering still works.
+6. Admin Courses page no longer shows year/semester filters.
+7. Admin Courses page still supports search, program filter, and lecturer filter.
+8. Create Course still works.
+9. Admin Question Bank no longer shows New Question.
+10. Lecturer Question Bank still shows New Question.
+11. Questions for approval still appears for Admin with the red badge.
+12. Lecturer Profile shows fields in the requested order.
+13. Lecturer Profile shows full Program names.
+14. Lecturer Profile shows Courses taught count.
+15. questions.course_id and topics.course_id were not changed.
+16. Strategy A was preserved.
+17. No unrelated logic, routes, APIs, authentication, permissions, or DB structure were modified.
+
+Before making changes:
+Give me a short implementation plan and wait for my approval.
+
+After making changes:
+Summarize exactly:
+- Which files were edited.
+- What was changed.
+- Whether any DB/schema change was required.
+- Confirm login logic was not changed.
+- Confirm permissions were not changed.
+- Confirm Strategy A was preserved.
