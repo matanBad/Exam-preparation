@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAuthUser } from "@/lib/auth";
 
@@ -440,7 +441,8 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex justify-between items-start gap-3 flex-wrap">
+        <div>
         <h1 className="text-3xl font-bold">
           {course.courseCode}: {course.courseName}
         </h1>
@@ -463,6 +465,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
             </span>
           )}
         </div>
+        </div>
+        <Link href="/courses">
+          <Button
+            type="button"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            data-testid="btn-return"
+          >
+            Return
+          </Button>
+        </Link>
       </div>
 
       <Card>

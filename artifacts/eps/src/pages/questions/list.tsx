@@ -282,8 +282,8 @@ export default function QuestionsList() {
             // Selected-course view (regular or approval): only Return.
             <Button
               type="button"
-              variant="outline"
               onClick={returnToOverview}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="btn-return"
             >
               Return
@@ -292,8 +292,8 @@ export default function QuestionsList() {
             // Approval overview: only Return (back to regular Question Bank).
             <Button
               type="button"
-              variant="outline"
               onClick={exitApproval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               data-testid="btn-return"
             >
               Return
@@ -322,7 +322,12 @@ export default function QuestionsList() {
               )}
               {!isAdmin && (
                 <Link href="/lecturer/questions/new">
-                  <Button data-testid="btn-new-question">New Question</Button>
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    data-testid="btn-new-question"
+                  >
+                    Create Question
+                  </Button>
                 </Link>
               )}
             </>

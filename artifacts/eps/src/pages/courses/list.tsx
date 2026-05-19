@@ -121,11 +121,6 @@ export default function CoursesList() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Courses</h1>
-        {isAdmin && (
-          <Button onClick={() => setShowNew(!showNew)}>
-            {showNew ? "Cancel" : "Create Course"}
-          </Button>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -219,6 +214,19 @@ export default function CoursesList() {
               ))}
             </SelectContent>
           </Select>
+        )}
+        {isAdmin && (
+          <Button
+            onClick={() => setShowNew(!showNew)}
+            className={
+              showNew
+                ? "ml-auto"
+                : "ml-auto bg-green-600 hover:bg-green-700 text-white"
+            }
+            data-testid="btn-create-course"
+          >
+            {showNew ? "Cancel" : "Create Course"}
+          </Button>
         )}
       </div>
 

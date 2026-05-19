@@ -206,8 +206,13 @@ export default function AdminUsers() {
               deletion requests
             </Button>
           </Link>
-          <Button onClick={() => setShowCreate((v) => !v)}>
-            {showCreate ? "Cancel" : "New user"}
+          <Button
+            onClick={() => setShowCreate((v) => !v)}
+            className={
+              showCreate ? undefined : "bg-green-600 hover:bg-green-700 text-white"
+            }
+          >
+            {showCreate ? "Cancel" : "Create User"}
           </Button>
         </div>
       </div>
@@ -406,8 +411,12 @@ export default function AdminUsers() {
             {createError && (
               <p className="text-sm text-destructive">{createError}</p>
             )}
-            <Button onClick={handleCreate} disabled={createUser.isPending}>
-              {createUser.isPending ? "Creating..." : "Create user"}
+            <Button
+              onClick={handleCreate}
+              disabled={createUser.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {createUser.isPending ? "Creating..." : "Create User"}
             </Button>
           </CardContent>
         </Card>
