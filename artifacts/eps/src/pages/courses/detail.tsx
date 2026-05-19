@@ -85,10 +85,12 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   };
 
   const [newTopic, setNewTopic] = useState("");
-  const [newParent, setNewParent] = useState<number | "">("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // editingRootId tracks which root topic is currently in edit mode (only one
+  // at a time). In edit mode we auto-expand that root, allow rename, show
+  // Delete next to subtopics, and expose an inline "Add subtopic" form.
+  const [editingRootId, setEditingRootId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
-  const [editParent, setEditParent] = useState<number | "">("");
+  const [newSubtopicName, setNewSubtopicName] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
   const isStudent = user?.role === "student";
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -104,54 +106,89 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getListCourseTopicsQueryKey(id) });
 
-  const handleAdd = () => {
+  const handleAddRoot = () => {
     if (!newTopic.trim()) return;
     createTopic.mutate(
       {
         id,
-        data: {
-          topicName: newTopic.trim(),
-          parentTopicId: newParent === "" ? null : newParent,
-        },
+        data: { topicName: newTopic.trim(), parentTopicId: null },
       },
       {
         onSuccess: () => {
           refresh();
           setNewTopic("");
-          setNewParent("");
         },
       },
     );
   };
 
   const startEdit = (t: Topic) => {
-    setEditingId(t.id);
+    setEditingRootId(t.id);
     setEditName(t.topicName);
-    setEditParent(t.parentTopicId ?? "");
+    setNewSubtopicName("");
+  };
+  const cancelEdit = () => {
+    setEditingRootId(null);
+    setEditName("");
+    setNewSubtopicName("");
   };
 
   const handleSaveEdit = () => {
-    if (editingId == null || !editName.trim()) return;
+    if (editingRootId == null || !editName.trim()) return;
     updateTopic.mutate(
       {
-        id: editingId,
-        data: {
-          topicName: editName.trim(),
-          parentTopicId: editParent === "" ? null : editParent,
-        },
+        id: editingRootId,
+        data: { topicName: editName.trim() },
       },
       {
         onSuccess: () => {
           refresh();
-          setEditingId(null);
+          cancelEdit();
         },
       },
     );
   };
 
-  const handleDelete = (topicId: number) => {
-    if (!confirm("Delete this topic? Any subtopics will be moved to top level.")) return;
-    deleteTopic.mutate({ id: topicId }, { onSuccess: refresh });
+  const handleDeleteRoot = (topicId: number) => {
+    if (
+      !confirm(
+        "Delete this topic and any of its subtopics? This cannot be undone.",
+      )
+    )
+      return;
+    deleteTopic.mutate(
+      { id: topicId },
+      {
+        onSuccess: () => {
+          refresh();
+          cancelEdit();
+        },
+      },
+    );
+  };
+
+  const handleDeleteSubtopic = (subtopicId: number) => {
+    if (!confirm("Delete this subtopic? This cannot be undone.")) return;
+    deleteTopic.mutate({ id: subtopicId }, { onSuccess: refresh });
+  };
+
+  const handleAddSubtopic = (parentId: number) => {
+    if (!newSubtopicName.trim()) return;
+    createTopic.mutate(
+      {
+        id,
+        data: {
+          topicName: newSubtopicName.trim(),
+          parentTopicId: parentId,
+        },
+      },
+      {
+        onSuccess: () => {
+          refresh();
+          setNewSubtopicName("");
+        },
+      },
+    );
   };
 
   if (loadingCourse || loadingTopics) return <p>Loading...</p>;
@@ -163,10 +200,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   // Filter topics by search: a topic matches if its name contains the query OR
   // any descendant matches (so the parent chain stays visible).
   const q = topicSearch.trim().toLowerCase();
-  const subtreeMatches = (t: Topic): boolean => {
-    if (t.topicName.toLowerCase().includes(q)) return true;
-    return childrenOf(t.id).some(subtreeMatches);
-  };
   const visibleIds = new Set<number>();
   if (q) {
     for (const t of all) {
@@ -196,7 +229,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   // Helper for filtered children
   const visibleChildrenOf = (pid: number) =>
     childrenOf(pid).filter(isVisible);
-  void subtreeMatches;
 
   // For students, when a search matches a subtopic, auto-expand its ancestor
   // chain so the matching child is reachable.
@@ -213,88 +245,166 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
     }
   }
 
-  const renderTopic = (t: Topic, depth: number) => {
+  // Student rendering: collapsible tree (unchanged behaviour).
+  const renderStudentTopic = (t: Topic, depth: number) => {
     const children = visibleChildrenOf(t.id);
     const hasChildren = children.length > 0;
-    const isOpen = !isStudent || autoExpanded.has(t.id);
+    const isOpen = autoExpanded.has(t.id);
     return (
       <li
         key={t.id}
         className="p-3 border rounded-md"
         style={{ marginLeft: depth * 20 }}
       >
-        {editingId === t.id ? (
-          <div className="space-y-2">
-            <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={editParent}
-              onChange={(e) =>
-                setEditParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
-              }
+        <div className="flex justify-between items-center">
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={() => toggleExpand(t.id)}
+              className="flex items-center gap-2 text-left hover:text-primary focus:outline-none"
+              data-testid={`btn-toggle-topic-${t.id}`}
             >
-              <option value="">No parent (top-level topic)</option>
-              {all
-                .filter((x) => x.id !== t.id && x.parentTopicId == null)
-                .map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.topicName}
-                  </option>
-                ))}
-            </select>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleSaveEdit} disabled={updateTopic.isPending}>
-                Save
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                Cancel
+              <span
+                className="inline-block w-3 text-xs text-muted-foreground transition-transform"
+                aria-hidden
+              >
+                {isOpen ? "▾" : "▸"}
+              </span>
+              <span>{t.topicName}</span>
+              <span className="text-xs text-muted-foreground">
+                ({children.length})
+              </span>
+            </button>
+          ) : (
+            <span className="ml-5">{t.topicName}</span>
+          )}
+        </div>
+        {hasChildren && isOpen && (
+          <ul className="space-y-2 mt-2">
+            {children.map((c) => renderStudentTopic(c, depth + 1))}
+          </ul>
+        )}
+      </li>
+    );
+  };
+
+  // Privileged rendering: roots only by default with a (n) subtopic count and
+  // an Edit button. Clicking Edit puts that root into edit mode where the
+  // subtopics are revealed with Delete actions, plus an inline "Add new
+  // subtopic" form and Save/Cancel for the root rename.
+  const renderPrivilegedRoot = (t: Topic) => {
+    const children = childrenOf(t.id);
+    const isEditing = editingRootId === t.id;
+    // Privileged users only see subtopics when actively editing a root.
+    // Non-edit rows stay collapsed, displaying just the (n) count.
+    const childrenToRender = children;
+    return (
+      <li key={t.id} className="p-3 border rounded-md">
+        {isEditing ? (
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="max-w-md"
+                data-testid={`input-edit-topic-${t.id}`}
+              />
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDeleteRoot(t.id)}
+                disabled={deleteTopic.isPending}
+                data-testid={`btn-delete-topic-${t.id}`}
+              >
+                Delete Topic
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex justify-between items-center">
-            {isStudent && hasChildren ? (
-              <button
-                type="button"
-                onClick={() => toggleExpand(t.id)}
-                className="flex items-center gap-2 text-left hover:text-primary focus:outline-none"
-                data-testid={`btn-toggle-topic-${t.id}`}
+            <div
+              className="flex items-center gap-2"
+              data-testid={`row-topic-${t.id}`}
+            >
+              <span>{t.topicName}</span>
+              <span className="text-xs text-muted-foreground">
+                ({children.length})
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => startEdit(t)}
+              data-testid={`btn-edit-topic-${t.id}`}
+            >
+              Edit
+            </Button>
+          </div>
+        )}
+
+        {isEditing && (
+          <ul className="space-y-2 mt-3 ml-5">
+            {childrenToRender.map((c) => (
+              <li
+                key={c.id}
+                className="p-2 border rounded-md flex justify-between items-center"
               >
-                <span
-                  className="inline-block w-3 text-xs text-muted-foreground transition-transform"
-                  aria-hidden
-                >
-                  {isOpen ? "▾" : "▸"}
-                </span>
-                <span>{t.topicName}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({children.length})
-                </span>
-              </button>
-            ) : (
-              <span className={isStudent ? "ml-5" : ""}>{t.topicName}</span>
-            )}
-            {isPrivileged && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => startEdit(t)}>
-                  Edit
-                </Button>
+                <span>{c.topicName}</span>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDelete(t.id)}
+                  onClick={() => handleDeleteSubtopic(c.id)}
                   disabled={deleteTopic.isPending}
+                  data-testid={`btn-delete-subtopic-${c.id}`}
                 >
                   Delete
                 </Button>
-              </div>
-            )}
-          </div>
-        )}
-        {hasChildren && isOpen && (
-          <ul className="space-y-2 mt-2">
-            {children.map((c) => renderTopic(c, depth + 1))}
+              </li>
+            ))}
+            <li
+                className="p-2 border rounded-md border-dashed"
+                data-testid={`add-subtopic-${t.id}`}
+              >
+                <div className="flex gap-2 flex-wrap">
+                  <Input
+                    placeholder="New subtopic name"
+                    value={newSubtopicName}
+                    onChange={(e) => setNewSubtopicName(e.target.value)}
+                    className="max-w-md"
+                    data-testid={`input-new-subtopic-${t.id}`}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleAddSubtopic(t.id)}
+                    disabled={createTopic.isPending || !newSubtopicName.trim()}
+                    data-testid={`btn-add-subtopic-${t.id}`}
+                  >
+                    Add new subtopic
+                  </Button>
+                </div>
+              </li>
           </ul>
+        )}
+
+        {isEditing && (
+          <div className="flex gap-2 mt-3">
+            <Button
+              size="sm"
+              onClick={handleSaveEdit}
+              disabled={updateTopic.isPending || !editName.trim()}
+              data-testid={`btn-save-topic-${t.id}`}
+            >
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={cancelEdit}
+              data-testid={`btn-cancel-edit-topic-${t.id}`}
+            >
+              Cancel
+            </Button>
+          </div>
         )}
       </li>
     );
@@ -340,7 +450,9 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
             data-testid="input-search-topics"
           />
           <ul className="space-y-2 mb-6">
-            {roots.map((t) => renderTopic(t, 0))}
+            {roots.map((t) =>
+              isStudent ? renderStudentTopic(t, 0) : renderPrivilegedRoot(t),
+            )}
             {all.length === 0 && (
               <p className="text-muted-foreground">No topics yet.</p>
             )}
@@ -359,23 +471,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                 value={newTopic}
                 onChange={(e) => setNewTopic(e.target.value)}
               />
-              <select
-                className="border rounded px-2 py-1 w-full"
-                value={newParent}
-                onChange={(e) =>
-                  setNewParent(e.target.value === "" ? "" : parseInt(e.target.value, 10))
-                }
-              >
-                <option value="">No parent (top-level topic)</option>
-                {all
-                  .filter((t) => t.parentTopicId == null)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.topicName} (add as subtopic)
-                    </option>
-                  ))}
-              </select>
-              <Button onClick={handleAdd} disabled={createTopic.isPending}>
+              <Button onClick={handleAddRoot} disabled={createTopic.isPending}>
                 Add Topic
               </Button>
             </div>

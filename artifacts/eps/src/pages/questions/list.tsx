@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X, ChevronLeft } from "lucide-react";
 import { getAuthUser } from "@/lib/auth";
 import {
   Select,
@@ -23,6 +22,9 @@ import {
 
 const ALL = "_all";
 const STATUSES = ["draft", "approved", "archived"] as const;
+// Statuses selectable in regular (non-approval) mode — draft/pending live in
+// the dedicated approval flow.
+const REGULAR_STATUSES = ["approved", "archived"] as const;
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 const PENDING_STATUSES = ["draft", "pending"] as const;
 
@@ -33,9 +35,19 @@ export default function QuestionsList() {
     const v = searchParams.get("difficulty");
     return v && (DIFFICULTIES as readonly string[]).includes(v) ? v : ALL;
   })();
+  // Approval mode is a UI flag carried in the URL (?approval=1). It does not
+  // change any server scope: server still enforces role-based access. We
+  // additionally filter to pending/draft questions client-side and (for
+  // lecturers) restrict to createdBy === me.id.
+  const approval = searchParams.get("approval") === "1";
+  // In approval mode the status filter is locked (pending/draft) and not
+  // user-controllable; in regular mode the UI only exposes Approved/Archived.
   const status = (() => {
+    if (approval) return ALL;
     const v = searchParams.get("status");
-    return v && (STATUSES as readonly string[]).includes(v) ? v : ALL;
+    // Outside approval mode only Approved/Archived are addressable via URL;
+    // pending/draft are reachable only through the approval flow.
+    return v && (REGULAR_STATUSES as readonly string[]).includes(v) ? v : ALL;
   })();
 
   const setParam = (key: string, value: string) => {
@@ -52,6 +64,42 @@ export default function QuestionsList() {
   const setCourseId = (v: string) => setParam("courseId", v);
   const setDifficulty = (v: string) => setParam("difficulty", v);
   const setStatus = (v: string) => setParam("status", v);
+  const enterApproval = () => {
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        out.set("approval", "1");
+        out.delete("courseId");
+        out.delete("status");
+        out.delete("difficulty");
+        return out;
+      },
+      { replace: true },
+    );
+  };
+  const exitApproval = () => {
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        out.delete("approval");
+        out.delete("courseId");
+        return out;
+      },
+      { replace: true },
+    );
+  };
+  // Selected-course "Return" goes back to the course-cards overview within
+  // the current mode (regular or approval), preserving approval=1 if set.
+  const returnToOverview = () => {
+    setSearchParams(
+      (sp) => {
+        const out = new URLSearchParams(sp);
+        out.delete("courseId");
+        return out;
+      },
+      { replace: true },
+    );
+  };
 
   const [q, setQ] = useState("");
   const me = getAuthUser();
@@ -103,134 +151,170 @@ export default function QuestionsList() {
 
   const isPrivilegedSearch =
     (me?.role === "lecturer" || me?.role === "admin") && q.trim().length > 0;
-  const questions = isPrivilegedSearch
-    ? (allQuestions ?? []).filter((qu) => {
-        if (
-          courseId !== ALL &&
-          qu.courseId !== parseInt(courseId, 10)
-        )
-          return false;
-        if (difficulty !== ALL && qu.difficultyLevel !== difficulty) return false;
-        if (status !== ALL && qu.status !== status) return false;
-        const needle = q.trim().toLowerCase();
-        const meta = courseMeta.get(qu.courseId);
-        const hay = [
-          qu.title,
-          qu.questionText,
-          qu.topicName ?? "",
-          qu.courseName ?? meta?.courseName ?? "",
-          meta?.courseCode ?? "",
-          meta?.programName ?? "",
-          meta?.lecturerName ?? "",
-        ]
-          .join(" \u0000 ")
-          .toLowerCase();
-        return hay.includes(needle);
-      })
-    : serverQuestions;
+  // Pending/draft questions in scope for the current viewer. Lecturers only
+  // see their own pending items; admins see everything pending. This is the
+  // source for both the course-card pending counts in approval mode and the
+  // approval-mode selected-course question list.
+  const pendingScoped = (allQuestions ?? []).filter((qu) => {
+    if (!(PENDING_STATUSES as readonly string[]).includes(qu.status))
+      return false;
+    if (isLecturer && me && qu.createdBy !== me.id) return false;
+    return true;
+  });
+  // In approval mode the question list is always derived from the
+  // pending-scoped client set (so lecturer scoping by createdBy is applied
+  // consistently). Selected-course view further narrows to that course.
+  const baseList = approval
+    ? pendingScoped.filter((qu) =>
+        courseId !== ALL ? qu.courseId === parseInt(courseId, 10) : true,
+      )
+    : isPrivilegedSearch
+      ? (allQuestions ?? [])
+      : (serverQuestions ?? []);
+  const questions =
+    approval || isPrivilegedSearch
+      ? baseList.filter((qu) => {
+          if (
+            courseId !== ALL &&
+            qu.courseId !== parseInt(courseId, 10)
+          )
+            return false;
+          if (difficulty !== ALL && qu.difficultyLevel !== difficulty)
+            return false;
+          if (!approval && status !== ALL && qu.status !== status) return false;
+          if (!q.trim()) return true;
+          const needle = q.trim().toLowerCase();
+          const meta = courseMeta.get(qu.courseId);
+          const hay = [
+            qu.title,
+            qu.questionText,
+            qu.topicName ?? "",
+            qu.courseName ?? meta?.courseName ?? "",
+            meta?.courseCode ?? "",
+            meta?.programName ?? "",
+            meta?.lecturerName ?? "",
+          ]
+            .join(" \u0000 ")
+            .toLowerCase();
+          return hay.includes(needle);
+        })
+      : baseList;
   const archive = useArchiveQuestion();
   const queryClient = useQueryClient();
 
-  // When no course is selected and no other filters are active, show the
-  // course-cards overview + pending approval shortcut for lecturers/admins.
-  // Any active filter (status/difficulty/search) leaves overview so users can
-  // see the resulting filtered list (e.g. pending-approval shortcut).
+  // Course-cards overview is shown when no course is selected. In regular
+  // mode we also gate it on the other filters being empty so an explicit
+  // status/difficulty filter drops the user into the flat list. In approval
+  // mode the overview is always shown when no course is selected.
   const showOverview =
     isPrivileged &&
     courseId === ALL &&
-    status === ALL &&
-    difficulty === ALL &&
-    !q;
+    (approval || (status === ALL && difficulty === ALL && !q));
 
-  // Per-course question counts derived from the unfiltered query.
-  const countsByCourse = new Map<number, number>();
-  for (const q of allQuestions ?? []) {
-    countsByCourse.set(q.courseId, (countsByCourse.get(q.courseId) ?? 0) + 1);
+  // Per-course pending counts (used in approval-mode overview).
+  const pendingByCourse = new Map<number, number>();
+  for (const qu of pendingScoped) {
+    pendingByCourse.set(
+      qu.courseId,
+      (pendingByCourse.get(qu.courseId) ?? 0) + 1,
+    );
   }
-  const pendingCount = (allQuestions ?? []).filter((q) =>
-    (PENDING_STATUSES as readonly string[]).includes(q.status),
-  ).length;
+  // Per-course total counts (used in regular-mode overview).
+  const countsByCourse = new Map<number, number>();
+  for (const qu of allQuestions ?? []) {
+    countsByCourse.set(qu.courseId, (countsByCourse.get(qu.courseId) ?? 0) + 1);
+  }
+  const pendingCount = pendingScoped.length;
+  // Courses to show in the approval-mode overview: only those with pending.
+  const approvalCourses = (courses ?? []).filter(
+    (c) => (pendingByCourse.get(c.id) ?? 0) > 0,
+  );
+  // The selected course (when a card has been opened) — used for the title
+  // in the selected-course view.
+  const selectedCourse =
+    courseId !== ALL
+      ? (courses ?? []).find((c) => c.id === parseInt(courseId, 10))
+      : undefined;
 
   const handleArchive = (id: number) => {
     archive.mutate(
       { id },
       {
         onSuccess: () => {
+          // Invalidate every variant of the questions list (filtered list,
+          // unfiltered allQuestions used for overview counts / approval scope)
+          // so pending badges and approval-mode views update immediately.
           queryClient.invalidateQueries({
-            queryKey: getListQuestionsQueryKey(params),
+            queryKey: getListQuestionsQueryKey().slice(0, 1),
           });
         },
       },
     );
   };
 
+  // Header title varies per mode/view.
+  const pageTitle = approval
+    ? selectedCourse
+      ? `${selectedCourse.courseCode} - ${selectedCourse.courseName}`
+      : "Questions for approval"
+    : selectedCourse
+      ? `${selectedCourse.courseCode} - ${selectedCourse.courseName}`
+      : "Question Bank";
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start gap-3 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold">Question Bank</h1>
-          {(status !== ALL || difficulty !== ALL || courseId !== ALL) && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {status !== ALL && (
-                <FilterChip
-                  label="Status"
-                  value={status}
-                  onClear={() => setStatus(ALL)}
-                />
-              )}
-              {difficulty !== ALL && (
-                <FilterChip
-                  label="Difficulty"
-                  value={difficulty}
-                  onClear={() => setDifficulty(ALL)}
-                />
-              )}
-              {courseId !== ALL && (
-                <FilterChip
-                  label="Course"
-                  value={courseId}
-                  onClear={() => setCourseId(ALL)}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setStatus(ALL);
-                  setDifficulty(ALL);
-                  setCourseId(ALL);
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground underline"
-                data-testid="btn-clear-filters"
-              >
-                Clear all
-              </button>
-            </div>
-          )}
-        </div>
+        <h1 className="text-3xl font-bold">{pageTitle}</h1>
         <div className="flex items-center gap-2">
-          {isPrivileged && (
+          {/* Action area: differs by mode/view. */}
+          {selectedCourse ? (
+            // Selected-course view (regular or approval): only Return.
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStatus("draft")}
-              className="relative"
-              data-testid="btn-pending-approval"
+              onClick={returnToOverview}
+              data-testid="btn-return"
             >
-              Questions for approval
-              {pendingCount > 0 && (
-                <span
-                  className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold leading-none"
-                  data-testid="badge-pending-count"
-                >
-                  {pendingCount}
-                </span>
-              )}
+              Return
             </Button>
-          )}
-          {!isAdmin && (
-            <Link href="/lecturer/questions/new">
-              <Button data-testid="btn-new-question">New Question</Button>
-            </Link>
+          ) : approval ? (
+            // Approval overview: only Return (back to regular Question Bank).
+            <Button
+              type="button"
+              variant="outline"
+              onClick={exitApproval}
+              data-testid="btn-return"
+            >
+              Return
+            </Button>
+          ) : (
+            // Regular overview: Questions for approval + (lecturer) New Question.
+            <>
+              {isPrivileged && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={enterApproval}
+                  className="relative"
+                  data-testid="btn-pending-approval"
+                >
+                  Questions for approval
+                  {pendingCount > 0 && (
+                    <span
+                      className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold leading-none"
+                      data-testid="badge-pending-count"
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
+                </Button>
+              )}
+              {!isAdmin && (
+                <Link href="/lecturer/questions/new">
+                  <Button data-testid="btn-new-question">New Question</Button>
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -238,47 +322,61 @@ export default function QuestionsList() {
       {showOverview && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {courses?.map((c) => (
-              <button
-                type="button"
-                key={c.id}
-                onClick={() => setCourseId(c.id.toString())}
-                className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-                data-testid={`card-course-questions-${c.id}`}
-              >
-                <Card className="cursor-pointer transition hover:shadow-md hover:border-primary/40">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center justify-between gap-2">
-                      <span>{c.courseCode}</span>
-                      <Badge variant="outline">
-                        {countsByCourse.get(c.id) ?? 0}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {c.courseName}
-                    </p>
-                    {/* Lecturer view: show Program only.
-                        Admin view: show Lecturer + Program. */}
-                    {!isLecturer && c.lecturerName && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Lecturer: {c.lecturerName}
+            {(approval ? approvalCourses : (courses ?? [])).map((c) => {
+              const count = approval
+                ? (pendingByCourse.get(c.id) ?? 0)
+                : (countsByCourse.get(c.id) ?? 0);
+              return (
+                <button
+                  type="button"
+                  key={c.id}
+                  onClick={() => setCourseId(c.id.toString())}
+                  className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+                  data-testid={`card-course-questions-${c.id}`}
+                >
+                  <Card className="cursor-pointer transition hover:shadow-md hover:border-primary/40">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center justify-between gap-2">
+                        <span>{c.courseCode}</span>
+                        <Badge
+                          variant={approval && count > 0 ? "destructive" : "outline"}
+                        >
+                          {count}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {c.courseName}
                       </p>
-                    )}
-                    {c.programName && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Program: {c.programName}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </button>
-            ))}
-            {courses?.length === 0 && (
+                      {/* Lecturer view: show Program only.
+                          Admin view: show Lecturer + Program. */}
+                      {!isLecturer && c.lecturerName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Lecturer: {c.lecturerName}
+                        </p>
+                      )}
+                      {c.programName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Program: {c.programName}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </button>
+              );
+            })}
+            {!approval && courses?.length === 0 && (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   No courses available.
+                </CardContent>
+              </Card>
+            )}
+            {approval && approvalCourses.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No questions are waiting for approval.
                 </CardContent>
               </Card>
             )}
@@ -286,39 +384,19 @@ export default function QuestionsList() {
         </div>
       )}
 
-      {!showOverview && courseId !== ALL && (
-        <button
-          type="button"
-          onClick={() => setCourseId(ALL)}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          data-testid="btn-back-to-courses"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to courses
-        </button>
-      )}
-
       {!showOverview && (
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <CardContent
+          className={`pt-6 grid grid-cols-1 gap-3 ${
+            approval ? "md:grid-cols-2" : "md:grid-cols-3"
+          }`}
+        >
           <Input
             placeholder="Search title or text..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
             data-testid="input-search-questions"
           />
-          <Select value={courseId} onValueChange={setCourseId}>
-            <SelectTrigger data-testid="select-filter-course">
-              <SelectValue placeholder="Course" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All courses</SelectItem>
-              {courses?.map((c) => (
-                <SelectItem key={c.id} value={c.id.toString()}>
-                  {c.courseCode}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={difficulty} onValueChange={setDifficulty}>
             <SelectTrigger data-testid="select-filter-difficulty">
               <SelectValue placeholder="Difficulty" />
@@ -330,17 +408,20 @@ export default function QuestionsList() {
               <SelectItem value="Hard">Hard</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger data-testid="select-filter-status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Regular selected-course view only exposes Approved/Archived;
+              Draft/Pending live in the Questions-for-approval flow. */}
+          {!approval && (
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger data-testid="select-filter-status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All statuses</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </CardContent>
       </Card>
       )}
@@ -418,24 +499,3 @@ export default function QuestionsList() {
   );
 }
 
-function FilterChip({
-  label,
-  value,
-  onClear,
-}: {
-  label: string;
-  value: string;
-  onClear: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClear}
-      className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 hover:bg-primary/20 transition-colors"
-      data-testid={`chip-${label.toLowerCase()}`}
-    >
-      {label}: <span className="capitalize font-medium">{value}</span>
-      <X className="w-3 h-3" />
-    </button>
-  );
-}
