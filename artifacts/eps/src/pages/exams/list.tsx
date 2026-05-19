@@ -62,7 +62,7 @@ export default function ExamsList() {
         </div>
         <Link href="/exams/new">
           <Button
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-700 hover:bg-green-800 text-white"
             data-testid="btn-new-exam"
           >
             Start Mock Exam

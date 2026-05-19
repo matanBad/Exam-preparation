@@ -221,7 +221,7 @@ export default function CoursesList() {
             className={
               showNew
                 ? "ml-auto"
-                : "ml-auto bg-green-600 hover:bg-green-700 text-white"
+                : "ml-auto bg-green-700 hover:bg-green-800 text-white"
             }
             data-testid="btn-create-course"
           >

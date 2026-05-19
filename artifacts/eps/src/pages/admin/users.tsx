@@ -209,7 +209,7 @@ export default function AdminUsers() {
           <Button
             onClick={() => setShowCreate((v) => !v)}
             className={
-              showCreate ? undefined : "bg-green-600 hover:bg-green-700 text-white"
+              showCreate ? undefined : "bg-green-700 hover:bg-green-800 text-white"
             }
           >
             {showCreate ? "Cancel" : "Create User"}
@@ -414,7 +414,7 @@ export default function AdminUsers() {
             <Button
               onClick={handleCreate}
               disabled={createUser.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-700 hover:bg-green-800 text-white"
             >
               {createUser.isPending ? "Creating..." : "Create User"}
             </Button>
