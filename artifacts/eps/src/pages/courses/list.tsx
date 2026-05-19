@@ -10,7 +10,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getAuthUser } from "@/lib/auth";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,22 @@ export default function CoursesList() {
   const { data: courses, isLoading } = useListCourses();
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
+  // For admins and lecturers, shuffle the course list once per page load so
+  // the cards appear in a random order. Students keep the server's order.
+  // useMemo keyed on the course IDs keeps the order stable across re-renders
+  // (filter/search input changes) and only reshuffles when the underlying
+  // list changes.
+  const orderedCourses = useMemo(() => {
+    if (!courses) return courses;
+    if (!isPrivileged) return courses;
+    const arr = [...courses];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses?.map((c) => c.id).join(","), isPrivileged]);
   const isAdmin = user?.role === "admin";
   const isLecturer = user?.role === "lecturer";
   const isStudent = user?.role === "student";
@@ -269,7 +285,7 @@ export default function CoursesList() {
         <p>Loading...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses
+          {orderedCourses
             ?.filter((c) => {
               if (search.trim()) {
                 const q = search.trim().toLowerCase();

@@ -185,14 +185,8 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-3xl font-bold">Users Accounts</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link href="/admin/deletion-requests">
-            <Button variant="outline" data-testid="btn-deletion-requests">
-              <UserX className="w-4 h-4 mr-2" />
-              deletion requests
-            </Button>
-          </Link>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold">Users Accounts</h1>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger className="w-40" data-testid="select-role-filter">
               <SelectValue />
@@ -204,6 +198,14 @@ export default function AdminUsers() {
               <SelectItem value="admin">Admins</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href="/admin/deletion-requests">
+            <Button variant="outline" data-testid="btn-deletion-requests">
+              <UserX className="w-4 h-4 mr-2" />
+              deletion requests
+            </Button>
+          </Link>
           <Button onClick={() => setShowCreate((v) => !v)}>
             {showCreate ? "Cancel" : "New user"}
           </Button>
