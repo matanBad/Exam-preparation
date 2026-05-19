@@ -469,7 +469,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
         <Link href="/courses">
           <Button
             type="button"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-900 hover:bg-blue-950 text-white"
             data-testid="btn-return"
           >
             Return
