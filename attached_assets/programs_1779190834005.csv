@@ -1,0 +1,8 @@
+id,name,code,status,created_at,updated_at
+1,Software Engineering,SE,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+2,Civil Engineering,CIVE,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+3,Mechanical Engineering,ME,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+4,Chemical Engineering,CHEM,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+5,Industrial Engineering and Management,IEM,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+6,Electrical Engineering,EE,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""
+7,Computer Science,CS,active,"""2026-05-18T15:23:50.288Z""","""2026-05-18T15:23:50.288Z"""

@@ -1,0 +1,31 @@
+I uploaded a new DB seed package. Use ONLY these new CSV files as the source of truth:
+
+- users.csv
+- programs.csv
+- courses.csv
+- course_offerings.csv
+- enrollments.csv
+- topics.csv
+- questions.csv
+- answer_options.csv
+
+Do not infer study_year from course codes.
+Do not distribute study_year randomly.
+Use course_offerings.study_year and course_offerings.semester exactly as provided in the uploaded CSV.
+
+Important DB rules already applied in the new CSV files:
+1. course_offerings.study_year uses: First, Second, Third, Fourth.
+2. course_offerings.semester uses only: A, B.
+3. fall/spring were replaced with A/B.
+4. academic_year remains 2025-2026.
+5. users.csv includes current_study_year and current_semester for students.
+6. users.csv includes must_change_password for lecturer first-login password change.
+7. Non-demo student emails end with @ac.sce.ac.il.
+8. Non-demo lecturer emails end with @sce.ac.il.
+9. Admin emails end with @eps.com.
+10. Demo accounts were preserved: Sam Fisher, Dr. Liat Levi, Alex Adam.
+11. enrollments.csv contains students only.
+12. Each student is enrolled in all courses in their program according to course_offerings.
+13. Strategy A is preserved: topics.course_id and questions.course_id still point to the parent course.
+
+When updating the project, replace the existing seed data with these CSV files only. Ignore older DB files if they conflict.
