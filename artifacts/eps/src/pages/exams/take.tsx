@@ -169,10 +169,18 @@ export default function ExamTake({ params }: { params: { id: string } }) {
               <p className="text-xs text-muted-foreground">{q.topicName}</p>
             )}
             {q.questionType === "multiple_choice" && (
-              <p className="text-xs text-muted-foreground italic">
-                Multiple correct answers — select all that apply. Partial credit
-                applies.
-              </p>
+              <div
+                className="mt-3 rounded-md border border-amber-400/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-900 dark:text-amber-200"
+                data-testid={`info-partial-credit-${q.id}`}
+              >
+                <span className="font-semibold">
+                  This question has more than one correct answer.
+                </span>{" "}
+                Select every option you think is correct. You'll get partial
+                points for each correct answer you mark, and lose points for any
+                incorrect ones you select (your score for this question can't go
+                below zero).
+              </div>
             )}
           </CardHeader>
           <CardContent className="space-y-4">
