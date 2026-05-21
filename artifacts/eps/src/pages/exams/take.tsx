@@ -174,12 +174,11 @@ export default function ExamTake({ params }: { params: { id: string } }) {
                 data-testid={`info-partial-credit-${q.id}`}
               >
                 <span className="font-semibold">
-                  This question has more than one correct answer.
+                  This question may have one or more correct answers.
                 </span>{" "}
-                Select every option you think is correct. You'll get partial
-                points for each correct answer you mark, and lose points for any
-                incorrect ones you select (your score for this question can't go
-                below zero).
+                Select every option you think is correct. You'll get a share of
+                the points for each correct answer you mark. Incorrect
+                selections don't deduct points.
               </div>
             )}
           </CardHeader>

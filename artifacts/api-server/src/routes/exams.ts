@@ -401,23 +401,20 @@ router.post(
       const totalCorrect = correctIds.size;
 
       const maxScore = eq_.maxScore;
-      // Partial scoring: each correct selection earns a fraction of maxScore,
-      // each wrong selection cancels one correct. Floor at 0 (no negative scores).
-      const earnedScore =
-        totalCorrect > 0
-          ? Math.min(
-              maxScore,
-              Math.max(
-                0,
-                Math.round(
-                  ((correctSelected - incorrectSelected) / totalCorrect) *
-                    maxScore *
-                    100,
-                ) / 100,
-              ),
-            )
-          : 0;
-      const fullyCorrect = earnedScore === maxScore && validSubmitted.length > 0;
+      // Partial scoring (per user spec): each correct selection earns a
+      // proportional share of maxScore. Incorrect selections do NOT deduct
+      // points. To count as fully correct (and stop earning max) the student
+      // must select all correct options AND no incorrect ones.
+      const rawEarned =
+        totalCorrect > 0 ? (correctSelected / totalCorrect) * maxScore : 0;
+      const earnedScore = Math.min(
+        maxScore,
+        Math.max(0, Math.round(rawEarned * 100) / 100),
+      );
+      const fullyCorrect =
+        totalCorrect > 0 &&
+        correctSelected === totalCorrect &&
+        incorrectSelected === 0;
       if (fullyCorrect) correctCount += 1;
       totalEarnedScore += earnedScore;
       totalMaxScore += maxScore;
