@@ -157,7 +157,13 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const { courseId, topicIds, totalQuestions, durationMinutes } = parsed.data;
+    const { courseId, topicIds, totalQuestions, durationMinutes, difficultyLevel } =
+      parsed.data;
+    // Enforce minimum exam length server-side regardless of client.
+    if (totalQuestions < 5) {
+      res.status(400).json({ error: "An exam must have at least 5 questions." });
+      return;
+    }
     const auth = req.auth!;
 
     if (auth.role !== "student") {
@@ -213,14 +219,29 @@ router.post(
     if (topicIds && topicIds.length > 0) {
       filters.push(inArray(questionsTable.topicId, topicIds));
     }
+    if (difficultyLevel) {
+      filters.push(eq(questionsTable.difficultyLevel, difficultyLevel));
+    }
     const pool = await db
       .select()
       .from(questionsTable)
       .where(and(...filters));
     if (pool.length === 0) {
-      res
-        .status(400)
-        .json({ error: "No approved questions match the criteria" });
+      res.status(400).json({
+        error: difficultyLevel
+          ? `No approved ${difficultyLevel} questions match the criteria`
+          : "No approved questions match the criteria",
+      });
+      return;
+    }
+    if (pool.length < totalQuestions) {
+      res.status(400).json({
+        error: `Only ${pool.length} approved ${
+          difficultyLevel ? difficultyLevel + " " : ""
+        }question${pool.length === 1 ? "" : "s"} available for the selected criteria. Reduce the number of questions${
+          difficultyLevel ? " or pick a different difficulty" : ""
+        }.`,
+      });
       return;
     }
     const selected = shuffle(pool).slice(0, totalQuestions);

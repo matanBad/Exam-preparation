@@ -774,12 +774,23 @@ export const ArchiveQuestionResponse = zod.object({
   topicName: zod.string().nullish(),
 });
 
+export const generateExamBodyTotalQuestionsMin = 5;
 export const generateExamBodyTotalQuestionsMax = 100;
 
 export const GenerateExamBody = zod.object({
   courseId: zod.number(),
   topicIds: zod.array(zod.number()).optional(),
-  totalQuestions: zod.number().min(1).max(generateExamBodyTotalQuestionsMax),
+  totalQuestions: zod
+    .number()
+    .min(generateExamBodyTotalQuestionsMin)
+    .max(generateExamBodyTotalQuestionsMax)
+    .describe("Number of questions. Minimum 5."),
+  difficultyLevel: zod
+    .enum(["Easy", "Medium", "Hard"])
+    .nullish()
+    .describe(
+      "If set, only questions of this difficulty are included. Omit\/null for a mix of all difficulties.",
+    ),
   durationMinutes: zod.number().nullish(),
 });
 

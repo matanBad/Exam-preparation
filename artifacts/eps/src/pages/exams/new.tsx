@@ -30,8 +30,12 @@ export default function ExamNew() {
   const [courseId, setCourseId] = useState<number | null>(null);
   const [selectedTopics, setSelectedTopics] = useState<number[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(10);
+  const [difficulty, setDifficulty] = useState<"any" | "Easy" | "Medium" | "Hard">(
+    "any",
+  );
   const [duration, setDuration] = useState<number | null>(30);
   const [error, setError] = useState<string | null>(null);
+  const MIN_QUESTIONS = 5;
 
   const { data: topics } = useListCourseTopics(courseId ?? 0, {
     query: { enabled: !!courseId, queryKey: getListCourseTopicsQueryKey(courseId ?? 0) },
@@ -50,12 +54,17 @@ export default function ExamNew() {
       setError("Please choose a course");
       return;
     }
+    if (totalQuestions < MIN_QUESTIONS) {
+      setError(`A mock exam must have at least ${MIN_QUESTIONS} questions.`);
+      return;
+    }
     generate.mutate(
       {
         data: {
           courseId,
           topicIds: selectedTopics,
           totalQuestions,
+          difficultyLevel: difficulty === "any" ? null : difficulty,
           durationMinutes: duration,
         },
       },
@@ -162,12 +171,42 @@ export default function ExamNew() {
               <Input
                 id="total"
                 type="number"
-                min={1}
+                min={MIN_QUESTIONS}
                 max={100}
                 value={totalQuestions}
-                onChange={(e) => setTotalQuestions(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) =>
+                  setTotalQuestions(
+                    parseInt(e.target.value, 10) || MIN_QUESTIONS,
+                  )
+                }
                 data-testid="input-total-questions"
               />
+              <p className="text-xs text-muted-foreground">
+                Minimum {MIN_QUESTIONS} questions per exam.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Difficulty</Label>
+              <Select
+                value={difficulty}
+                onValueChange={(v) =>
+                  setDifficulty(v as "any" | "Easy" | "Medium" | "Hard")
+                }
+              >
+                <SelectTrigger data-testid="select-difficulty">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any difficulty (mixed)</SelectItem>
+                  <SelectItem value="Easy">Easy only · 5 pts each</SelectItem>
+                  <SelectItem value="Medium">Medium only · 10 pts each</SelectItem>
+                  <SelectItem value="Hard">Hard only · 15 pts each</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Pick a single difficulty to make every question in the exam that
+                level, or leave as “Any” for a mix.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="duration">Duration (minutes, blank for untimed)</Label>

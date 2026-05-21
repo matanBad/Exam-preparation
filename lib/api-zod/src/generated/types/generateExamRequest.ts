@@ -5,14 +5,18 @@
  * Exam Preparation System (EPS) API
  * OpenAPI spec version: 0.1.0
  */
+import type { Difficulty } from "./difficulty";
 
 export interface GenerateExamRequest {
   courseId: number;
   topicIds?: number[];
   /**
-   * @minimum 1
+   * Number of questions. Minimum 5.
+   * @minimum 5
    * @maximum 100
    */
   totalQuestions: number;
+  /** If set, only questions of this difficulty are included. Omit/null for a mix of all difficulties. */
+  difficultyLevel?: Difficulty | null;
   durationMinutes?: number | null;
 }

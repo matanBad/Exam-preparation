@@ -1333,7 +1333,16 @@ components:
         topicIds:
           type: array
           items: { type: integer }
-        totalQuestions: { type: integer, minimum: 1, maximum: 100 }
+        totalQuestions:
+          type: integer
+          minimum: 5
+          maximum: 100
+          description: "Number of questions. Minimum 5."
+        difficultyLevel:
+          allOf:
+            - $ref: "#/components/schemas/Difficulty"
+          nullable: true
+          description: "If set, only questions of this difficulty are included. Omit/null for a mix of all difficulties."
         durationMinutes: { type: integer, nullable: true }
       required: [courseId, totalQuestions]
 
