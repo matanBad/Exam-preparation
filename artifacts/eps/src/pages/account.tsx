@@ -369,7 +369,7 @@ export default function Account() {
         <CardContent>
           <form onSubmit={submitEmail} className="space-y-4" data-testid="form-change-email">
             <div className="space-y-2">
-              <Label htmlFor="email">New email</Label>
+              <Label htmlFor="email">Current email</Label>
               <Input
                 id="email"
                 type="email"
@@ -380,7 +380,7 @@ export default function Account() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-cur-pw">Current password</Label>
+              <Label htmlFor="email-cur-pw">New email</Label>
               <Input
                 id="email-cur-pw"
                 type="password"
