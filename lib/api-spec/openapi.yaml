@@ -1358,9 +1358,19 @@ components:
         options:
           type: array
           items: { $ref: "#/components/schemas/ExamQuestionOption" }
-        selectedAnswerOptionId: { type: integer, nullable: true }
+        selectedAnswerOptionId:
+          type: integer
+          nullable: true
+          description: "Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds."
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+          description: "All option ids currently selected by the student for this question."
+        maxScore:
+          type: number
+          description: "Max points this question is worth (snapshotted from difficulty at exam generation time)."
       required:
-        [id, questionId, title, questionText, questionType, difficultyLevel, randomizedOrder, options]
+        [id, questionId, title, questionText, questionType, difficultyLevel, randomizedOrder, options, selectedAnswerOptionIds, maxScore]
 
     Exam:
       type: object
@@ -1374,10 +1384,12 @@ components:
         durationMinutes: { type: integer, nullable: true }
         startedAt: { type: string, format: date-time, nullable: true }
         submittedAt: { type: string, format: date-time, nullable: true }
-        score: { type: number, nullable: true }
+        score: { type: number, nullable: true, description: "Final percentage (0-100)." }
+        totalMaxScore: { type: number, description: "Sum of maxScore across all exam questions." }
+        totalEarnedScore: { type: number, nullable: true, description: "Sum of earnedScore across all exam questions (null until submitted)." }
         status: { $ref: "#/components/schemas/ExamStatus" }
         createdAt: { type: string, format: date-time }
-      required: [id, userId, courseId, examMode, totalQuestions, status, createdAt]
+      required: [id, userId, courseId, examMode, totalQuestions, status, createdAt, totalMaxScore]
 
     ExamWithQuestions:
       allOf:
@@ -1393,7 +1405,14 @@ components:
       type: object
       properties:
         examQuestionId: { type: integer }
-        selectedAnswerOptionId: { type: integer, nullable: true }
+        selectedAnswerOptionId:
+          type: integer
+          nullable: true
+          description: "Legacy single-choice selection. Use selectedAnswerOptionIds for multi-select; this is kept for backward compatibility."
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+          description: "All option ids the student selected for this question. Empty array means unanswered."
       required: [examQuestionId]
 
     SubmitExamRequest:
@@ -1408,11 +1427,13 @@ components:
       type: object
       properties:
         examId: { type: integer }
-        score: { type: number }
-        correctCount: { type: integer }
+        score: { type: number, description: "Final percentage (0-100)." }
+        correctCount: { type: integer, description: "Number of questions answered fully correctly." }
         totalQuestions: { type: integer }
+        totalMaxScore: { type: number }
+        totalEarnedScore: { type: number }
         status: { $ref: "#/components/schemas/ExamStatus" }
-      required: [examId, score, correctCount, totalQuestions, status]
+      required: [examId, score, correctCount, totalQuestions, status, totalMaxScore, totalEarnedScore]
 
     ReviewItem:
       type: object
@@ -1421,17 +1442,29 @@ components:
         questionId: { type: integer }
         title: { type: string }
         questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: string, nullable: true }
         explanationText: { type: string, nullable: true }
-        isCorrect: { type: boolean }
-        selectedAnswerOptionId: { type: integer, nullable: true }
-        correctAnswerOptionId: { type: integer, nullable: true }
+        isCorrect: { type: boolean, description: "True only if earnedScore equals maxScore." }
+        maxScore: { type: number }
+        earnedScore: { type: number, nullable: true, description: "Points earned for this question; null if not yet graded." }
+        totalCorrectCount: { type: integer, description: "How many of the question's options are correct." }
+        correctSelectedCount: { type: integer, description: "How many correct options the student selected." }
+        incorrectSelectedCount: { type: integer, description: "How many incorrect options the student selected." }
+        selectedAnswerOptionId: { type: integer, nullable: true, description: "Legacy single-choice selection." }
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+        correctAnswerOptionId: { type: integer, nullable: true, description: "Legacy single correct option (first correct)." }
+        correctAnswerOptionIds:
+          type: array
+          items: { type: integer }
         options:
           type: array
           items: { $ref: "#/components/schemas/AnswerOption" }
       required:
-        [examQuestionId, questionId, title, questionText, difficultyLevel, isCorrect, options]
+        [examQuestionId, questionId, title, questionText, questionType, difficultyLevel, isCorrect, maxScore, totalCorrectCount, correctSelectedCount, incorrectSelectedCount, selectedAnswerOptionIds, correctAnswerOptionIds, options]
 
     ExamReview:
       type: object

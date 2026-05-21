@@ -471,7 +471,12 @@ export interface ExamQuestion {
   topicName?: string | null;
   randomizedOrder: number;
   options: ExamQuestionOption[];
+  /** Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds. */
   selectedAnswerOptionId?: number | null;
+  /** All option ids currently selected by the student for this question. */
+  selectedAnswerOptionIds: number[];
+  /** Max points this question is worth (snapshotted from difficulty at exam generation time). */
+  maxScore: number;
 }
 
 export interface Exam {
@@ -484,7 +489,12 @@ export interface Exam {
   durationMinutes?: number | null;
   startedAt?: string | null;
   submittedAt?: string | null;
+  /** Final percentage (0-100). */
   score?: number | null;
+  /** Sum of maxScore across all exam questions. */
+  totalMaxScore: number;
+  /** Sum of earnedScore across all exam questions (null until submitted). */
+  totalEarnedScore?: number | null;
   status: ExamStatus;
   createdAt: string;
 }
@@ -495,7 +505,10 @@ export type ExamWithQuestions = Exam & {
 
 export interface SubmitAnswer {
   examQuestionId: number;
+  /** Legacy single-choice selection. Use selectedAnswerOptionIds for multi-select; this is kept for backward compatibility. */
   selectedAnswerOptionId?: number | null;
+  /** All option ids the student selected for this question. Empty array means unanswered. */
+  selectedAnswerOptionIds?: number[];
 }
 
 export interface SubmitExamRequest {
@@ -504,9 +517,13 @@ export interface SubmitExamRequest {
 
 export interface ExamResult {
   examId: number;
+  /** Final percentage (0-100). */
   score: number;
+  /** Number of questions answered fully correctly. */
   correctCount: number;
   totalQuestions: number;
+  totalMaxScore: number;
+  totalEarnedScore: number;
   status: ExamStatus;
 }
 
@@ -515,12 +532,27 @@ export interface ReviewItem {
   questionId: number;
   title: string;
   questionText: string;
+  questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
   explanationText?: string | null;
+  /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;
+  maxScore: number;
+  /** Points earned for this question; null if not yet graded. */
+  earnedScore?: number | null;
+  /** How many of the question's options are correct. */
+  totalCorrectCount: number;
+  /** How many correct options the student selected. */
+  correctSelectedCount: number;
+  /** How many incorrect options the student selected. */
+  incorrectSelectedCount: number;
+  /** Legacy single-choice selection. */
   selectedAnswerOptionId?: number | null;
+  selectedAnswerOptionIds: number[];
+  /** Legacy single correct option (first correct). */
   correctAnswerOptionId?: number | null;
+  correctAnswerOptionIds: number[];
   options: AnswerOption[];
 }
 

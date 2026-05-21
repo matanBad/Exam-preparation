@@ -8,5 +8,8 @@
 
 export interface SubmitAnswer {
   examQuestionId: number;
+  /** Legacy single-choice selection. Use selectedAnswerOptionIds for multi-select; this is kept for backward compatibility. */
   selectedAnswerOptionId?: number | null;
+  /** All option ids the student selected for this question. Empty array means unanswered. */
+  selectedAnswerOptionIds?: number[];
 }

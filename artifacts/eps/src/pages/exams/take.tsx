@@ -8,13 +8,20 @@ import { Progress } from "@/components/ui/progress";
 
 type ExamData = Awaited<ReturnType<ReturnType<typeof useStartExam>["mutateAsync"]>>;
 
+const DIFFICULTY_STYLES: Record<string, string> = {
+  Easy: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200",
+  Medium: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200",
+  Hard: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-200",
+};
+
 export default function ExamTake({ params }: { params: { id: string } }) {
   const examId = parseInt(params.id, 10);
   const [, setLocation] = useLocation();
   const startExam = useStartExam();
   const submitExam = useSubmitExam();
   const [exam, setExam] = useState<ExamData | null>(null);
-  const [answers, setAnswers] = useState<Record<number, number | null>>({});
+  // Map of examQuestionId → array of selected option ids (supports multi-select).
+  const [answers, setAnswers] = useState<Record<number, number[]>>({});
   const [current, setCurrent] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -30,9 +37,14 @@ export default function ExamTake({ params }: { params: { id: string } }) {
           if (data.durationMinutes) {
             setSecondsLeft(data.durationMinutes * 60);
           }
-          const initial: Record<number, number | null> = {};
+          const initial: Record<number, number[]> = {};
           for (const q of data.questions) {
-            initial[q.id] = q.selectedAnswerOptionId ?? null;
+            initial[q.id] =
+              q.selectedAnswerOptionIds && q.selectedAnswerOptionIds.length > 0
+                ? [...q.selectedAnswerOptionIds]
+                : q.selectedAnswerOptionId != null
+                ? [q.selectedAnswerOptionId]
+                : [];
           }
           setAnswers(initial);
         },
@@ -55,8 +67,17 @@ export default function ExamTake({ params }: { params: { id: string } }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft]);
 
-  const handleSelect = (examQuestionId: number, optionId: number) => {
-    setAnswers((prev) => ({ ...prev, [examQuestionId]: optionId }));
+  const toggleSingle = (examQuestionId: number, optionId: number) => {
+    setAnswers((prev) => ({ ...prev, [examQuestionId]: [optionId] }));
+  };
+  const toggleMulti = (examQuestionId: number, optionId: number) => {
+    setAnswers((prev) => {
+      const current = prev[examQuestionId] ?? [];
+      const next = current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId];
+      return { ...prev, [examQuestionId]: next };
+    });
   };
 
   const handleSubmit = () => {
@@ -68,7 +89,7 @@ export default function ExamTake({ params }: { params: { id: string } }) {
         data: {
           answers: exam.questions.map((q) => ({
             examQuestionId: q.id,
-            selectedAnswerOptionId: answers[q.id] ?? null,
+            selectedAnswerOptionIds: answers[q.id] ?? [],
           })),
         },
       },
@@ -82,7 +103,7 @@ export default function ExamTake({ params }: { params: { id: string } }) {
   };
 
   const answeredCount = useMemo(
-    () => Object.values(answers).filter((v) => v != null).length,
+    () => Object.values(answers).filter((v) => v && v.length > 0).length,
     [answers],
   );
 
@@ -108,6 +129,7 @@ export default function ExamTake({ params }: { params: { id: string } }) {
           <h1 className="text-2xl font-bold">{exam.courseName ?? "Exam"}</h1>
           <p className="text-sm text-muted-foreground">
             Question {current + 1} of {exam.questions.length} · {answeredCount} answered
+            {exam.totalMaxScore ? ` · ${exam.totalMaxScore} total points` : ""}
           </p>
         </div>
         {secondsLeft != null && (
@@ -126,35 +148,74 @@ export default function ExamTake({ params }: { params: { id: string } }) {
       {q && (
         <Card data-testid={`card-question-${q.id}`}>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <CardTitle className="text-lg">{q.title}</CardTitle>
-              <Badge variant="outline">{q.difficultyLevel}</Badge>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge
+                  variant="outline"
+                  className={DIFFICULTY_STYLES[q.difficultyLevel] ?? ""}
+                  data-testid={`badge-difficulty-${q.id}`}
+                >
+                  {q.difficultyLevel}
+                </Badge>
+                <Badge
+                  className="bg-primary text-primary-foreground"
+                  data-testid={`badge-max-score-${q.id}`}
+                >
+                  Question Score: {q.maxScore} {q.maxScore === 1 ? "Point" : "Points"}
+                </Badge>
+              </div>
             </div>
             {q.topicName && (
               <p className="text-xs text-muted-foreground">{q.topicName}</p>
+            )}
+            {q.questionType === "multiple_choice" && (
+              <p className="text-xs text-muted-foreground italic">
+                Multiple correct answers — select all that apply. Partial credit
+                applies.
+              </p>
             )}
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-base whitespace-pre-wrap">{q.questionText}</p>
             <div className="space-y-2">
               {q.options.map((opt, idx) => {
-                const selected = answers[q.id] === opt.id;
+                const selected = (answers[q.id] ?? []).includes(opt.id);
+                const isMulti = q.questionType === "multiple_choice";
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => handleSelect(q.id, opt.id)}
-                    className={`w-full text-left p-3 rounded-md border transition-colors ${
+                    onClick={() =>
+                      isMulti
+                        ? toggleMulti(q.id, opt.id)
+                        : toggleSingle(q.id, opt.id)
+                    }
+                    className={`w-full text-left p-3 rounded-md border transition-colors flex items-start gap-3 ${
                       selected
                         ? "border-primary bg-primary/10"
                         : "border-border hover:bg-accent"
                     }`}
                     data-testid={`btn-option-${q.id}-${opt.id}`}
+                    aria-pressed={selected}
                   >
-                    <span className="font-mono text-sm text-muted-foreground mr-3">
+                    <span
+                      className={`mt-0.5 shrink-0 inline-flex items-center justify-center w-5 h-5 border-2 ${
+                        isMulti ? "rounded" : "rounded-full"
+                      } ${
+                        selected
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-muted-foreground/40"
+                      }`}
+                    >
+                      {selected ? (
+                        <span className="text-xs leading-none">✓</span>
+                      ) : null}
+                    </span>
+                    <span className="font-mono text-sm text-muted-foreground">
                       {String.fromCharCode(65 + idx)}.
                     </span>
-                    {opt.answerText}
+                    <span className="flex-1">{opt.answerText}</span>
                   </button>
                 );
               })}
@@ -197,7 +258,7 @@ export default function ExamTake({ params }: { params: { id: string } }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {exam.questions.map((qq, idx) => {
-              const isAnswered = answers[qq.id] != null;
+              const isAnswered = (answers[qq.id] ?? []).length > 0;
               const isCurrent = idx === current;
               return (
                 <button

@@ -798,7 +798,16 @@ export const GetExamResponse = zod
     durationMinutes: zod.number().nullish(),
     startedAt: zod.coerce.date().nullish(),
     submittedAt: zod.coerce.date().nullish(),
-    score: zod.number().nullish(),
+    score: zod.number().nullish().describe("Final percentage (0-100)."),
+    totalMaxScore: zod
+      .number()
+      .describe("Sum of maxScore across all exam questions."),
+    totalEarnedScore: zod
+      .number()
+      .nullish()
+      .describe(
+        "Sum of earnedScore across all exam questions (null until submitted).",
+      ),
     status: zod.enum(["generated", "in_progress", "submitted"]),
     createdAt: zod.coerce.date(),
   })
@@ -820,7 +829,22 @@ export const GetExamResponse = zod
               answerText: zod.string(),
             }),
           ),
-          selectedAnswerOptionId: zod.number().nullish(),
+          selectedAnswerOptionId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds.",
+            ),
+          selectedAnswerOptionIds: zod
+            .array(zod.number())
+            .describe(
+              "All option ids currently selected by the student for this question.",
+            ),
+          maxScore: zod
+            .number()
+            .describe(
+              "Max points this question is worth (snapshotted from difficulty at exam generation time).",
+            ),
         }),
       ),
     }),
@@ -841,7 +865,16 @@ export const StartExamResponse = zod
     durationMinutes: zod.number().nullish(),
     startedAt: zod.coerce.date().nullish(),
     submittedAt: zod.coerce.date().nullish(),
-    score: zod.number().nullish(),
+    score: zod.number().nullish().describe("Final percentage (0-100)."),
+    totalMaxScore: zod
+      .number()
+      .describe("Sum of maxScore across all exam questions."),
+    totalEarnedScore: zod
+      .number()
+      .nullish()
+      .describe(
+        "Sum of earnedScore across all exam questions (null until submitted).",
+      ),
     status: zod.enum(["generated", "in_progress", "submitted"]),
     createdAt: zod.coerce.date(),
   })
@@ -863,7 +896,22 @@ export const StartExamResponse = zod
               answerText: zod.string(),
             }),
           ),
-          selectedAnswerOptionId: zod.number().nullish(),
+          selectedAnswerOptionId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds.",
+            ),
+          selectedAnswerOptionIds: zod
+            .array(zod.number())
+            .describe(
+              "All option ids currently selected by the student for this question.",
+            ),
+          maxScore: zod
+            .number()
+            .describe(
+              "Max points this question is worth (snapshotted from difficulty at exam generation time).",
+            ),
         }),
       ),
     }),
@@ -877,16 +925,31 @@ export const SubmitExamBody = zod.object({
   answers: zod.array(
     zod.object({
       examQuestionId: zod.number(),
-      selectedAnswerOptionId: zod.number().nullish(),
+      selectedAnswerOptionId: zod
+        .number()
+        .nullish()
+        .describe(
+          "Legacy single-choice selection. Use selectedAnswerOptionIds for multi-select; this is kept for backward compatibility.",
+        ),
+      selectedAnswerOptionIds: zod
+        .array(zod.number())
+        .optional()
+        .describe(
+          "All option ids the student selected for this question. Empty array means unanswered.",
+        ),
     }),
   ),
 });
 
 export const SubmitExamResponse = zod.object({
   examId: zod.number(),
-  score: zod.number(),
-  correctCount: zod.number(),
+  score: zod.number().describe("Final percentage (0-100)."),
+  correctCount: zod
+    .number()
+    .describe("Number of questions answered fully correctly."),
   totalQuestions: zod.number(),
+  totalMaxScore: zod.number(),
+  totalEarnedScore: zod.number(),
   status: zod.enum(["generated", "in_progress", "submitted"]),
 });
 
@@ -905,7 +968,16 @@ export const GetExamReviewResponse = zod.object({
     durationMinutes: zod.number().nullish(),
     startedAt: zod.coerce.date().nullish(),
     submittedAt: zod.coerce.date().nullish(),
-    score: zod.number().nullish(),
+    score: zod.number().nullish().describe("Final percentage (0-100)."),
+    totalMaxScore: zod
+      .number()
+      .describe("Sum of maxScore across all exam questions."),
+    totalEarnedScore: zod
+      .number()
+      .nullish()
+      .describe(
+        "Sum of earnedScore across all exam questions (null until submitted).",
+      ),
     status: zod.enum(["generated", "in_progress", "submitted"]),
     createdAt: zod.coerce.date(),
   }),
@@ -915,12 +987,37 @@ export const GetExamReviewResponse = zod.object({
       questionId: zod.number(),
       title: zod.string(),
       questionText: zod.string(),
+      questionType: zod.enum(["single_choice", "multiple_choice"]),
       difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
       topicName: zod.string().nullish(),
       explanationText: zod.string().nullish(),
-      isCorrect: zod.boolean(),
-      selectedAnswerOptionId: zod.number().nullish(),
-      correctAnswerOptionId: zod.number().nullish(),
+      isCorrect: zod
+        .boolean()
+        .describe("True only if earnedScore equals maxScore."),
+      maxScore: zod.number(),
+      earnedScore: zod
+        .number()
+        .nullish()
+        .describe("Points earned for this question; null if not yet graded."),
+      totalCorrectCount: zod
+        .number()
+        .describe("How many of the question's options are correct."),
+      correctSelectedCount: zod
+        .number()
+        .describe("How many correct options the student selected."),
+      incorrectSelectedCount: zod
+        .number()
+        .describe("How many incorrect options the student selected."),
+      selectedAnswerOptionId: zod
+        .number()
+        .nullish()
+        .describe("Legacy single-choice selection."),
+      selectedAnswerOptionIds: zod.array(zod.number()),
+      correctAnswerOptionId: zod
+        .number()
+        .nullish()
+        .describe("Legacy single correct option (first correct)."),
+      correctAnswerOptionIds: zod.array(zod.number()),
       options: zod.array(
         zod.object({
           id: zod.number(),
@@ -948,7 +1045,16 @@ export const GetUserExamsResponseItem = zod.object({
   durationMinutes: zod.number().nullish(),
   startedAt: zod.coerce.date().nullish(),
   submittedAt: zod.coerce.date().nullish(),
-  score: zod.number().nullish(),
+  score: zod.number().nullish().describe("Final percentage (0-100)."),
+  totalMaxScore: zod
+    .number()
+    .describe("Sum of maxScore across all exam questions."),
+  totalEarnedScore: zod
+    .number()
+    .nullish()
+    .describe(
+      "Sum of earnedScore across all exam questions (null until submitted).",
+    ),
   status: zod.enum(["generated", "in_progress", "submitted"]),
   createdAt: zod.coerce.date(),
 });

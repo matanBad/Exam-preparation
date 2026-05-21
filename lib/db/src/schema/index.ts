@@ -261,7 +261,15 @@ export const mockExamQuestionsTable = pgTable(
       () => answerOptionsTable.id,
       { onDelete: "set null" },
     ),
+    // JSON-encoded array of selected answer_option ids (supports multi-select).
+    selectedOptionIds: text("selected_option_ids").notNull().default("[]"),
     isCorrect: boolean("is_correct"),
+    // Snapshot of the max score for this question at exam generation time, derived
+    // from the question's difficulty (Easy=5, Medium=10, Hard=15). Snapshotted so
+    // changes to the question after the exam was generated don't affect grading.
+    maxScore: doublePrecision("max_score").notNull().default(10),
+    // Points earned after grading; null until exam is submitted.
+    earnedScore: doublePrecision("earned_score"),
     responseTimeSeconds: integer("response_time_seconds"),
   },
   (t) => ({

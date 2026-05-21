@@ -1,0 +1,70 @@
+Add the following features to the Student Side of the system with a clean, modern, and user-friendly UI. Make sure to update the frontend, backend logic, database structure, and real-time calculations accordingly.
+
+1. Display Score Value for Each Question
+- Each question should display its maximum score value.
+- Example:
+  "Question Score: 10 Points"
+- The score should appear clearly near the question title.
+
+2. Display Earned Score Out of Total Score
+- After the exam is checked, display:
+  "You received X out of Y points"
+- Example:
+  "You received 7 out of 10 points"
+- If the question has not been checked yet, display:
+  "Pending Review"
+
+3. Support Partial Scoring for Multiple-Answer Questions
+- For questions with multiple correct answers:
+  - The system should calculate partial scores based on the number of correct answers selected.
+- Example:
+  - Question value = 10 points
+  - 5 correct answers exist
+  - Student selected 3 correctly
+  - Result:
+    "You received 6 out of 10 points"
+- Show detailed feedback including:
+  - Total correct answers
+  - Number of correctly selected answers
+- Prevent negative scoring.
+
+4. Score Distribution Based on Difficulty Level
+- Add a difficulty level field for each question:
+  - Easy
+  - Medium
+  - Hard
+- The score should be automatically calculated based on difficulty:
+  - Easy = lower score
+  - Medium = medium score
+  - Hard = higher score
+- Teachers/Admins should be able to select the difficulty level when creating a question.
+- The system should automatically assign the score according to the selected difficulty.
+
+5. Upgrade the Exam Results Screen
+- The exam results page should display:
+  - Score value for each question
+  - Earned score for each question
+  - Question difficulty level
+  - Total exam points
+  - Total earned points
+  - Final success percentage
+- Add a visual progress bar for the final grade.
+- Use color indicators:
+  - Green = high score
+  - Yellow = medium score
+  - Red = low score
+
+6. Database & Backend Requirements
+- Add support for:
+  - questionDifficulty
+  - maxScore
+  - earnedScore
+  - partialScoring
+- Ensure all scoring calculations are handled dynamically on the backend.
+- Make sure the API returns all scoring details correctly.
+
+7. UI/UX Improvements
+- Keep the design responsive and mobile-friendly.
+- Use cards, badges, and clean spacing for better readability.
+- Highlight scores and difficulty levels visually.
+- Add smooth animations/transitions when displaying results.

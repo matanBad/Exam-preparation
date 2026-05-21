@@ -19,5 +19,10 @@ export interface ExamQuestion {
   topicName?: string | null;
   randomizedOrder: number;
   options: ExamQuestionOption[];
+  /** Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds. */
   selectedAnswerOptionId?: number | null;
+  /** All option ids currently selected by the student for this question. */
+  selectedAnswerOptionIds: number[];
+  /** Max points this question is worth (snapshotted from difficulty at exam generation time). */
+  maxScore: number;
 }

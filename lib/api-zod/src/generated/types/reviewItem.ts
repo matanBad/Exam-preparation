@@ -7,17 +7,33 @@
  */
 import type { AnswerOption } from "./answerOption";
 import type { Difficulty } from "./difficulty";
+import type { QuestionType } from "./questionType";
 
 export interface ReviewItem {
   examQuestionId: number;
   questionId: number;
   title: string;
   questionText: string;
+  questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
   explanationText?: string | null;
+  /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;
+  maxScore: number;
+  /** Points earned for this question; null if not yet graded. */
+  earnedScore?: number | null;
+  /** How many of the question's options are correct. */
+  totalCorrectCount: number;
+  /** How many correct options the student selected. */
+  correctSelectedCount: number;
+  /** How many incorrect options the student selected. */
+  incorrectSelectedCount: number;
+  /** Legacy single-choice selection. */
   selectedAnswerOptionId?: number | null;
+  selectedAnswerOptionIds: number[];
+  /** Legacy single correct option (first correct). */
   correctAnswerOptionId?: number | null;
+  correctAnswerOptionIds: number[];
   options: AnswerOption[];
 }

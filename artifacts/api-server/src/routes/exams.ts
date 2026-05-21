@@ -29,6 +29,28 @@ import { createNotification, notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
+// Difficulty → max-score table. Single source of truth for how many points a
+// question is worth based on its difficulty level.
+const DIFFICULTY_SCORE: Record<"Easy" | "Medium" | "Hard", number> = {
+  Easy: 5,
+  Medium: 10,
+  Hard: 15,
+};
+function scoreForDifficulty(d: string | null | undefined): number {
+  if (d === "Easy" || d === "Medium" || d === "Hard") return DIFFICULTY_SCORE[d];
+  return DIFFICULTY_SCORE.Medium;
+}
+
+function parseOptionIds(json: string | null | undefined): number[] {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((x) => typeof x === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -83,6 +105,7 @@ async function loadExamWithQuestions(examId: number) {
         .map((id) => optMap.get(id))
         .filter((o): o is NonNullable<typeof o> => !!o)
         .map((o) => ({ id: o.id, answerText: o.answerText }));
+      const selectedIds = parseOptionIds(row.meq.selectedOptionIds);
       return {
         id: row.meq.id,
         questionId: row.q.id,
@@ -94,9 +117,17 @@ async function loadExamWithQuestions(examId: number) {
         randomizedOrder: row.meq.randomizedOrder,
         options: orderedOpts,
         selectedAnswerOptionId: row.meq.selectedAnswerOptionId,
+        selectedAnswerOptionIds: selectedIds,
+        maxScore: row.meq.maxScore,
       };
     })
     .sort((a, b) => a.randomizedOrder - b.randomizedOrder);
+
+  const totalMaxScore = examQs.reduce((s, r) => s + (r.meq.maxScore ?? 0), 0);
+  const hasEarned = examQs.some((r) => r.meq.earnedScore != null);
+  const totalEarnedScore = hasEarned
+    ? examQs.reduce((s, r) => s + (r.meq.earnedScore ?? 0), 0)
+    : null;
 
   return {
     id: exam.exam.id,
@@ -109,6 +140,8 @@ async function loadExamWithQuestions(examId: number) {
     startedAt: exam.exam.startedAt,
     submittedAt: exam.exam.submittedAt,
     score: exam.exam.score,
+    totalMaxScore,
+    totalEarnedScore,
     status: exam.exam.status as "generated" | "in_progress" | "submitted",
     createdAt: exam.exam.createdAt,
     questions,
@@ -224,6 +257,7 @@ router.post(
         questionId: q.id,
         randomizedOrder: idx,
         randomizedOptionOrder: JSON.stringify(order),
+        maxScore: scoreForDifficulty(q.difficultyLevel),
       };
     });
     if (examQuestionRows.length > 0) {
@@ -325,35 +359,85 @@ router.post(
       .select()
       .from(mockExamQuestionsTable)
       .where(eq(mockExamQuestionsTable.examId, exam.id));
-    const optIds = parsed.data.answers
-      .map((a) => a.selectedAnswerOptionId)
-      .filter((x): x is number => typeof x === "number");
-    const opts = optIds.length
+
+    // Fetch every answer option for the questions in this exam so we can
+    // identify correct options and grade multi-select questions.
+    const questionIds = Array.from(new Set(examQs.map((eq_) => eq_.questionId)));
+    const allOpts = questionIds.length
       ? await db
           .select()
           .from(answerOptionsTable)
-          .where(inArray(answerOptionsTable.id, optIds))
+          .where(inArray(answerOptionsTable.questionId, questionIds))
       : [];
-    const optMap = new Map(opts.map((o) => [o.id, o]));
+    const optsByQuestion = new Map<number, typeof allOpts>();
+    for (const o of allOpts) {
+      const arr = optsByQuestion.get(o.questionId) ?? [];
+      arr.push(o);
+      optsByQuestion.set(o.questionId, arr);
+    }
 
     let correctCount = 0;
+    let totalEarnedScore = 0;
+    let totalMaxScore = 0;
     for (const eq_ of examQs) {
       const ans = parsed.data.answers.find((a) => a.examQuestionId === eq_.id);
-      const selectedId = ans?.selectedAnswerOptionId ?? null;
-      const isCorrect =
-        selectedId != null && (optMap.get(selectedId)?.isCorrect ?? false);
-      if (isCorrect) correctCount += 1;
+      // Accept new multi-select field, fall back to legacy single id.
+      const submittedIds = ans?.selectedAnswerOptionIds?.length
+        ? ans.selectedAnswerOptionIds
+        : ans?.selectedAnswerOptionId != null
+        ? [ans.selectedAnswerOptionId]
+        : [];
+
+      const qOpts = optsByQuestion.get(eq_.questionId) ?? [];
+      const correctIds = new Set(qOpts.filter((o) => o.isCorrect).map((o) => o.id));
+      // Validate + dedupe: ignore any submitted id that isn't an option for
+      // this question, and collapse duplicates so a tampered payload can't
+      // inflate `correctSelected` past `totalCorrect`.
+      const validSubmitted = Array.from(
+        new Set(submittedIds.filter((id) => qOpts.some((o) => o.id === id))),
+      );
+      const correctSelected = validSubmitted.filter((id) => correctIds.has(id)).length;
+      const incorrectSelected = validSubmitted.length - correctSelected;
+      const totalCorrect = correctIds.size;
+
+      const maxScore = eq_.maxScore;
+      // Partial scoring: each correct selection earns a fraction of maxScore,
+      // each wrong selection cancels one correct. Floor at 0 (no negative scores).
+      const earnedScore =
+        totalCorrect > 0
+          ? Math.min(
+              maxScore,
+              Math.max(
+                0,
+                Math.round(
+                  ((correctSelected - incorrectSelected) / totalCorrect) *
+                    maxScore *
+                    100,
+                ) / 100,
+              ),
+            )
+          : 0;
+      const fullyCorrect = earnedScore === maxScore && validSubmitted.length > 0;
+      if (fullyCorrect) correctCount += 1;
+      totalEarnedScore += earnedScore;
+      totalMaxScore += maxScore;
+
       await db
         .update(mockExamQuestionsTable)
         .set({
-          selectedAnswerOptionId: selectedId,
-          isCorrect,
+          // Keep legacy single-id column populated for back-compat (first selected id).
+          selectedAnswerOptionId: validSubmitted[0] ?? null,
+          selectedOptionIds: JSON.stringify(validSubmitted),
+          isCorrect: fullyCorrect,
+          earnedScore,
         })
         .where(eq(mockExamQuestionsTable.id, eq_.id));
     }
 
     const score =
-      examQs.length > 0 ? Math.round((correctCount / examQs.length) * 10000) / 100 : 0;
+      totalMaxScore > 0
+        ? Math.round((totalEarnedScore / totalMaxScore) * 10000) / 100
+        : 0;
     const submittedAt = new Date();
     await db
       .update(mockExamsTable)
@@ -398,6 +482,8 @@ router.post(
         score,
         correctCount,
         totalQuestions: examQs.length,
+        totalMaxScore: Math.round(totalMaxScore * 100) / 100,
+        totalEarnedScore: Math.round(totalEarnedScore * 100) / 100,
         status: "submitted",
         submittedAt,
       }),
@@ -461,33 +547,63 @@ router.get(
         const qOpts = opts
           .filter((o) => o.questionId === row.q.id)
           .sort((a, b) => a.displayOrder - b.displayOrder);
-        const correct = qOpts.find((o) => o.isCorrect);
-        const selectedId = row.meq.selectedAnswerOptionId;
+        const correctOpts = qOpts.filter((o) => o.isCorrect);
+        const correctIds = correctOpts.map((o) => o.id);
+        const selectedIds = parseOptionIds(row.meq.selectedOptionIds);
+        // Fallback to legacy column if the multi-id column hasn't been
+        // populated for this exam (e.g. exams submitted before the migration).
+        const effectiveSelected =
+          selectedIds.length > 0
+            ? selectedIds
+            : row.meq.selectedAnswerOptionId != null
+            ? [row.meq.selectedAnswerOptionId]
+            : [];
+        const correctSelectedCount = effectiveSelected.filter((id) =>
+          correctIds.includes(id),
+        ).length;
+        const incorrectSelectedCount =
+          effectiveSelected.length - correctSelectedCount;
+        const maxScore = row.meq.maxScore;
+        const earnedScore = row.meq.earnedScore;
         const isCorrect =
-          selectedId != null
-            ? (qOpts.find((o) => o.id === selectedId)?.isCorrect ?? false)
-            : false;
+          earnedScore != null && earnedScore === maxScore && effectiveSelected.length > 0;
         return {
           examQuestionId: row.meq.id,
           questionId: row.q.id,
           title: row.q.title,
           questionText: row.q.questionText,
+          questionType: row.q.questionType as "single_choice" | "multiple_choice",
           difficultyLevel: row.q.difficultyLevel as "Easy" | "Medium" | "Hard",
           topicName: row.topicName,
           explanationText: row.q.explanationText,
           isCorrect,
-          selectedAnswerOptionId: selectedId,
-          correctAnswerOptionId: correct?.id ?? null,
+          maxScore,
+          earnedScore,
+          totalCorrectCount: correctOpts.length,
+          correctSelectedCount,
+          incorrectSelectedCount,
+          selectedAnswerOptionId: row.meq.selectedAnswerOptionId,
+          selectedAnswerOptionIds: effectiveSelected,
+          correctAnswerOptionId: correctOpts[0]?.id ?? null,
+          correctAnswerOptionIds: correctIds,
           options: qOpts,
         };
       })
       .sort((a, b) => a.examQuestionId - b.examQuestionId);
+
+    const totalMaxScore = items.reduce((s, it) => s + it.maxScore, 0);
+    const hasEarned = items.some((it) => it.earnedScore != null);
+    const totalEarnedScore = hasEarned
+      ? items.reduce((s, it) => s + (it.earnedScore ?? 0), 0)
+      : null;
 
     res.json(
       GetExamReviewResponse.parse({
         exam: {
           ...examRow.exam,
           courseName: examRow.courseName,
+          totalMaxScore,
+          totalEarnedScore,
         },
         items,
       }),
@@ -518,11 +634,41 @@ router.get(
       .leftJoin(coursesTable, eq(coursesTable.id, mockExamsTable.courseId))
       .where(eq(mockExamsTable.userId, id))
       .orderBy(desc(mockExamsTable.createdAt));
+
+    // Aggregate per-exam totals so the response satisfies the Exam contract
+    // (which now requires totalMaxScore and optionally totalEarnedScore).
+    const examIds = rows.map((r) => r.exam.id);
+    const totalsByExam = new Map<number, { max: number; earned: number; hasEarned: boolean }>();
+    if (examIds.length > 0) {
+      const meqRows = await db
+        .select({
+          examId: mockExamQuestionsTable.examId,
+          maxScore: mockExamQuestionsTable.maxScore,
+          earnedScore: mockExamQuestionsTable.earnedScore,
+        })
+        .from(mockExamQuestionsTable)
+        .where(inArray(mockExamQuestionsTable.examId, examIds));
+      for (const m of meqRows) {
+        const t = totalsByExam.get(m.examId) ?? { max: 0, earned: 0, hasEarned: false };
+        t.max += m.maxScore ?? 0;
+        if (m.earnedScore != null) {
+          t.earned += m.earnedScore;
+          t.hasEarned = true;
+        }
+        totalsByExam.set(m.examId, t);
+      }
+    }
+
     res.json(
-      rows.map((r) => ({
-        ...r.exam,
-        courseName: r.courseName,
-      })),
+      rows.map((r) => {
+        const t = totalsByExam.get(r.exam.id);
+        return {
+          ...r.exam,
+          courseName: r.courseName,
+          totalMaxScore: t?.max ?? 0,
+          totalEarnedScore: t?.hasEarned ? t.earned : null,
+        };
+      }),
     );
   },
 );

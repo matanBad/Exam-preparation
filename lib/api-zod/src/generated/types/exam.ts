@@ -17,7 +17,12 @@ export interface Exam {
   durationMinutes?: number | null;
   startedAt?: Date | null;
   submittedAt?: Date | null;
+  /** Final percentage (0-100). */
   score?: number | null;
+  /** Sum of maxScore across all exam questions. */
+  totalMaxScore: number;
+  /** Sum of earnedScore across all exam questions (null until submitted). */
+  totalEarnedScore?: number | null;
   status: ExamStatus;
   createdAt: Date;
 }

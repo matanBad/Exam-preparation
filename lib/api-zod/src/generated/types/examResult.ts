@@ -9,8 +9,12 @@ import type { ExamStatus } from "./examStatus";
 
 export interface ExamResult {
   examId: number;
+  /** Final percentage (0-100). */
   score: number;
+  /** Number of questions answered fully correctly. */
   correctCount: number;
   totalQuestions: number;
+  totalMaxScore: number;
+  totalEarnedScore: number;
   status: ExamStatus;
 }
