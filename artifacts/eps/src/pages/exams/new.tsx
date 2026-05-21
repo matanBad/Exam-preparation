@@ -90,9 +90,6 @@ export default function ExamNew() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-3xl font-bold">Generate Mock Exam</h1>
-        <p className="text-muted-foreground mt-1">
-          Choose a course, optional topics, and exam length.
-        </p>
       </div>
       <form onSubmit={submit} className="space-y-6" data-testid="form-generate-exam">
         <Card>
