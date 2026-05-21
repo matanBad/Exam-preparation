@@ -94,7 +94,6 @@ export default function ExamNew() {
           Choose a course, optional topics, and exam length.
         </p>
       </div>
-
       <form onSubmit={submit} className="space-y-6" data-testid="form-generate-exam">
         <Card>
           <CardHeader>
@@ -186,7 +185,7 @@ export default function ExamNew() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Difficulty</Label>
+              <Label>Questions Difficulty</Label>
               <Select
                 value={difficulty}
                 onValueChange={(v) =>
