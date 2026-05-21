@@ -35,7 +35,15 @@ export default function ExamTake({ params }: { params: { id: string } }) {
           if (cancelled) return;
           setExam(data);
           if (data.durationMinutes) {
-            setSecondsLeft(data.durationMinutes * 60);
+            const total = data.durationMinutes * 60;
+            // Resume from where the student left off: subtract elapsed wall-clock
+            // time since the exam was first started. Server sets startedAt on
+            // the first /start call and does not reset it on subsequent calls.
+            const startedAtMs = data.startedAt
+              ? new Date(data.startedAt).getTime()
+              : Date.now();
+            const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+            setSecondsLeft(Math.max(0, total - elapsed));
           }
           const initial: Record<number, number[]> = {};
           for (const q of data.questions) {
