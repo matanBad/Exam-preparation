@@ -148,24 +148,23 @@ export default function ExamTake({ params }: { params: { id: string } }) {
       {q && (
         <Card data-testid={`card-question-${q.id}`}>
           <CardHeader>
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <CardTitle className="text-lg">{q.title}</CardTitle>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge
-                  variant="outline"
-                  className={DIFFICULTY_STYLES[q.difficultyLevel] ?? ""}
-                  data-testid={`badge-difficulty-${q.id}`}
-                >
-                  {q.difficultyLevel}
-                </Badge>
-                <Badge
-                  className="bg-primary text-primary-foreground"
-                  data-testid={`badge-max-score-${q.id}`}
-                >
-                  Question Score: {q.maxScore} {q.maxScore === 1 ? "Point" : "Points"}
-                </Badge>
-              </div>
+            <div
+              className="mb-3 flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2"
+              data-testid={`banner-score-${q.id}`}
+            >
+              <span className="text-sm font-semibold text-primary">
+                Question Score: {q.maxScore}{" "}
+                {q.maxScore === 1 ? "Point" : "Points"}
+              </span>
+              <Badge
+                variant="outline"
+                className={DIFFICULTY_STYLES[q.difficultyLevel] ?? ""}
+                data-testid={`badge-difficulty-${q.id}`}
+              >
+                {q.difficultyLevel}
+              </Badge>
             </div>
+            <CardTitle className="text-lg">{q.title}</CardTitle>
             {q.topicName && (
               <p className="text-xs text-muted-foreground">{q.topicName}</p>
             )}

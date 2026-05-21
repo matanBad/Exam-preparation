@@ -71,38 +71,50 @@ export default function ExamReview({ params }: { params: { id: string } }) {
             className="animate-in fade-in slide-in-from-bottom-1 duration-300"
           >
             <CardHeader>
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <CardTitle className="text-base flex-1 min-w-[200px]">
-                  {idx + 1}. {item.title}
-                </CardTitle>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge
-                    variant="outline"
-                    className={DIFFICULTY_STYLES[item.difficultyLevel] ?? ""}
-                  >
-                    {item.difficultyLevel}
-                  </Badge>
+              <div
+                className={`mb-3 flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${
+                  !graded
+                    ? "border-muted-foreground/30 bg-muted"
+                    : allCorrect
+                    ? "border-green-600/40 bg-green-50 dark:bg-green-950/30"
+                    : partial
+                    ? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/30"
+                    : "border-red-600/40 bg-red-50 dark:bg-red-950/30"
+                }`}
+                data-testid={`banner-score-${item.examQuestionId}`}
+              >
+                <span
+                  className={`text-sm font-semibold ${
+                    !graded
+                      ? "text-muted-foreground"
+                      : allCorrect
+                      ? "text-green-700 dark:text-green-400"
+                      : partial
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-red-700 dark:text-red-400"
+                  }`}
+                >
                   {!graded ? (
-                    <Badge variant="secondary" className="gap-1">
-                      <Clock className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
                       Pending Review
-                    </Badge>
+                    </span>
                   ) : (
-                    <Badge
-                      className={
-                        allCorrect
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : partial
-                          ? "bg-amber-500 hover:bg-amber-600 text-white"
-                          : "bg-red-600 hover:bg-red-700 text-white"
-                      }
-                      data-testid={`badge-earned-${item.examQuestionId}`}
-                    >
+                    <>
                       You received {earnedQ} out of {item.maxScore} points
-                    </Badge>
+                    </>
                   )}
-                </div>
+                </span>
+                <Badge
+                  variant="outline"
+                  className={DIFFICULTY_STYLES[item.difficultyLevel] ?? ""}
+                >
+                  {item.difficultyLevel}
+                </Badge>
               </div>
+              <CardTitle className="text-base">
+                {idx + 1}. {item.title}
+              </CardTitle>
               {item.topicName && (
                 <p className="text-xs text-muted-foreground">{item.topicName}</p>
               )}

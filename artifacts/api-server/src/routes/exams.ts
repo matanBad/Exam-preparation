@@ -564,7 +564,19 @@ router.get(
         const incorrectSelectedCount =
           effectiveSelected.length - correctSelectedCount;
         const maxScore = row.meq.maxScore;
-        const earnedScore = row.meq.earnedScore;
+        // Backward-compat: exams submitted before per-question scoring was
+        // added have earnedScore=null but still have a graded `isCorrect` flag.
+        // Derive earned from that so the review screen never shows
+        // "Pending Review" for an already-submitted exam.
+        const examSubmitted = examRow.exam.status === "submitted";
+        const earnedScore =
+          row.meq.earnedScore != null
+            ? row.meq.earnedScore
+            : examSubmitted
+            ? row.meq.isCorrect
+              ? maxScore
+              : 0
+            : null;
         const isCorrect =
           earnedScore != null && earnedScore === maxScore && effectiveSelected.length > 0;
         return {
