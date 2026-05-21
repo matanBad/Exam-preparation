@@ -203,10 +203,6 @@ export default function ExamNew() {
                   <SelectItem value="Hard">Hard only · 15 pts each</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Pick a single difficulty to make every question in the exam that
-                level, or leave as “Any” for a mix.
-              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="duration">Duration (minutes, blank for untimed)</Label>
