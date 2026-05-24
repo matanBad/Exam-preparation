@@ -368,7 +368,7 @@ export function QuestionForm({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={onCancel}
           data-testid="btn-cancel-question"
         >

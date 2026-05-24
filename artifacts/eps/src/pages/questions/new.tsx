@@ -16,7 +16,7 @@ export default function QuestionNew() {
       <h1 className="text-3xl font-bold">New Question</h1>
       <QuestionForm
         submitting={create.isPending}
-        submitLabel="Create question"
+        submitLabel="Submit question"
         onCancel={() => setLocation("/lecturer/questions")}
         onSubmit={(values) =>
           create.mutate(
