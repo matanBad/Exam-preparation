@@ -1,0 +1,13 @@
+Stop execution immediately. We have performed a structural quality audit on the topics and subtopics table (topics.csv) and identified a critical architectural issue: You have used generic, duplicated topic names (such as "עקרונות מרכזיים", "השוואת חלופות", "מטרות ותחומי שימוש") and copy-pasted them blindly across all 245 courses. These topics are completely disconnected from the actual academic syllabi (for example, there is no such thing as "Comparing Alternatives" in a Programming or Calculus course).
+
+We are going to completely fix and rebuild this hierarchy using Reverse Engineering from our high-quality questions file (questions.csv).
+
+### 🛠️ Strict Migration & Engineering Instructions:
+
+1. Scan Real Content: Iterate course-by-course through questions.csv. Analyze the actual text of the questions (the code fragments, specific mathematical formulas, unique titles, and detailed explanations) and extract the real, domain-specific parent topics and subtopics.
+2. Update topics.csv Content: Replace the generic/templated placeholder names in topics.csv with the highly professional, academic terms you extracted. 
+   - For example: In a Data Structures course, the rows must be updated to terms like "Linear Data Structures", "Linked Lists", "Stacks & Queues", "Binary Search Trees", "Hash Tables", etc.
+3. Strict Database Integrity (ID Preservation): You are strictly forbidden from deleting rows, adding new rows, or changing any IDs. Maintain complete Referential Integrity. Modify ONLY the string value in the `topic_name` column based on the existing `id` and `course_id`.
+4. Language Rules: Match the professional standards of the department. If the questions and engineering terms for a course are in English (like in Computer Science/Software Engineering), the updated `topic_name` must be in English. If the course is taught locally in Hebrew (like Construction Materials), use precise, professional Hebrew terminology.
+
+Execute this migration directly on the existing topics.csv file. Once completed, provide a brief execution report and display the updated hierarchical topic tree for Course 3 (Data Structures) as a proof of quality so I can verify the improvement.
