@@ -59,12 +59,14 @@ export function QuestionForm({
   onSubmit,
   onCancel,
   submitLabel,
+  showStatus = true,
 }: {
   initial?: Partial<QuestionFormValues>;
   submitting: boolean;
   onSubmit: (values: QuestionFormValues) => void;
   onCancel: () => void;
   submitLabel: string;
+  showStatus?: boolean;
 }) {
   const [, setLocation] = useLocation();
   const [values, setValues] = useState<QuestionFormValues>({
@@ -242,27 +244,29 @@ export function QuestionForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={values.status}
-                onValueChange={(v) =>
-                  setValues((s) => ({
-                    ...s,
-                    status: v as "draft" | "approved" | "archived",
-                  }))
-                }
-              >
-                <SelectTrigger data-testid="select-q-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {showStatus && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={values.status}
+                  onValueChange={(v) =>
+                    setValues((s) => ({
+                      ...s,
+                      status: v as "draft" | "approved" | "archived",
+                    }))
+                  }
+                >
+                  <SelectTrigger data-testid="select-q-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
