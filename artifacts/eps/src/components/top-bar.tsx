@@ -42,7 +42,7 @@ const TITLES: Array<[RegExp, string]> = [
   [/^\/exams(\/|$)/, "My Exams"],
   [/^\/lecturer\/questions(\/|$)/, "Question Bank"],
   [/^\/admin\/users$/, "Users"],
-  [/^\/admin\/user-approvals$/, "User approval"],
+  [/^\/admin\/user-approvals$/, "Users"],
 ];
 
 function pageTitle(path: string): string {
