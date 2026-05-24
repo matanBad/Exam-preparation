@@ -1,0 +1,55 @@
+I uploaded two final files:
+
+1. questions9_alignment_fixed_db.csv
+2. final_visual_assets_corrected_v5.zip
+
+Please integrate both into the EPS system.
+
+Step 1 — Update the questions DB:
+- Replace/update the current questions table using questions9_alignment_fixed_db.csv.
+- Match questions by id.
+- Preserve all columns exactly as provided.
+- This DB already includes duplicate handling, clearer question wording, and course/topic/subtopic alignment fixes.
+- Do not re-optimize, rewrite, or regenerate questions.
+
+Step 2 — Integrate visual assets:
+- Extract final_visual_assets_corrected_v5.zip.
+- Move all files from images/ into:
+  public/question-images/
+
+Inside the ZIP:
+- reports/final_included_images_manifest_v5.csv = questions that should have images.
+- reports/image_required_false_manifest_v5.csv = non-code questions that should not have images.
+- reports/corrected_v5_audit.json = QA summary.
+
+For every row in final_included_images_manifest_v5.csv:
+- Match by question_id.
+- Set image_required = true.
+- Set image_path or image_url to:
+  /question-images/<file>
+
+For every row in image_required_false_manifest_v5.csv:
+- Match by question_id.
+- Set image_required = false.
+- Clear image_path / image_url if one exists.
+
+Important rules:
+- Do not use older image ZIP versions.
+- Do not generate new images.
+- Do not attach images to questions marked image_required=false.
+- Preserve exact image filenames.
+- The DB file is the source of truth for question text.
+- The image manifest is the source of truth for image mapping.
+
+After integration, run verification:
+1. Every DB question was imported/updated correctly.
+2. Every image_required=true question has an existing image file.
+3. Every image_required=false question has no image.
+4. No missing image paths.
+5. No duplicate image mapping.
+6. Print a summary:
+   - total questions updated
+   - total images linked
+   - total questions marked image_required=false
+   - missing image count
+   - duplicate mapping count
