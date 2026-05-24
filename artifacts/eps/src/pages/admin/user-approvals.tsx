@@ -56,9 +56,6 @@ export default function AdminUserApprovals() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold">User approval</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Self-registered accounts waiting for an admin to approve them.
-          </p>
         </div>
         <Link href="/admin/users">
           <Button variant="outline" data-testid="btn-back-to-users">
