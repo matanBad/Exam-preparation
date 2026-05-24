@@ -153,7 +153,7 @@ function LecturerDashboard({ user }: { user: EpsUser }) {
   const hasMoreCourses = (courses ?? []).length > visibleCourses.length;
 
   return (
-    <div className="space-y-4 mt-6">
+    <div className="space-y-4 mt-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link
           href="/courses"
@@ -294,7 +294,7 @@ function AdminDashboardView() {
   ];
 
   return (
-    <div className="space-y-6 mt-6">
+    <div className="space-y-6 mt-10">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {stats.map((s) => (
           <StatTile key={s.key} stat={s} />
