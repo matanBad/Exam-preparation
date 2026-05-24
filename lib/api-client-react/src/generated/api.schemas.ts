@@ -339,6 +339,10 @@ export interface Course {
   programCode?: string | null;
   lecturerId?: number | null;
   lecturerName?: string | null;
+  /** Number of approved questions in this course (server-aggregated) */
+  approvedQuestionCount?: number;
+  /** Number of pending/draft questions in this course visible to the caller */
+  pendingQuestionCount?: number;
   /** Study year of the matched offering */
   studyYear?: CourseStudyYear;
   /** Semester of the matched offering (A/B) */

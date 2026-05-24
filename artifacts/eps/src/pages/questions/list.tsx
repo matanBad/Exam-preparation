@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListQuestions,
   useListCourses,
+  getListCoursesQueryKey,
   useArchiveQuestion,
   getListQuestionsQueryKey,
 } from "@workspace/api-client-react";
@@ -125,8 +126,20 @@ export default function QuestionsList() {
 
   const { data: courses } = useListCourses();
   const { data: serverQuestions, isLoading } = useListQuestions(params);
-  // Unfiltered set, used to populate the course-overview index for lecturer/admin.
-  const { data: allQuestions } = useListQuestions();
+  // We only need the unfiltered question set for approval mode (to derive
+  // pending rows scoped to the caller) and for privileged free-text search
+  // across course/program/lecturer fields. Per-course totals/pending badges
+  // come from /api/courses (approvedQuestionCount, pendingQuestionCount) so
+  // the Question Bank overview no longer downloads the full bank.
+  const needAllQuestions =
+    approval ||
+    ((me?.role === "lecturer" || me?.role === "admin") && q.trim().length > 0);
+  const { data: allQuestions } = useListQuestions(undefined, {
+    query: {
+      queryKey: getListQuestionsQueryKey(),
+      enabled: needAllQuestions,
+    },
+  });
 
   // Build a lookup of course → { programName, lecturerName, courseCode,
   // courseName } so we can search question rows by their parent course's
@@ -218,26 +231,22 @@ export default function QuestionsList() {
     courseId === ALL &&
     (approval || (status === ALL && difficulty === ALL && !q));
 
-  // Per-course pending counts (used in approval-mode overview).
+  // Per-course counts come straight from /api/courses now — server-side
+  // aggregation means the overview renders instantly without downloading
+  // the full question bank just to count rows.
   const pendingByCourse = new Map<number, number>();
-  for (const qu of pendingScoped) {
-    pendingByCourse.set(
-      qu.courseId,
-      (pendingByCourse.get(qu.courseId) ?? 0) + 1,
-    );
-  }
-  // Per-course total counts (used in regular-mode overview). We only count
-  // approved questions: draft/pending live in the approval flow, and
-  // archived questions are hidden from the regular Question Bank view.
   const countsByCourse = new Map<number, number>();
-  for (const qu of allQuestions ?? []) {
-    if (qu.status !== "approved") continue;
-    countsByCourse.set(qu.courseId, (countsByCourse.get(qu.courseId) ?? 0) + 1);
+  for (const c of courses ?? []) {
+    pendingByCourse.set(c.id, c.pendingQuestionCount ?? 0);
+    countsByCourse.set(c.id, c.approvedQuestionCount ?? 0);
   }
-  const pendingCount = pendingScoped.length;
+  const pendingCount = (courses ?? []).reduce(
+    (n, c) => n + (c.pendingQuestionCount ?? 0),
+    0,
+  );
   // Courses to show in the approval-mode overview: only those with pending.
   const approvalCourses = (courses ?? []).filter(
-    (c) => (pendingByCourse.get(c.id) ?? 0) > 0,
+    (c) => (c.pendingQuestionCount ?? 0) > 0,
   );
   // The selected course (when a card has been opened) — used for the title
   // in the selected-course view.
@@ -256,6 +265,11 @@ export default function QuestionsList() {
           // so pending badges and approval-mode views update immediately.
           queryClient.invalidateQueries({
             queryKey: getListQuestionsQueryKey().slice(0, 1),
+          });
+          // /api/courses returns the per-course question counts now,
+          // so refetch it so the overview badges update too.
+          queryClient.invalidateQueries({
+            queryKey: getListCoursesQueryKey().slice(0, 1),
           });
         },
       },

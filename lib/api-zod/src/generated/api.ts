@@ -371,6 +371,18 @@ export const ListCoursesResponseItem = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  approvedQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of approved questions in this course (server-aggregated)",
+    ),
+  pendingQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of pending\/draft questions in this course visible to the caller",
+    ),
   studyYear: zod
     .union([
       zod.literal("First"),
@@ -425,6 +437,18 @@ export const GetCourseResponse = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  approvedQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of approved questions in this course (server-aggregated)",
+    ),
+  pendingQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of pending\/draft questions in this course visible to the caller",
+    ),
   studyYear: zod
     .union([
       zod.literal("First"),
@@ -469,6 +493,18 @@ export const UpdateCourseResponse = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  approvedQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of approved questions in this course (server-aggregated)",
+    ),
+  pendingQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of pending\/draft questions in this course visible to the caller",
+    ),
   studyYear: zod
     .union([
       zod.literal("First"),
@@ -553,6 +589,18 @@ export const GetUserCoursesResponseItem = zod.object({
   programCode: zod.string().nullish(),
   lecturerId: zod.number().nullish(),
   lecturerName: zod.string().nullish(),
+  approvedQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of approved questions in this course (server-aggregated)",
+    ),
+  pendingQuestionCount: zod
+    .number()
+    .optional()
+    .describe(
+      "Number of pending\/draft questions in this course visible to the caller",
+    ),
   studyYear: zod
     .union([
       zod.literal("First"),

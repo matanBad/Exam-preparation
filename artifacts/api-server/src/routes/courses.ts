@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, eq, inArray, type SQL } from "drizzle-orm";
+import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import {
   db,
   coursesTable,
@@ -8,6 +8,7 @@ import {
   usersTable,
   courseOfferingsTable,
   programsTable,
+  questionsTable,
 } from "@workspace/db";
 import {
   ListCoursesResponse,
@@ -159,17 +160,47 @@ router.get(
         byCourse.set(r.course.id, r);
       }
     }
-    const courses = Array.from(byCourse.values()).map((r) => ({
-      ...r.course,
-      offeringId: r.offeringId,
-      studyYear: r.offeringStudyYear,
-      offeringSemester: r.offeringSemester,
-      programId: r.programId,
-      programName: r.programName,
-      programCode: r.programCode,
-      lecturerId: r.lecturerId,
-      lecturerName: r.lecturerName,
-    }));
+
+    // Aggregate per-course question counts on the server so the client
+    // doesn't have to download the full question bank just to render
+    // overview cards. Counts are bounded to the same visible course set
+    // so they always match what the caller can actually open.
+    // Students always see the approved bank; pending/draft is a privileged
+    // count (admins see all, lecturers see only courses they teach — the
+    // visibility filter via ids has already been applied).
+    const visibleCourseIdList = Array.from(byCourse.keys());
+    const countRows = visibleCourseIdList.length
+      ? await db
+          .select({
+            courseId: questionsTable.courseId,
+            approved: sql<number>`COUNT(*) FILTER (WHERE ${questionsTable.status} = 'approved')`.mapWith(Number),
+            pending: sql<number>`COUNT(*) FILTER (WHERE ${questionsTable.status} IN ('pending','draft'))`.mapWith(Number),
+          })
+          .from(questionsTable)
+          .where(inArray(questionsTable.courseId, visibleCourseIdList))
+          .groupBy(questionsTable.courseId)
+      : [];
+    const countsByCourse = new Map(
+      countRows.map((r) => [r.courseId, { approved: r.approved, pending: r.pending }]),
+    );
+
+    const courses = Array.from(byCourse.values()).map((r) => {
+      const c = countsByCourse.get(r.course.id);
+      return {
+        ...r.course,
+        offeringId: r.offeringId,
+        studyYear: r.offeringStudyYear,
+        offeringSemester: r.offeringSemester,
+        programId: r.programId,
+        programName: r.programName,
+        programCode: r.programCode,
+        lecturerId: r.lecturerId,
+        lecturerName: r.lecturerName,
+        approvedQuestionCount: c?.approved ?? 0,
+        pendingQuestionCount:
+          auth.role === "student" ? 0 : (c?.pending ?? 0),
+      };
+    });
     res.json(ListCoursesResponse.parse(courses));
   },
 );

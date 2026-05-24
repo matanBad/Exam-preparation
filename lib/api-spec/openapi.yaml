@@ -1185,6 +1185,8 @@ components:
         programCode: { type: string, nullable: true }
         lecturerId: { type: integer, nullable: true }
         lecturerName: { type: string, nullable: true }
+        approvedQuestionCount: { type: integer, description: "Number of approved questions in this course (server-aggregated)" }
+        pendingQuestionCount: { type: integer, description: "Number of pending/draft questions in this course visible to the caller" }
         studyYear:
           type: string
           nullable: true
