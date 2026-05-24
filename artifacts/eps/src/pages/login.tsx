@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import logoUrl from "@/assets/ep-logo.png";
 
 const demos = [
-  { label: "Student", email: "student@eps.com" },
-  { label: "Lecturer", email: "lecturer@eps.com" },
+  { label: "Student", email: "shai.fisher@ac.sce.ac.il" },
+  { label: "Lecturer", email: "liat.levi@sce.ac.il" },
   { label: "Admin", email: "admin@eps.com" },
 ];
 
