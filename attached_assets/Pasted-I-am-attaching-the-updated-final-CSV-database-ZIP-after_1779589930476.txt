@@ -1,0 +1,58 @@
+I am attaching the updated final CSV database ZIP after the topics migration fix.
+
+Please update the project database using the attached files.
+
+Main goal:
+Replace the existing CSV database files with the updated files from the ZIP, especially the corrected topics.csv.
+
+Important context:
+The previous topics.csv contained generic duplicated topic names across many courses.
+The new topics.csv was rebuilt using reverse engineering from the actual questions.csv content, so topic and subtopic names are now course-specific and academically meaningful.
+
+Files to replace:
+1. courses.csv
+2. course_offerings.csv
+3. topics.csv
+4. users.csv
+5. lecturer_programs.csv
+6. enrollments.csv
+7. questions.csv
+8. answer_options.csv
+
+Critical rules:
+- Do not rename any file.
+- Do not change CSV headers.
+- Do not regenerate data.
+- Do not rewrite questions or answer options.
+- Do not change IDs.
+- Preserve all existing primary keys and foreign keys.
+- Preserve UTF-8 encoding.
+- Use the attached CSV files as the source of truth.
+
+Very important:
+The IDs in topics.csv must remain exactly as they are, because questions.csv references them through:
+- topic_id
+- subtopic_id
+
+After replacing the files, validate:
+1. All courses load successfully.
+2. Every question has a valid course_id.
+3. Every question has a valid topic_id.
+4. Every question has a valid subtopic_id.
+5. Every answer option has a valid question_id.
+6. Each question has exactly 4 answer options.
+7. single_choice questions have exactly one correct option.
+8. multiple_choice questions have at least two correct options.
+9. Archived questions remain with status = archived and should not appear in the normal student quiz flow unless explicitly requested by admin filtering.
+10. Approved questions should appear normally.
+11. The UI should display the corrected course-specific topics and subtopics instead of generic topic names.
+
+If the project reads directly from CSV files:
+- Replace the existing files and restart the app.
+
+If the project imports CSV files into SQLite/PostgreSQL:
+- Clear or rebuild the local database.
+- Rerun the seed/import script using the updated CSV files.
+
+Do not make automatic content changes.
+If an import error occurs, fix only the minimal compatibility issue and explain exactly what was changed.

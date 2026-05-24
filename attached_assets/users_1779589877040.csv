@@ -1,0 +1,200 @@
+id,full_name,email,password_hash,role,account_status,created_at,updated_at,profile_image_url,program_id,current_study_year,current_semester,must_change_password
+1,Shai Fisher,shai.fisher@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,1.0,First,A,False
+2,Dr. Liat Levi,liat.levi@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,False
+3,Alex Adam,admin@eps.com,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,admin,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,False
+4,Noa Cohen,noa.cohen@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,1.0,First,B,False
+5,Daniel Mizrahi,daniel.mizrahi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,1.0,Second,A,False
+6,Maya Levi,maya.levi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,1.0,Second,B,False
+7,Dr. Amir Barak,amir.barak@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+10,Sivan Sanvetu,sivan.sanvetu@ac.sce.ac.il,$2b$10$tiI0aB1JUFDYXTQowuoMluLErMYeou9qZEyZmyV9XQYicqVWMNAAG,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,1.0,Third,A,False
+11,Dr. Dana Cohen,dana.cohen@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+12,Tal Ben-Ami,tal.benami@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,2.0,First,A,False
+13,Dr. Ron Shalev,ron.shalev@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+14,Ori Ben David,ori.bendavid@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,3.0,First,A,False
+15,Dr. Yael Katz,yael.katz@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+16,Rina Avraham,rina.avraham@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,4.0,First,A,False
+17,Dr. Eyal Mor,eyal.mor@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+18,Lior Peretz,lior.peretz@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,5.0,First,A,False
+19,Dr. Gal Naveh,gal.naveh@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,,,,True
+20,Eden Shalom,eden.shalom@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,6.0,First,A,False
+21,Tamar Biton,tamar.biton@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,7.0,First,A,False
+22,Yael Harari,yael.harari@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,2.0,First,B,False
+23,Omer Dahan,omer.dahan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,2.0,Second,A,False
+24,Neta Amar,neta.amar@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,3.0,First,B,False
+25,Amit Cohen,amit.cohen@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,3.0,Second,A,False
+26,Noam Shamir,noam.shamir@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,4.0,First,B,False
+27,Shira Azulay,shira.azulay@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,4.0,Second,A,False
+28,Maya Rahamim,maya.rahamim@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,5.0,First,B,False
+29,Ido Malka,ido.malka@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,5.0,Second,A,False
+30,Roy Ben Simon,roy.bensimon@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,6.0,First,B,False
+31,Hila Romano,hila.romano@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,6.0,Second,A,False
+32,Ari Golan,ari.golan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,7.0,First,B,False
+33,Dana Friedman,dana.friedman@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-19T12:13:26.096Z""","""2026-05-19T12:13:26.096Z""",,7.0,Second,A,False
+34,Dr. Amir Sela,amir.sela@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+35,Dr. Hagar Cohen,hagar.cohen@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+36,Dr. Eyal Rosenthal,eyal.rosenthal@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+37,Dr. Michal Zohar,michal.zohar@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+38,Dr. Nadav Bar,nadav.bar@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+39,Dr. Keren Shapira,keren.shapira@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+40,Dr. Roni Tal,roni.tal@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+41,Dr. Yaara Stein,yaara.stein@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+42,Dr. Oren Shaked,oren.shaked@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+43,Dr. Galit Mor,galit.mor@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+44,Dr. Itai Shalev,itai.shalev@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+45,Dr. Liron Katz,liron.katz@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+46,Dr. Talia Green,talia.green@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+47,Dr. Avner Cohen,avner.cohen@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+48,Dr. Noa Klein,noa.klein@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+49,Dr. Yair Naveh,yair.naveh@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+50,Dr. Alma Lavi,alma.lavi@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+51,Dr. Eran Barak,eran.barak@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+52,Dr. Dafna Levi,dafna.levi@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+53,Dr. Uri Mizrahi,uri.mizrahi@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+54,Dr. Yael Shani,yael.shani@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+55,Dr. Miriam Azulay,miriam.azulay@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+56,Dr. Yoav Ben Natan,yoav.bennatan@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+57,Dr. Hadas Avraham,hadas.avraham@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+58,Dr. Gilad Sharabi,gilad.sharabi@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+59,Dr. Noa Aharoni,noa.aharoni@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+60,Dr. Eitan Romano,eitan.romano@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+61,Dr. Sarah Friedman,sarah.friedman@sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,lecturer,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,,,,False
+62,Adam Levi,adam.levi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Second,B,False
+63,Noa Cohen,noa.cohen63@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Third,A,False
+64,Daniel Mizrahi,daniel.mizrahi64@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Fourth,B,False
+65,Maya Avraham,maya.avraham@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,First,A,False
+66,Eitan Biton,eitan.biton@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Second,B,False
+67,Shira Peretz,shira.peretz@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Third,A,False
+68,Amit Dahan,amit.dahan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Fourth,B,False
+69,Tamar Azulay,tamar.azulay@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,First,A,False
+70,Ido Barak,ido.barak@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Second,B,False
+71,Hila Shalev,hila.shalev@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Third,A,False
+72,Roy Katz,roy.katz@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Fourth,B,False
+73,Neta Mor,neta.mor@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,First,A,False
+74,Omer Naveh,omer.naveh@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Second,B,False
+75,Yael Ben Ami,yael.benami@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Third,A,False
+76,Lior Shapira,lior.shapira@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Fourth,B,False
+77,Roni Tal,roni.tal@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,First,A,False
+78,Gal Friedman,gal.friedman@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Second,B,False
+79,Dana Amar,dana.amar@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Third,A,False
+80,Yair Golan,yair.golan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,1,Fourth,B,False
+81,Alma Harari,alma.harari@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+82,Itai Romano,itai.romano@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Fourth,B,False
+83,Keren Ben David,keren.bendavid@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,First,A,False
+84,Uri Shamir,uri.shamir@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Second,B,False
+85,Dafna Malka,dafna.malka@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+86,Eden Sela,eden.sela@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Fourth,B,False
+87,Nadav Zohar,nadav.zohar@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,First,A,False
+88,Hagar Green,hagar.green@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Second,B,False
+89,Oren Lavi,oren.lavi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+90,Talia Klein,talia.klein@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Fourth,B,False
+91,Avner Shani,avner.shani@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,First,A,False
+92,Yarden Rahav,yarden.rahav@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Second,B,False
+93,Adi Ohana,adi.ohana@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+94,Guy Maman,guy.maman@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Fourth,B,False
+95,Shani Atias,shani.atias@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,First,A,False
+96,Matan Carmi,matan.carmi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Second,B,False
+97,Linoy Kadosh,linoy.kadosh@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+98,Ariel Yosef,ariel.yosef@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Fourth,B,False
+99,Bar Sasson,bar.sasson@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,First,A,False
+100,Ofir Hadad,ofir.hadad@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Second,B,False
+101,Chen Tzur,chen.tzur@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,2,Third,A,False
+102,Niv Vaknin,niv.vaknin@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Fourth,B,False
+103,Tair Barel,tair.barel@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,First,A,False
+104,Sapir Dayan,sapir.dayan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Second,B,False
+105,Yoni Caspit,yoni.caspit@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Third,A,False
+106,Maayan Elbaz,maayan.elbaz@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Fourth,B,False
+107,Ravid Farhi,ravid.farhi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,First,A,False
+108,Yuval Goldberg,yuval.goldberg@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Second,B,False
+109,Noam Hakim,noam.hakim@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Third,A,False
+110,Roei Israeli,roei.israeli@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Fourth,B,False
+111,Moria Jerbi,moria.jerbi@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,First,A,False
+112,Avi Koren,avi.koren@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Second,B,False
+113,Meital Lahav,meital.lahav@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Third,A,False
+114,Sagi Manor,sagi.manor@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Fourth,B,False
+115,Tehila Nahum,tehila.nahum@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,First,A,False
+116,Rotem Or,rotem.or@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Second,B,False
+117,Yasmin Paz,yasmin.paz@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Third,A,False
+118,Eli Rosen,eli.rosen@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Fourth,B,False
+119,Amitai Sahar,amitai.sahar@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,First,A,False
+120,Michal Tobias,michal.tobias@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Second,B,False
+121,Noya Uzan,noya.uzan@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,3,Third,A,False
+122,Adam Levi,adam.levi122@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,First,A,False
+123,Noa Cohen,noa.cohen123@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Second,B,False
+124,Daniel Mizrahi,daniel.mizrahi124@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Third,A,False
+125,Maya Avraham,maya.avraham125@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Fourth,B,False
+126,Eitan Biton,eitan.biton126@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,First,A,False
+127,Shira Peretz,shira.peretz127@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Second,B,False
+128,Amit Dahan,amit.dahan128@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Third,A,False
+129,Tamar Azulay,tamar.azulay129@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Fourth,B,False
+130,Ido Barak,ido.barak130@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,First,A,False
+131,Hila Shalev,hila.shalev131@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Second,B,False
+132,Roy Katz,roy.katz132@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Third,A,False
+133,Neta Mor,neta.mor133@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Fourth,B,False
+134,Omer Naveh,omer.naveh134@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,First,A,False
+135,Yael Ben Ami,yael.benami135@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Second,B,False
+136,Lior Shapira,lior.shapira136@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Third,A,False
+137,Roni Tal,roni.tal137@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Fourth,B,False
+138,Gal Friedman,gal.friedman138@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,First,A,False
+139,Dana Amar,dana.amar139@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Second,B,False
+140,Yair Golan,yair.golan140@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Third,A,False
+141,Alma Harari,alma.harari141@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,4,Fourth,B,False
+142,Itai Romano,itai.romano142@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Second,B,False
+143,Keren Ben David,keren.bendavid143@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Third,A,False
+144,Uri Shamir,uri.shamir144@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Fourth,B,False
+145,Dafna Malka,dafna.malka145@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,First,A,False
+146,Eden Sela,eden.sela146@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Second,B,False
+147,Nadav Zohar,nadav.zohar147@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Third,A,False
+148,Hagar Green,hagar.green148@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Fourth,B,False
+149,Oren Lavi,oren.lavi149@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,First,A,False
+150,Talia Klein,talia.klein150@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Second,B,False
+151,Avner Shani,avner.shani151@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Third,A,False
+152,Yarden Rahav,yarden.rahav152@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Fourth,B,False
+153,Adi Ohana,adi.ohana153@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,First,A,False
+154,Guy Maman,guy.maman154@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Second,B,False
+155,Shani Atias,shani.atias155@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Third,A,False
+156,Matan Carmi,matan.carmi156@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Fourth,B,False
+157,Linoy Kadosh,linoy.kadosh157@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,First,A,False
+158,Ariel Yosef,ariel.yosef158@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Second,B,False
+159,Bar Sasson,bar.sasson159@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Third,A,False
+160,Ofir Hadad,ofir.hadad160@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,Fourth,B,False
+161,Chen Tzur,chen.tzur161@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,5,First,A,False
+162,Niv Vaknin,niv.vaknin162@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Third,A,False
+163,Tair Barel,tair.barel163@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Fourth,B,False
+164,Sapir Dayan,sapir.dayan164@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,First,A,False
+165,Yoni Caspit,yoni.caspit165@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Second,B,False
+166,Maayan Elbaz,maayan.elbaz166@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Third,A,False
+167,Ravid Farhi,ravid.farhi167@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Fourth,B,False
+168,Yuval Goldberg,yuval.goldberg168@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,First,A,False
+169,Noam Hakim,noam.hakim169@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Second,B,False
+170,Roei Israeli,roei.israeli170@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Third,A,False
+171,Moria Jerbi,moria.jerbi171@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Fourth,B,False
+172,Avi Koren,avi.koren172@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,First,A,False
+173,Meital Lahav,meital.lahav173@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Second,B,False
+174,Sagi Manor,sagi.manor174@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Third,A,False
+175,Tehila Nahum,tehila.nahum175@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Fourth,B,False
+176,Rotem Or,rotem.or176@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,First,A,False
+177,Yasmin Paz,yasmin.paz177@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Second,B,False
+178,Eli Rosen,eli.rosen178@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Third,A,False
+179,Amitai Sahar,amitai.sahar179@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Fourth,B,False
+180,Michal Tobias,michal.tobias180@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,First,A,False
+181,Noya Uzan,noya.uzan181@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,6,Second,B,False
+182,Adam Levi,adam.levi182@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Fourth,B,False
+183,Noa Cohen,noa.cohen183@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,First,A,False
+184,Daniel Mizrahi,daniel.mizrahi184@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Second,B,False
+185,Maya Avraham,maya.avraham185@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Third,A,False
+186,Eitan Biton,eitan.biton186@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Fourth,B,False
+187,Shira Peretz,shira.peretz187@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,First,A,False
+188,Amit Dahan,amit.dahan188@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Second,B,False
+189,Tamar Azulay,tamar.azulay189@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Third,A,False
+190,Ido Barak,ido.barak190@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Fourth,B,False
+191,Hila Shalev,hila.shalev191@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,First,A,False
+192,Roy Katz,roy.katz192@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Second,B,False
+193,Neta Mor,neta.mor193@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Third,A,False
+194,Omer Naveh,omer.naveh194@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Fourth,B,False
+195,Yael Ben Ami,yael.benami195@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,First,A,False
+196,Lior Shapira,lior.shapira196@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Second,B,False
+197,Roni Tal,roni.tal197@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Third,A,False
+198,Gal Friedman,gal.friedman198@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Fourth,B,False
+199,Dana Amar,dana.amar199@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,First,A,False
+200,Yair Golan,yair.golan200@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Second,B,False
+201,Alma Harari,alma.harari201@ac.sce.ac.il,$2b$10$1EbZYKGJ50RJqXaDIhXSHeeU.avGvRXajL/a0YFOl8.bYMBMtgLSC,student,active,"""2026-05-24T00:00:00.000Z""","""2026-05-24T00:00:00.000Z""",,7,Third,A,False

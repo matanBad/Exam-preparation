@@ -98,195 +98,6 @@ async function insertInChunks<T>(
   }
 }
 
-// Course-name translations (Hebrew → English) keyed by course_code. Applied
-// when seeding `courses` so the UI stays English even when the source CSV
-// uses Hebrew labels.
-const COURSE_NAME_EN: Record<string, string> = {
-  "SE-DIS1": "Logic and Discrete Topics I",
-  "SE-ARCH1": "Computer Architecture I",
-  "SE-DIS2": "Logic and Discrete Topics II",
-  "SE-ARCH2": "Computer Architecture II",
-  SE101: "Foundations of Software Engineering",
-  "SE-AUTO": "Automata and Formal Languages",
-  "SE-PL": "Principles of Programming Languages",
-  "SE-NET1": "Introduction to Computer Networks",
-  ALG1: "Algorithms I",
-  ALG2: "Algorithms II",
-  "SE-SAFE": "Software Safety",
-  "SE-ADVOOP": "Advanced Object-Oriented Programming",
-  "SE-COMPX": "Computability and Complexity",
-  "SE-PM": "Software Project Management",
-  "SE-FINAL": "Final Project",
-  "SE-SEMINAR": "Seminar",
-  "0200091": "Advanced English B",
-  "GEN-GEN": "General Course",
-  "CS-LOGIC": "Logic and Set Theory",
-  "CS-ALG2": "Algebra 2",
-  "CS-DISCRETE": "Discrete Mathematics",
-  "CS-LINUX": "Introduction to Linux Workshop",
-  "CS-SYSPROG": "Introduction to Systems Programming",
-  "CS-ARCHASM": "Computer Architecture and Assembly",
-  "CS-ADVALG": "Advanced Algorithms",
-  "CS-SEMINAR-PAR": "Advanced Seminar in Parallel Computing",
-  "CS-SEMINAR-DL": "Advanced Seminar in Deep Learning",
-  "CS-SEMINAR-CYBER": "Advanced Seminar in Cybersecurity",
-  "1003001": "Architectural Design",
-  "1000881": "Surveying 1",
-  "1044441": "Computer Applications in Civil Engineering",
-  "0200011": "Advanced English 2",
-  "1000591": "Introduction to Engineering Geology",
-  "1000571": "Strength of Materials 2",
-  "1002660": "Building Materials 1",
-  "1000951": "Surveying 2",
-  "1007101": "Fluid Mechanics 1",
-  "1000171": "Engineering Economics for Construction",
-  "1001461": "Introduction to Stability",
-  "1000651": "Building Materials 2",
-  "1001446": "Engineering Graphics 2",
-  "1002681": "Concrete Structures 2",
-  "1002741": "Structural Statics 2",
-  "1001571": "Steel Structures 1",
-  "1001070": "Soil Mechanics 2",
-  "1007041": "Construction Methods",
-  "1001060": "Foundation Design",
-  "1002321": "Principles of Structural Design",
-  "1002941": "Structural Dynamics",
-  "1002131": "The Engineer's Build",
-  "1000261": "Earthquake-Resistant Structural Design",
-  "1003111": "Introduction to Finite Elements",
-  "1001050": "Final Project Stage A",
-  "1001221": "Prestressed Concrete",
-  "1001048": "Final Project Workshop A",
-  "5001751": "Systems Analysis",
-  "1002020": "Final Project Stage B",
-  "1090309": "Foundations of Transportation Engineering",
-  "1001049": "Final Project Workshop B",
-  "6060190": "Materials Science 1",
-  "0400051": "Introduction to Physics 1",
-  "0400271": "Introduction to Rigid Body Mechanics",
-  "6060192": "Materials Science 2",
-  "6000426": "Computer Graphics",
-  "0400011": "Introduction to Physics 2",
-  "0400201": "Physics 2A",
-  "6000852": "Introduction to Engineering Design 1",
-  "6050128": "Foundations of Creative Design",
-  "6090022": "Applied Mathematics for Engineering",
-  "6000561": "Theory of Machines",
-  "6050131": "Introduction to Linear Systems",
-  "6000581": "Manufacturing Technologies",
-  "6090003": "Programming with MATLAB",
-  "6000541": "Introduction to Electrical and Electronics Engineering",
-  "6000882": "Introduction to Engineering Design 2",
-  "6090139": "History and Philosophy of Design",
-  "6090001": "Thermodynamics 2",
-  "6000781": "Heat Transfer",
-  "6000621": "Machine Design 1",
-  "6000603": "Electronics",
-  "6001151": "Microcomputers",
-  "6001032": "Product Design and Development 1",
-  "6010062": "Design Project",
-  "6001061": "Machine Design 2",
-  "6050125": "Computerized Manufacturing Systems",
-  "6020010": "Fluid Mechanics 2",
-  "6090005": "Linear Control",
-  "6000911": "Introduction to Microcomputers",
-  "6060210": "Embedded Systems",
-  "3000181": "Analytical Chemistry 1",
-  "3000696": "Information Retrieval and Presentation",
-  "3000701": "General Chemistry 2",
-  "3000231": "Analytical Chemistry 2",
-  "3000761": "Introduction to Chemical Engineering 2",
-  "3001888": "MATLAB Programming for Chemical Engineering",
-  "3000791": "Introduction to Chemical Engineering 3",
-  "3000211": "Organic Chemistry 1",
-  "3000821": "Introduction to Cell Biology",
-  "3000041": "Introduction to Biotechnology",
-  "3000361": "Organic Chemistry 2",
-  "3000851": "Biochemistry",
-  "3000301": "Principles of Chemical Engineering 2",
-  "3000331": "Physical Chemistry",
-  "3000971": "Polymers and Biopolymers",
-  "3000421": "Principles of Chemical Engineering 3",
-  "3000091": "Safety in Chemical and Biotech Industry",
-  "3000521": "Design and Analysis of Experiments",
-  "3000481": "Plant Design 1",
-  "3001151": "Plant Design 2",
-  "3010151": "Introduction to Environmental Life Characterization",
-  "3020041": "Microbiology",
-  "3020101": "Foundations of Genetics",
-  "3020131": "Molecular Biology and Genetic Engineering",
-  "6500000": "Computer Applications",
-  "5001111": "Statistical Inference",
-  "5000761": "Foundations of Accounting",
-  "5000237": "Introduction to Databases",
-  "5000421": "Microeconomics",
-  "5000811": "Managerial Economics",
-  "5000701": "Organizational Behavior",
-  "5000841": "Foundations of Finance",
-  "5001001": "Human Resources Management",
-  "5000481": "Applied Statistics",
-  "5000891": "Marketing Management",
-  "5010271": "Operations Research 1",
-  "5000021": "Production Planning and Control 1",
-  "5000571": "Design of Experiments",
-  "5000971": "Total Quality Management",
-  "5011042": "Foundations of Materials Engineering",
-  "5010102": "Statistical Quality Control",
-  "5000751": "Engineering Reliability",
-  "5001052": "Human Factors Engineering",
-  "5020422": "Advanced Programming",
-  "5000491": "File Organization and Processing",
-  "5090001": "Project Feasibility Analysis",
-  "5001042": "Project Preparation",
-  "5050669": "Engineering Design Management",
-  "5010321": "Operations Research 2",
-  "5010211": "Maintenance Management",
-  "5020361": "Databases",
-  "5020462": "Foundations of Data Structures",
-  "5000521": "Information Systems Analysis and Design 1",
-  "0500002": "Business Entrepreneurship",
-  "5010241": "Decision Making",
-  "5060666": "Game Theory",
-  "5000542": "Simulation Methods",
-  "5000041": "Production Planning and Control 2",
-  "5010132": "Machine Elements",
-  "5050114": "Computer-Integrated Manufacturing (CIM)",
-  "5010331": "Safety Engineering",
-  "5010163": "Material Handling and Layout Systems",
-  "5000072": "Information Systems in Industry",
-  "5020231": "Human-Computer Interaction",
-  "5000522": "Information Systems Analysis and Design 2",
-  "5020271": "Information Retrieval and Filtering",
-  "5054369": "Business Intelligence",
-  "5090002": "Software Project Management",
-  "5090003": "Industrial Project Management",
-  "5000512": "Robotics and Automation",
-  "5020161": "Data Mining",
-  "5020432": "Computer Networks",
-  "1001041": "Introduction to Computers in Construction Management",
-  "5090006": "Project Management Software",
-  "EE-SWTOOLS": "Software Tools",
-  "EE-MATHA": "Engineering Mathematics A",
-  EE203: "Introduction to Electrical Engineering 2",
-  "EE-VECTOR": "Vector Analysis",
-  "EE-SEMI": "Semiconductor Devices",
-  "EE-COMPLEX": "Complex Functions",
-  "EE-ELECIRC": "Electronic Circuits",
-  "EE-RANDSIG": "Introduction to Random Signals",
-  "EE-WAVES": "Waves and Transmission Lines",
-  "EE-ADVEC": "Advanced Electronic Circuits",
-  "EE-DIGEC": "Digital Electronic Circuits",
-  "EE-ENERGY": "Energy Conversion",
-  "EE-POWER1": "Power Systems 1",
-  "EE-IND-ELEC": "Industrial Electronics",
-  "EE-MICROWAVE": "Introduction to Microwaves and Antennas",
-  "EE-POWER2": "Power Systems 2",
-  "EE-HVLV": "High and Low Voltage Technologies",
-  "EE-PROJ-A": "Project",
-  "EE-DRIVES": "Electric Drives",
-  "EE-SAFETYLAW": "Electrical Safety and Regulations",
-};
-
 // Tiny deterministic PRNG so seed runs are reproducible.
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -359,7 +170,7 @@ async function main() {
     courseRows.map((c) => ({
       id: Number(c.id),
       courseCode: c.course_code,
-      courseName: COURSE_NAME_EN[c.course_code] ?? c.course_name,
+      courseName: c.course_name,
       semester: nullable(c.semester),
       academicYear: nullable(c.academic_year),
       status: c.status || "active",
@@ -422,15 +233,20 @@ async function main() {
   // Pre-read course_offerings so we can attribute each question to a
   // lecturer who actually teaches that course. The Question Bank page
   // filters lecturer-visible questions by `createdBy = lecturerId`, so
-  // without this every lecturer sees 0 questions.
+  // without this every lecturer sees 0 questions. We collect ALL distinct
+  // lecturers per course and round-robin assignments so co-lecturers each
+  // get visibility into a fair share of their course's questions.
   const offeringPreview = readCsv("course_offerings.csv");
-  const lecturerByCourse = new Map<number, number>();
+  const lecturersByCourse = new Map<number, number[]>();
   for (const o of offeringPreview) {
     const cid = Number(o.course_id);
     const lid = Number(o.lecturer_id);
     if (!validCourseIds.has(cid) || !validUserIds.has(lid)) continue;
-    if (!lecturerByCourse.has(cid)) lecturerByCourse.set(cid, lid);
+    const list = lecturersByCourse.get(cid);
+    if (!list) lecturersByCourse.set(cid, [lid]);
+    else if (!list.includes(lid)) list.push(lid);
   }
+  const courseRoundRobin = new Map<number, number>();
 
   const questionRows = readCsv("questions.csv");
   const questionRowsValid = questionRows.filter((q) => {
@@ -446,47 +262,61 @@ async function main() {
   if (questionsSkipped > 0)
     console.warn(`Skipping ${questionsSkipped} question rows with missing FK.`);
 
-  // Distribute statuses across the question bank for a realistic demo:
-  //   100 → pending (waiting for approval)
-  //   100 → draft
-  //    72 → archived
-  //  rest → approved
-  // Order is a deterministic shuffle of question ids so re-seeds are stable.
+  // Distribute statuses across the question bank for a realistic demo.
+  // Targets: 100 pending, 100 draft, and at least 72 archived total.
+  // Rules:
+  //  - Existing `archived` rows from the CSV are PRESERVED (never reassigned).
+  //  - Pending/draft are sampled deterministically from non-archived rows.
+  //  - If the CSV ships fewer than 72 archived rows we top up the difference
+  //    from the leftover non-archived pool, so admins always see ~72 archived.
   const rng = mulberry32(20260524);
-  const shuffleIdx = questionRowsValid
-    .map((_, i) => i)
-    .sort((a, b) => rng() - 0.5);
-  const statusOverride = new Map<number, "pending" | "draft" | "archived">();
-  const PENDING_N = Math.min(100, shuffleIdx.length);
-  const DRAFT_N = Math.min(100, Math.max(0, shuffleIdx.length - PENDING_N));
-  const ARCHIVED_N = Math.min(
-    72,
-    Math.max(0, shuffleIdx.length - PENDING_N - DRAFT_N),
+  const nonArchivedIdx: number[] = [];
+  let preExistingArchived = 0;
+  questionRowsValid.forEach((q, i) => {
+    if (q.status === "archived") preExistingArchived++;
+    else nonArchivedIdx.push(i);
+  });
+  nonArchivedIdx.sort((a, b) => rng() - 0.5);
+  const PENDING_N = Math.min(100, nonArchivedIdx.length);
+  const DRAFT_N = Math.min(100, nonArchivedIdx.length - PENDING_N);
+  const ARCHIVE_TOPUP = Math.min(
+    Math.max(0, 72 - preExistingArchived),
+    nonArchivedIdx.length - PENDING_N - DRAFT_N,
   );
+  const statusOverride = new Map<number, "pending" | "draft" | "archived">();
+  let cursor = 0;
   for (let k = 0; k < PENDING_N; k++)
-    statusOverride.set(shuffleIdx[k], "pending");
-  for (let k = PENDING_N; k < PENDING_N + DRAFT_N; k++)
-    statusOverride.set(shuffleIdx[k], "draft");
-  for (let k = PENDING_N + DRAFT_N; k < PENDING_N + DRAFT_N + ARCHIVED_N; k++)
-    statusOverride.set(shuffleIdx[k], "archived");
+    statusOverride.set(nonArchivedIdx[cursor++], "pending");
+  for (let k = 0; k < DRAFT_N; k++)
+    statusOverride.set(nonArchivedIdx[cursor++], "draft");
+  for (let k = 0; k < ARCHIVE_TOPUP; k++)
+    statusOverride.set(nonArchivedIdx[cursor++], "archived");
 
+  const totalArchived = preExistingArchived + ARCHIVE_TOPUP;
   console.log(
     `Seeding ${questionRowsValid.length} questions ` +
-      `(${PENDING_N} pending, ${DRAFT_N} draft, ${ARCHIVED_N} archived, ` +
-      `${questionRowsValid.length - PENDING_N - DRAFT_N - ARCHIVED_N} approved)...`,
+      `(${PENDING_N} pending, ${DRAFT_N} draft, ${totalArchived} archived, ` +
+      `${questionRowsValid.length - PENDING_N - DRAFT_N - totalArchived} approved)...`,
   );
   await insertInChunks(
     questionsTable,
     questionRowsValid.map((q, i) => {
-      // Re-attribute every question to its course's lecturer so the
-      // Question Bank's lecturer-scoped view is populated. Fall back to
-      // the numeric CSV value if no offering exists for the course.
+      // Re-attribute every question to one of its course's lecturers via
+      // round-robin so multi-lecturer courses share authorship instead of
+      // collapsing onto one user. Fall back to the CSV value if no
+      // offering exists for the course.
       const courseId = Number(q.course_id);
       const cbRaw = q.created_by;
       const cbNum = cbRaw && /^\d+$/.test(cbRaw) ? Number(cbRaw) : null;
       const fallback =
         cbNum !== null && validUserIds.has(cbNum) ? cbNum : null;
-      const createdBy = lecturerByCourse.get(courseId) ?? fallback;
+      const lecturers = lecturersByCourse.get(courseId);
+      let createdBy: number | null = fallback;
+      if (lecturers && lecturers.length > 0) {
+        const next = courseRoundRobin.get(courseId) ?? 0;
+        createdBy = lecturers[next % lecturers.length];
+        courseRoundRobin.set(courseId, next + 1);
+      }
       return {
         id: Number(q.id),
         courseId,
