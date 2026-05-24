@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "wouter";
 import { UserX, UserCheck, Pencil } from "lucide-react";
@@ -78,6 +78,16 @@ export default function AdminUsers() {
   const { data: users, isLoading } = useListUsers(filter, {
     query: { queryKey: getListUsersQueryKey(filter) },
   });
+  // Independent unfiltered fetch so the pending-approval badge is accurate
+  // even when the admin has filtered the table by a specific role.
+  const { data: allUsers } = useListUsers(
+    {},
+    { query: { queryKey: getListUsersQueryKey({}) } },
+  );
+  const pendingApprovalCount = useMemo(
+    () => (allUsers ?? []).filter((u) => u.accountStatus === "pending").length,
+    [allUsers],
+  );
   const me = getAuthUser();
   const queryClient = useQueryClient();
   const createUser = useCreateUser();
@@ -222,9 +232,21 @@ export default function AdminUsers() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Link href="/admin/user-approvals">
-            <Button variant="outline" data-testid="btn-user-approvals">
+            <Button
+              variant="outline"
+              className="relative"
+              data-testid="btn-user-approvals"
+            >
               <UserCheck className="w-4 h-4 mr-2" />
               user approval
+              {pendingApprovalCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold leading-none"
+                  data-testid="badge-user-approvals-count"
+                >
+                  {pendingApprovalCount}
+                </span>
+              )}
             </Button>
           </Link>
           <Link href="/admin/deletion-requests">
