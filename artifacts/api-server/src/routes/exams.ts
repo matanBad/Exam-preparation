@@ -29,16 +29,42 @@ import { createNotification, notifyUsersByRole } from "../lib/notifications";
 
 const router: IRouter = Router();
 
-// Difficulty → max-score table. Single source of truth for how many points a
-// question is worth based on its difficulty level.
-const DIFFICULTY_SCORE: Record<"Easy" | "Medium" | "Hard", number> = {
-  Easy: 5,
-  Medium: 10,
-  Hard: 15,
+// Difficulty → relative weight. The absolute points per question are derived
+// from these weights at exam-generation time so the per-exam total is always
+// exactly 100 (Easy = 1x, Medium = 2x, Hard = 3x).
+const DIFFICULTY_WEIGHT: Record<"Easy" | "Medium" | "Hard", number> = {
+  Easy: 1,
+  Medium: 2,
+  Hard: 3,
 };
-function scoreForDifficulty(d: string | null | undefined): number {
-  if (d === "Easy" || d === "Medium" || d === "Hard") return DIFFICULTY_SCORE[d];
-  return DIFFICULTY_SCORE.Medium;
+function weightForDifficulty(d: string | null | undefined): number {
+  if (d === "Easy" || d === "Medium" || d === "Hard") return DIFFICULTY_WEIGHT[d];
+  return DIFFICULTY_WEIGHT.Medium;
+}
+
+const EXAM_TOTAL_SCORE = 100;
+
+// Distribute EXAM_TOTAL_SCORE across the given per-question weights so the
+// rounded shares sum exactly to EXAM_TOTAL_SCORE with no negative values.
+// Uses the largest-remainder method on integer cents: each weight gets its
+// floor cent share, then the leftover cents go to the questions with the
+// largest fractional remainders. Ties broken by lower index for determinism.
+function distributeScores(weights: number[]): number[] {
+  if (weights.length === 0) return [];
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  if (totalWeight <= 0) return weights.map(() => 0);
+  const totalCents = EXAM_TOTAL_SCORE * 100;
+  const exact = weights.map((w) => (w / totalWeight) * totalCents);
+  const floors = exact.map((v) => Math.floor(v));
+  let leftover = totalCents - floors.reduce((s, v) => s + v, 0);
+  const order = exact
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => (b.frac - a.frac) || (a.i - b.i));
+  const cents = floors.slice();
+  for (let k = 0; k < leftover; k++) {
+    cents[order[k % order.length].i] += 1;
+  }
+  return cents.map((c) => c / 100);
 }
 
 function parseOptionIds(json: string | null | undefined): number[] {
@@ -123,10 +149,15 @@ async function loadExamWithQuestions(examId: number) {
     })
     .sort((a, b) => a.randomizedOrder - b.randomizedOrder);
 
-  const totalMaxScore = examQs.reduce((s, r) => s + (r.meq.maxScore ?? 0), 0);
+  const totalMaxScore =
+    Math.round(
+      examQs.reduce((s, r) => s + (r.meq.maxScore ?? 0), 0) * 100,
+    ) / 100;
   const hasEarned = examQs.some((r) => r.meq.earnedScore != null);
   const totalEarnedScore = hasEarned
-    ? examQs.reduce((s, r) => s + (r.meq.earnedScore ?? 0), 0)
+    ? Math.round(
+        examQs.reduce((s, r) => s + (r.meq.earnedScore ?? 0), 0) * 100,
+      ) / 100
     : null;
 
   return {
@@ -268,6 +299,12 @@ router.post(
       })
       .returning();
 
+    // Per-question maxScore is derived from difficulty as a relative weight
+    // and then scaled so the exam total is exactly 100 points regardless of
+    // how many questions were generated.
+    const perQuestionScores = distributeScores(
+      selected.map((q) => weightForDifficulty(q.difficultyLevel)),
+    );
     const examQuestionRows = selected.map((q, idx) => {
       const qOpts = optsForSelected
         .filter((o) => o.questionId === q.id)
@@ -278,7 +315,7 @@ router.post(
         questionId: q.id,
         randomizedOrder: idx,
         randomizedOptionOrder: JSON.stringify(order),
-        maxScore: scoreForDifficulty(q.difficultyLevel),
+        maxScore: perQuestionScores[idx],
       };
     });
     if (examQuestionRows.length > 0) {
@@ -621,10 +658,13 @@ router.get(
       })
       .sort((a, b) => a.examQuestionId - b.examQuestionId);
 
-    const totalMaxScore = items.reduce((s, it) => s + it.maxScore, 0);
+    const totalMaxScore =
+      Math.round(items.reduce((s, it) => s + it.maxScore, 0) * 100) / 100;
     const hasEarned = items.some((it) => it.earnedScore != null);
     const totalEarnedScore = hasEarned
-      ? items.reduce((s, it) => s + (it.earnedScore ?? 0), 0)
+      ? Math.round(
+          items.reduce((s, it) => s + (it.earnedScore ?? 0), 0) * 100,
+        ) / 100
       : null;
 
     res.json(
@@ -695,8 +735,10 @@ router.get(
         return {
           ...r.exam,
           courseName: r.courseName,
-          totalMaxScore: t?.max ?? 0,
-          totalEarnedScore: t?.hasEarned ? t.earned : null,
+          totalMaxScore: t ? Math.round(t.max * 100) / 100 : 0,
+          totalEarnedScore: t?.hasEarned
+            ? Math.round(t.earned * 100) / 100
+            : null,
         };
       }),
     );
