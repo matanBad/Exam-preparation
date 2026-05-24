@@ -1,0 +1,57 @@
+I am attaching the final updated EPS database ZIP.
+
+Please replace the existing project database CSV files with the attached files, keeping the exact same filenames:
+
+1. courses.csv
+2. course_offerings.csv
+3. topics.csv
+4. users.csv
+5. lecturer_programs.csv
+6. enrollments.csv
+7. questions.csv
+8. answer_options.csv
+
+This version includes the latest fixes:
+- English-only database content.
+- Corrected course-specific topics and subtopics.
+- questions.csv includes the image_url column.
+- Local question diagram assets are included under public/question_images/.
+- Duplicate question_text rows were rewritten and deduplicated.
+- answer_options.csv was synchronously updated for all rewritten questions.
+- IDs, row counts, and foreign-key relationships were preserved.
+
+Critical rules:
+- Do not rename any file.
+- Do not change CSV headers.
+- Do not regenerate fake data.
+- Do not rewrite questions or answer options.
+- Do not change IDs.
+- Preserve UTF-8 encoding.
+- Use course_id, topic_id, subtopic_id, and question_id exactly as they appear in the CSV files.
+- Preserve the image_url values exactly as they appear in questions.csv.
+- Copy the public/question_images folder into the project's public folder so URLs like /question_images/q_123.png resolve correctly.
+
+Import / loading instructions:
+- If the app reads directly from CSV files, replace the CSV files and restart the app.
+- If the app imports CSV files into SQLite/PostgreSQL, clear or rebuild the local database and rerun the seed/import script.
+- If the database uses auto-increment IDs, make sure the original CSV IDs are preserved or mapped correctly before importing questions and answer options.
+
+Validation checklist after update:
+1. All courses load successfully from courses.csv.
+2. course_offerings.csv references valid course_id and lecturer_id values.
+3. topics.csv loads with valid parent_topic_id hierarchy.
+4. Every question has a valid course_id, topic_id, and subtopic_id.
+5. Every answer option has a valid question_id.
+6. Each question has exactly 4 answer options.
+7. single_choice questions have exactly one correct option.
+8. multiple_choice questions have at least two correct options.
+9. Archived questions remain with status = archived and should not appear in normal student quiz flows unless explicitly requested by admin filtering.
+10. Approved questions should appear normally.
+11. The Question Bank page for lecturers must count questions using:
+    lecturer_id -> course_offerings.course_id -> questions.course_id
+    Do not count questions directly by lecturer_id.
+12. Rows with populated image_url should display the corresponding diagram from public/question_images.
+13. Confirm there are no broken image links.
+14. Confirm there are no duplicate question_text rows after import.
+
+Do not make automatic content changes. If an import error occurs, fix only the minimal compatibility issue and explain exactly what changed.
