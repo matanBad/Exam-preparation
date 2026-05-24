@@ -23,6 +23,7 @@ import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
 import AdminUsers from "@/pages/admin/users";
 import AdminDeletionRequests from "@/pages/admin/deletion-requests";
+import AdminUserApprovals from "@/pages/admin/user-approvals";
 import Account from "@/pages/account";
 
 import { AuthLayout } from "@/components/layout";
@@ -128,6 +129,9 @@ function Router() {
       </Route>
       <Route path="/admin/deletion-requests">
         <ProtectedRoute component={AdminDeletionRequests} allowedRoles={['admin']} />
+      </Route>
+      <Route path="/admin/user-approvals">
+        <ProtectedRoute component={AdminUserApprovals} allowedRoles={['admin']} />
       </Route>
 
       <Route component={NotFound} />

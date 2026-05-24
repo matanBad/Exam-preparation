@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "wouter";
-import { UserX } from "lucide-react";
+import { UserX, UserCheck, Pencil } from "lucide-react";
 import {
   useListUsers,
   useCreateUser,
@@ -172,14 +172,35 @@ export default function AdminUsers() {
     );
   };
 
-  const handleDelete = (id: number, name: string) => {
+  const handleDelete = (id: number, name: string, onDone?: () => void) => {
     if (
       !confirm(
         `Delete user "${name}"? This permanently removes their account and all related data (enrollments, exams).`,
       )
     )
       return;
-    deleteUser.mutate({ id }, { onSuccess: refresh });
+    deleteUser.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          refresh();
+          onDone?.();
+        },
+      },
+    );
+  };
+
+  const [editUserId, setEditUserId] = useState<number | null>(null);
+  const editUser =
+    editUserId != null
+      ? (users ?? []).find((u) => u.id === editUserId) ?? null
+      : null;
+
+  const roleCountLabel = (n: number) => {
+    if (role === "student") return `${n} ${n === 1 ? "student" : "students"}`;
+    if (role === "lecturer") return `${n} ${n === 1 ? "lecturer" : "lecturers"}`;
+    if (role === "admin") return `${n} ${n === 1 ? "admin" : "admins"}`;
+    return `${n} ${n === 1 ? "user" : "users"}`;
   };
 
   return (
@@ -200,6 +221,12 @@ export default function AdminUsers() {
           </Select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Link href="/admin/user-approvals">
+            <Button variant="outline" data-testid="btn-user-approvals">
+              <UserCheck className="w-4 h-4 mr-2" />
+              user approval
+            </Button>
+          </Link>
           <Link href="/admin/deletion-requests">
             <Button variant="outline" data-testid="btn-deletion-requests">
               <UserX className="w-4 h-4 mr-2" />
@@ -423,7 +450,7 @@ export default function AdminUsers() {
       )}
       <Card>
         <CardHeader>
-          <CardTitle>{users?.length ?? 0} users</CardTitle>
+          <CardTitle>{roleCountLabel(users?.length ?? 0)}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading && <p>Loading...</p>}
@@ -455,22 +482,7 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
-                      <Select
-                        value={u.role}
-                        onValueChange={(v) => handleRoleChange(u.id, v as Role)}
-                        disabled={isSelf || updateUser.isPending}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((r) => (
-                            <SelectItem key={r} value={r} className="capitalize">
-                              {r}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <span className="capitalize text-sm">{u.role}</span>
                     </TableCell>
                     <TableCell className="text-sm">
                       {u.role === "student" ? (
@@ -505,24 +517,16 @@ export default function AdminUsers() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isSelf || updateUser.isPending}
-                          onClick={() => handleStatusToggle(u.id, u.accountStatus)}
-                        >
-                          {u.accountStatus === "active" ? "Disable" : "Enable"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={isSelf || deleteUser.isPending}
-                          onClick={() => handleDelete(u.id, u.fullName)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isSelf}
+                        onClick={() => setEditUserId(u.id)}
+                        data-testid={`btn-edit-user-${u.id}`}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -536,7 +540,115 @@ export default function AdminUsers() {
         programs={programs ?? []}
         onClose={() => setSelectedUserId(null)}
       />
+      <EditUserDialog
+        user={editUser}
+        busy={updateUser.isPending || deleteUser.isPending}
+        onClose={() => setEditUserId(null)}
+        onRoleChange={(r) => editUser && handleRoleChange(editUser.id, r)}
+        onStatusToggle={() =>
+          editUser && handleStatusToggle(editUser.id, editUser.accountStatus)
+        }
+        onDelete={() =>
+          editUser &&
+          handleDelete(editUser.id, editUser.fullName, () => setEditUserId(null))
+        }
+      />
     </div>
+  );
+}
+
+function EditUserDialog({
+  user,
+  busy,
+  onClose,
+  onRoleChange,
+  onStatusToggle,
+  onDelete,
+}: {
+  user: UserRow | null;
+  busy: boolean;
+  onClose: () => void;
+  onRoleChange: (r: Role) => void;
+  onStatusToggle: () => void;
+  onDelete: () => void;
+}) {
+  const open = !!user;
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md" data-testid="dialog-edit-user">
+        {user && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Edit user</DialogTitle>
+              <DialogDescription>
+                {user.fullName} &lt;{user.email}&gt;
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <div className="space-y-1">
+                <p className="font-medium">Role</p>
+                <Select
+                  value={user.role}
+                  onValueChange={(v) => onRoleChange(v as Role)}
+                  disabled={busy}
+                >
+                  <SelectTrigger
+                    className="w-full"
+                    data-testid="select-edit-role"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r} value={r} className="capitalize">
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium">Account status</p>
+                <div className="flex items-center justify-between gap-2">
+                  <Badge
+                    variant={
+                      user.accountStatus === "active" ? "default" : "secondary"
+                    }
+                    className="capitalize"
+                  >
+                    {user.accountStatus}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onStatusToggle}
+                    disabled={busy}
+                    data-testid="btn-edit-status-toggle"
+                  >
+                    {user.accountStatus === "active" ? "Disable" : "Enable"}
+                  </Button>
+                </div>
+              </div>
+              <div className="pt-2 border-t">
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={onDelete}
+                  disabled={busy}
+                  data-testid="btn-edit-delete"
+                >
+                  Delete user
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Permanently removes this account and all related data
+                  (enrollments, exams).
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
