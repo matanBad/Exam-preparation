@@ -106,10 +106,9 @@ async function loadQuestionsWithOptions(
     const courseIds = await visibleCourseIdsForQuestions(scope);
     if (courseIds.length === 0) return [];
     allFilters.push(inArray(questionsTable.courseId, courseIds));
-    // Lecturers must additionally only see questions they themselves created.
-    if (scope.kind === "lecturer") {
-      allFilters.push(eq(questionsTable.createdBy, scope.userId));
-    }
+    // Questions belong to courses, not to lecturers. A lecturer sees every
+    // question for any course they teach an offering of (resolved above via
+    // course_offerings), regardless of who originally created the row.
   }
   const where = allFilters.length ? and(...allFilters) : undefined;
 

@@ -151,16 +151,12 @@ export default function QuestionsList() {
 
   const isPrivilegedSearch =
     (me?.role === "lecturer" || me?.role === "admin") && q.trim().length > 0;
-  // Pending/draft questions in scope for the current viewer. Lecturers only
-  // see their own pending items; admins see everything pending. This is the
-  // source for both the course-card pending counts in approval mode and the
-  // approval-mode selected-course question list.
-  const pendingScoped = (allQuestions ?? []).filter((qu) => {
-    if (!(PENDING_STATUSES as readonly string[]).includes(qu.status))
-      return false;
-    if (isLecturer && me && qu.createdBy !== me.id) return false;
-    return true;
-  });
+  // Pending/draft questions in scope for the current viewer. The server
+  // already restricts allQuestions to the courses the lecturer teaches
+  // (admins see everything), so we only need a status filter here.
+  const pendingScoped = (allQuestions ?? []).filter((qu) =>
+    (PENDING_STATUSES as readonly string[]).includes(qu.status),
+  );
   // In approval mode the question list is always derived from the
   // pending-scoped client set (so lecturer scoping by createdBy is applied
   // consistently). Selected-course view further narrows to that course.
@@ -230,9 +226,12 @@ export default function QuestionsList() {
       (pendingByCourse.get(qu.courseId) ?? 0) + 1,
     );
   }
-  // Per-course total counts (used in regular-mode overview).
+  // Per-course total counts (used in regular-mode overview). We only count
+  // approved questions: draft/pending live in the approval flow, and
+  // archived questions are hidden from the regular Question Bank view.
   const countsByCourse = new Map<number, number>();
   for (const qu of allQuestions ?? []) {
+    if (qu.status !== "approved") continue;
     countsByCourse.set(qu.courseId, (countsByCourse.get(qu.courseId) ?? 0) + 1);
   }
   const pendingCount = pendingScoped.length;
