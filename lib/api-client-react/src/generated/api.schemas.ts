@@ -416,10 +416,6 @@ export interface Question {
   sourceReference?: string | null;
   status: QuestionStatus;
   createdBy?: number | null;
-  /** Public URL of the question's diagram/code visual (e.g. /question-images/q_00001_code_bw.png). Null when no image is attached. */
-  imageUrl?: string | null;
-  /** True when this question's prompt depends on an attached visual; false for text-only questions. */
-  imageRequired: boolean;
   options: AnswerOption[];
   courseName?: string | null;
   topicName?: string | null;
@@ -481,10 +477,6 @@ export interface ExamQuestion {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
-  /** Public URL of the question's image, if any. */
-  imageUrl?: string | null;
-  /** Whether this question requires an attached visual. */
-  imageRequired: boolean;
   randomizedOrder: number;
   options: ExamQuestionOption[];
   /** Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds. */
@@ -551,10 +543,6 @@ export interface ReviewItem {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
-  /** Public URL of the question's image, if any. */
-  imageUrl?: string | null;
-  /** Whether this question requires an attached visual. */
-  imageRequired: boolean;
   explanationText?: string | null;
   /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;

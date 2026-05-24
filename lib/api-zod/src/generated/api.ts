@@ -639,17 +639,6 @@ export const ListQuestionsResponseItem = zod.object({
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
-  imageUrl: zod
-    .string()
-    .nullish()
-    .describe(
-      "Public URL of the question's diagram\/code visual (e.g. \/question-images\/q_00001_code_bw.png). Null when no image is attached.",
-    ),
-  imageRequired: zod
-    .boolean()
-    .describe(
-      "True when this question's prompt depends on an attached visual; false for text-only questions.",
-    ),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -708,17 +697,6 @@ export const SearchQuestionsResponseItem = zod.object({
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
-  imageUrl: zod
-    .string()
-    .nullish()
-    .describe(
-      "Public URL of the question's diagram\/code visual (e.g. \/question-images\/q_00001_code_bw.png). Null when no image is attached.",
-    ),
-  imageRequired: zod
-    .boolean()
-    .describe(
-      "True when this question's prompt depends on an attached visual; false for text-only questions.",
-    ),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -750,17 +728,6 @@ export const GetQuestionResponse = zod.object({
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
-  imageUrl: zod
-    .string()
-    .nullish()
-    .describe(
-      "Public URL of the question's diagram\/code visual (e.g. \/question-images\/q_00001_code_bw.png). Null when no image is attached.",
-    ),
-  imageRequired: zod
-    .boolean()
-    .describe(
-      "True when this question's prompt depends on an attached visual; false for text-only questions.",
-    ),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -812,17 +779,6 @@ export const UpdateQuestionResponse = zod.object({
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
-  imageUrl: zod
-    .string()
-    .nullish()
-    .describe(
-      "Public URL of the question's diagram\/code visual (e.g. \/question-images\/q_00001_code_bw.png). Null when no image is attached.",
-    ),
-  imageRequired: zod
-    .boolean()
-    .describe(
-      "True when this question's prompt depends on an attached visual; false for text-only questions.",
-    ),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -853,17 +809,6 @@ export const ArchiveQuestionResponse = zod.object({
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
-  imageUrl: zod
-    .string()
-    .nullish()
-    .describe(
-      "Public URL of the question's diagram\/code visual (e.g. \/question-images\/q_00001_code_bw.png). Null when no image is attached.",
-    ),
-  imageRequired: zod
-    .boolean()
-    .describe(
-      "True when this question's prompt depends on an attached visual; false for text-only questions.",
-    ),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -936,13 +881,6 @@ export const GetExamResponse = zod
           questionType: zod.enum(["single_choice", "multiple_choice"]),
           difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
           topicName: zod.string().nullish(),
-          imageUrl: zod
-            .string()
-            .nullish()
-            .describe("Public URL of the question's image, if any."),
-          imageRequired: zod
-            .boolean()
-            .describe("Whether this question requires an attached visual."),
           randomizedOrder: zod.number(),
           options: zod.array(
             zod.object({
@@ -1010,13 +948,6 @@ export const StartExamResponse = zod
           questionType: zod.enum(["single_choice", "multiple_choice"]),
           difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
           topicName: zod.string().nullish(),
-          imageUrl: zod
-            .string()
-            .nullish()
-            .describe("Public URL of the question's image, if any."),
-          imageRequired: zod
-            .boolean()
-            .describe("Whether this question requires an attached visual."),
           randomizedOrder: zod.number(),
           options: zod.array(
             zod.object({
@@ -1118,13 +1049,6 @@ export const GetExamReviewResponse = zod.object({
       questionType: zod.enum(["single_choice", "multiple_choice"]),
       difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
       topicName: zod.string().nullish(),
-      imageUrl: zod
-        .string()
-        .nullish()
-        .describe("Public URL of the question's image, if any."),
-      imageRequired: zod
-        .boolean()
-        .describe("Whether this question requires an attached visual."),
       explanationText: zod.string().nullish(),
       isCorrect: zod
         .boolean()

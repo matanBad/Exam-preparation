@@ -189,8 +189,6 @@ export const questionsTable = pgTable(
     explanationText: text("explanation_text"),
     sourceReference: text("source_reference"),
     status: text("status").notNull().default("approved"),
-    imageUrl: text("image_url"),
-    imageRequired: boolean("image_required").notNull().default(false),
     createdBy: integer("created_by").references(() => usersTable.id, {
       onDelete: "set null",
     }),

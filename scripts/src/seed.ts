@@ -298,38 +298,6 @@ async function main() {
       `(${PENDING_N} pending, ${DRAFT_N} draft, ${totalArchived} archived, ` +
       `${questionRowsValid.length - PENDING_N - DRAFT_N - totalArchived} approved)...`,
   );
-
-  // ---- visual asset manifests (v5) ----
-  // Two CSVs control per-question image attachment, matched by question_id:
-  //   image_included_manifest.csv         → image_required=true,  image_url=/question-images/<file>
-  //   image_required_false_manifest.csv   → image_required=false, image_url=NULL
-  // Anything not listed defaults to image_required=false, image_url=NULL.
-  const includedRows = readCsv("image_included_manifest.csv");
-  const falseRows = readCsv("image_required_false_manifest.csv");
-  const imageMap = new Map<number, string>();
-  const seenFiles = new Map<string, number>();
-  let duplicateMappings = 0;
-  for (const r of includedRows) {
-    const qid = Number(r.question_id);
-    const file = r.file.trim();
-    if (imageMap.has(qid)) duplicateMappings++;
-    imageMap.set(qid, `/question-images/${file}`);
-    const prior = seenFiles.get(file);
-    if (prior !== undefined && prior !== qid) duplicateMappings++;
-    seenFiles.set(file, qid);
-  }
-  const requiredFalseSet = new Set<number>(
-    falseRows.map((r) => Number(r.question_id)),
-  );
-  // Sanity check overlap (should be 0 per audit).
-  const overlap = [...imageMap.keys()].filter((id) => requiredFalseSet.has(id));
-  if (overlap.length > 0) {
-    console.warn(
-      `WARN: ${overlap.length} question_id(s) appear in BOTH manifests; included wins.`,
-    );
-    for (const id of overlap) requiredFalseSet.delete(id);
-  }
-
   await insertInChunks(
     questionsTable,
     questionRowsValid.map((q, i) => {
@@ -349,11 +317,8 @@ async function main() {
         createdBy = lecturers[next % lecturers.length];
         courseRoundRobin.set(courseId, next + 1);
       }
-      const qid = Number(q.id);
-      const imageUrl = imageMap.get(qid) ?? null;
-      const imageRequired = imageUrl !== null;
       return {
-        id: qid,
+        id: Number(q.id),
         courseId,
         topicId: intOrNull(q.topic_id),
         subtopicId: intOrNull(q.subtopic_id),
@@ -364,51 +329,11 @@ async function main() {
         explanationText: nullable(q.explanation_text),
         sourceReference: nullable(q.source_reference),
         status: statusOverride.get(i) ?? (q.status || "approved"),
-        imageUrl,
-        imageRequired,
         createdBy,
       };
     }),
-    14,
+    12,
   );
-
-  // ---- Image integration verification (per user spec) ----
-  const fs2 = await import("node:fs");
-  const path2 = await import("node:path");
-  const imagesDir = path2.resolve(
-    __dirname,
-    "../../artifacts/eps/public/question-images",
-  );
-  const onDisk = new Set(
-    fs2.existsSync(imagesDir)
-      ? fs2.readdirSync(imagesDir).filter((f) => f.endsWith(".png"))
-      : [],
-  );
-  const validQIds = new Set(questionRowsValid.map((q) => Number(q.id)));
-  const includedIds = [...imageMap.keys()];
-  const includedInDb = includedIds.filter((id) => validQIds.has(id));
-  const missingImages = includedIds.filter((id) => {
-    const file = (imageMap.get(id) ?? "").split("/").pop() ?? "";
-    return !onDisk.has(file);
-  });
-  const falseInDb = [...requiredFalseSet].filter((id) => validQIds.has(id));
-  const totalLinked = includedInDb.length;
-  const totalFalse = falseInDb.length;
-
-  console.log("\n===== IMAGE INTEGRATION SUMMARY =====");
-  console.log(`Total questions updated:           ${questionRowsValid.length}`);
-  console.log(`Total images linked (required):    ${totalLinked}`);
-  console.log(`Total questions image_required=false: ${totalFalse}`);
-  console.log(`Missing image files:               ${missingImages.length}`);
-  console.log(`Duplicate image mappings:          ${duplicateMappings}`);
-  console.log(`Images on disk (public folder):    ${onDisk.size}`);
-  console.log(`Orphan images (on disk, no mapping): ${
-    [...onDisk].filter((f) => ![...imageMap.values()].some((u) => u.endsWith("/" + f))).length
-  }`);
-  if (missingImages.length > 0) {
-    console.warn("MISSING:", missingImages.slice(0, 10), "...");
-  }
-  console.log("=====================================\n");
 
   // ---- answer options ----
   const optionRows = readCsv("answer_options.csv");
