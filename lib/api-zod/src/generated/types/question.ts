@@ -23,6 +23,10 @@ export interface Question {
   sourceReference?: string | null;
   status: QuestionStatus;
   createdBy?: number | null;
+  /** Public URL of the question's diagram/code visual (e.g. /question-images/q_00001_code_bw.png). Null when no image is attached. */
+  imageUrl?: string | null;
+  /** True when this question's prompt depends on an attached visual; false for text-only questions. */
+  imageRequired: boolean;
   options: AnswerOption[];
   courseName?: string | null;
   topicName?: string | null;

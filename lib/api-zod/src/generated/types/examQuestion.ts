@@ -17,6 +17,10 @@ export interface ExamQuestion {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
+  /** Public URL of the question's image, if any. */
+  imageUrl?: string | null;
+  /** Whether this question requires an attached visual. */
+  imageRequired: boolean;
   randomizedOrder: number;
   options: ExamQuestionOption[];
   /** Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds. */

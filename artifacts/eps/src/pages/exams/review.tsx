@@ -131,6 +131,13 @@ export default function ExamReview({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm whitespace-pre-wrap">{item.questionText}</p>
+              {item.imageRequired && item.imageUrl && (
+                <img
+                  src={item.imageUrl}
+                  alt="Question diagram"
+                  className="max-w-full rounded-md border bg-white"
+                />
+              )}
               <div className="space-y-2">
                 {item.options.map((opt) => {
                   const isCorrect = item.correctAnswerOptionIds.includes(opt.id);

@@ -17,6 +17,10 @@ export interface ReviewItem {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
+  /** Public URL of the question's image, if any. */
+  imageUrl?: string | null;
+  /** Whether this question requires an attached visual. */
+  imageRequired: boolean;
   explanationText?: string | null;
   /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;

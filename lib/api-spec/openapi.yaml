@@ -1283,13 +1283,15 @@ components:
         sourceReference: { type: string, nullable: true }
         status: { $ref: "#/components/schemas/QuestionStatus" }
         createdBy: { type: integer, nullable: true }
+        imageUrl: { type: string, nullable: true, description: "Public URL of the question's diagram/code visual (e.g. /question-images/q_00001_code_bw.png). Null when no image is attached." }
+        imageRequired: { type: boolean, description: "True when this question's prompt depends on an attached visual; false for text-only questions." }
         options:
           type: array
           items: { $ref: "#/components/schemas/AnswerOption" }
         courseName: { type: string, nullable: true }
         topicName: { type: string, nullable: true }
       required:
-        [id, courseId, title, questionText, questionType, difficultyLevel, status, options]
+        [id, courseId, title, questionText, questionType, difficultyLevel, status, imageRequired, options]
 
     CreateQuestionRequest:
       type: object
@@ -1365,6 +1367,8 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true, description: "Public URL of the question's image, if any." }
+        imageRequired: { type: boolean, description: "Whether this question requires an attached visual." }
         randomizedOrder: { type: integer }
         options:
           type: array
@@ -1381,7 +1385,7 @@ components:
           type: number
           description: "Max points this question is worth (snapshotted from difficulty at exam generation time)."
       required:
-        [id, questionId, title, questionText, questionType, difficultyLevel, randomizedOrder, options, selectedAnswerOptionIds, maxScore]
+        [id, questionId, title, questionText, questionType, difficultyLevel, imageRequired, randomizedOrder, options, selectedAnswerOptionIds, maxScore]
 
     Exam:
       type: object
@@ -1456,6 +1460,8 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true, description: "Public URL of the question's image, if any." }
+        imageRequired: { type: boolean, description: "Whether this question requires an attached visual." }
         explanationText: { type: string, nullable: true }
         isCorrect: { type: boolean, description: "True only if earnedScore equals maxScore." }
         maxScore: { type: number }
@@ -1475,7 +1481,7 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AnswerOption" }
       required:
-        [examQuestionId, questionId, title, questionText, questionType, difficultyLevel, isCorrect, maxScore, totalCorrectCount, correctSelectedCount, incorrectSelectedCount, selectedAnswerOptionIds, correctAnswerOptionIds, options]
+        [examQuestionId, questionId, title, questionText, questionType, difficultyLevel, imageRequired, isCorrect, maxScore, totalCorrectCount, correctSelectedCount, incorrectSelectedCount, selectedAnswerOptionIds, correctAnswerOptionIds, options]
 
     ExamReview:
       type: object
