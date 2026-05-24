@@ -11,6 +11,7 @@ export type QuestionStatus =
 
 export const QuestionStatus = {
   draft: "draft",
+  pending: "pending",
   approved: "approved",
   archived: "archived",
 } as const;

@@ -29,7 +29,7 @@ export type QuestionFormValues = {
   difficultyLevel: "Easy" | "Medium" | "Hard";
   explanationText: string | null;
   sourceReference: string | null;
-  status: "draft" | "approved" | "archived";
+  status: "draft" | "pending" | "approved" | "archived";
   options: { answerText: string; isCorrect: boolean }[];
 };
 
@@ -252,7 +252,7 @@ export function QuestionForm({
                   onValueChange={(v) =>
                     setValues((s) => ({
                       ...s,
-                      status: v as "draft" | "approved" | "archived",
+                      status: v as "draft" | "pending" | "approved" | "archived",
                     }))
                   }
                 >

@@ -956,7 +956,7 @@ components:
 
     QuestionStatus:
       type: string
-      enum: [draft, approved, archived]
+      enum: [draft, pending, approved, archived]
 
     QuestionType:
       type: string

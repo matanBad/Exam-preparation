@@ -574,7 +574,7 @@ export const ListQuestionsQueryParams = zod.object({
   courseId: zod.coerce.number().optional(),
   topicId: zod.coerce.number().optional(),
   difficulty: zod.enum(["Easy", "Medium", "Hard"]).optional(),
-  status: zod.enum(["draft", "approved", "archived"]).optional(),
+  status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
   q: zod.coerce.string().optional(),
 });
 
@@ -589,7 +589,7 @@ export const ListQuestionsResponseItem = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
   options: zod.array(
     zod.object({
@@ -617,7 +617,7 @@ export const CreateQuestionBody = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]).optional(),
+  status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
   options: zod
     .array(
       zod.object({
@@ -633,7 +633,7 @@ export const SearchQuestionsQueryParams = zod.object({
   courseId: zod.coerce.number().optional(),
   topicId: zod.coerce.number().optional(),
   difficulty: zod.enum(["Easy", "Medium", "Hard"]).optional(),
-  status: zod.enum(["draft", "approved", "archived"]).optional(),
+  status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
 });
 
 export const SearchQuestionsResponseItem = zod.object({
@@ -647,7 +647,7 @@ export const SearchQuestionsResponseItem = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
   options: zod.array(
     zod.object({
@@ -678,7 +678,7 @@ export const GetQuestionResponse = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
   options: zod.array(
     zod.object({
@@ -707,7 +707,7 @@ export const UpdateQuestionBody = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]).optional(),
+  status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
   options: zod
     .array(
       zod.object({
@@ -729,7 +729,7 @@ export const UpdateQuestionResponse = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
   options: zod.array(
     zod.object({
@@ -759,7 +759,7 @@ export const ArchiveQuestionResponse = zod.object({
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
   sourceReference: zod.string().nullish(),
-  status: zod.enum(["draft", "approved", "archived"]),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
   options: zod.array(
     zod.object({
