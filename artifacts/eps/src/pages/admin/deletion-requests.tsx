@@ -12,9 +12,6 @@ export default function AdminDeletionRequests() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold">Account deletion requests</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Submitted by users who chose to delete their account.
-          </p>
         </div>
         <Link href="/admin/users">
           <Button variant="outline" data-testid="btn-back-to-users">
