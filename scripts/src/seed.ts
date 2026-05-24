@@ -86,6 +86,18 @@ function readCsv(name: string): Record<string, string>[] {
   return parseCsv(fs.readFileSync(path.join(DATA_DIR, name), "utf8"));
 }
 
+async function insertInChunks<T>(
+  table: any,
+  values: T[],
+  paramsPerRow: number,
+): Promise<void> {
+  if (values.length === 0) return;
+  const maxRows = Math.max(1, Math.floor(60000 / Math.max(1, paramsPerRow)));
+  for (let i = 0; i < values.length; i += maxRows) {
+    await db.insert(table).values(values.slice(i, i + maxRows));
+  }
+}
+
 const nullable = (v: string) => (v === "" ? null : v);
 const intOrNull = (v: string) => (v === "" ? null : Number(v));
 const floatOrNull = (v: string) => (v === "" ? null : Number(v));
@@ -121,7 +133,8 @@ async function main() {
   // freshly hashed default password if a row ever omits it.
   const userRows = readCsv("users.csv");
   console.log(`Seeding ${userRows.length} users...`);
-  await db.insert(usersTable).values(
+  await insertInChunks(
+    usersTable,
     userRows.map((u) => ({
       id: Number(u.id),
       fullName: u.full_name,
@@ -135,6 +148,7 @@ async function main() {
       currentSemester: nullable(u.current_semester ?? ""),
       mustChangePassword: boolVal(u.must_change_password ?? ""),
     })),
+    11,
   );
 
   // ---- courses ----
@@ -150,24 +164,49 @@ async function main() {
       status: c.status || "active",
     })),
   );
+  const validCourseIds = new Set(courseRows.map((c) => Number(c.id)));
+  const validUserIds = new Set(userRows.map((u) => Number(u.id)));
 
   // ---- enrollments ----
   const enrollmentRows = readCsv("enrollments.csv");
-  console.log(`Seeding ${enrollmentRows.length} enrollments...`);
-  await db.insert(enrollmentsTable).values(
-    enrollmentRows.map((e) => ({
+  const enrollmentRowsValid = enrollmentRows.filter(
+    (e) =>
+      validUserIds.has(Number(e.user_id)) &&
+      validCourseIds.has(Number(e.course_id)),
+  );
+  const enrollmentSkipped = enrollmentRows.length - enrollmentRowsValid.length;
+  if (enrollmentSkipped > 0)
+    console.warn(`Skipping ${enrollmentSkipped} enrollment rows with missing FK.`);
+  console.log(`Seeding ${enrollmentRowsValid.length} enrollments...`);
+  await insertInChunks(
+    enrollmentsTable,
+    enrollmentRowsValid.map((e) => ({
       id: Number(e.id),
       userId: Number(e.user_id),
       courseId: Number(e.course_id),
       enrollmentStatus: e.enrollment_status || "active",
     })),
+    4,
   );
 
   // ---- topics ----
   const topicRows = readCsv("topics.csv");
-  console.log(`Seeding ${topicRows.length} topics...`);
-  await db.insert(topicsTable).values(
-    topicRows.map((t) => ({
+  const topicRowsValid = topicRows.filter((t) =>
+    validCourseIds.has(Number(t.course_id)),
+  );
+  const validTopicIds = new Set(topicRowsValid.map((t) => Number(t.id)));
+  // Null out parent_topic_id pointers that no longer resolve to a kept topic.
+  for (const t of topicRowsValid) {
+    const pid = intOrNull(t.parent_topic_id);
+    if (pid !== null && !validTopicIds.has(pid)) t.parent_topic_id = "";
+  }
+  const topicsSkipped = topicRows.length - topicRowsValid.length;
+  if (topicsSkipped > 0)
+    console.warn(`Skipping ${topicsSkipped} topic rows with missing course FK.`);
+  console.log(`Seeding ${topicRowsValid.length} topics...`);
+  await insertInChunks(
+    topicsTable,
+    topicRowsValid.map((t) => ({
       id: Number(t.id),
       courseId: Number(t.course_id),
       topicName: t.topic_name,
@@ -175,39 +214,67 @@ async function main() {
       weight: floatOrNull(t.weight),
       status: t.status || "active",
     })),
+    6,
   );
 
   // ---- questions ----
   const questionRows = readCsv("questions.csv");
-  console.log(`Seeding ${questionRows.length} questions...`);
-  await db.insert(questionsTable).values(
-    questionRows.map((q) => ({
-      id: Number(q.id),
-      courseId: Number(q.course_id),
-      topicId: intOrNull(q.topic_id),
-      subtopicId: intOrNull(q.subtopic_id),
-      title: q.title,
-      questionText: q.question_text,
-      questionType: q.question_type || "single_choice",
-      difficultyLevel: q.difficulty_level || "Medium",
-      explanationText: nullable(q.explanation_text),
-      sourceReference: nullable(q.source_reference),
-      status: q.status || "approved",
-      createdBy: intOrNull(q.created_by),
-    })),
+  const questionRowsValid = questionRows.filter((q) => {
+    if (!validCourseIds.has(Number(q.course_id))) return false;
+    const tid = intOrNull(q.topic_id);
+    if (tid !== null && !validTopicIds.has(tid)) return false;
+    const sid = intOrNull(q.subtopic_id);
+    if (sid !== null && !validTopicIds.has(sid)) return false;
+    return true;
+  });
+  const validQuestionIds = new Set(questionRowsValid.map((q) => Number(q.id)));
+  const questionsSkipped = questionRows.length - questionRowsValid.length;
+  if (questionsSkipped > 0)
+    console.warn(`Skipping ${questionsSkipped} question rows with missing FK.`);
+  console.log(`Seeding ${questionRowsValid.length} questions...`);
+  await insertInChunks(
+    questionsTable,
+    questionRowsValid.map((q) => {
+      const cbRaw = q.created_by;
+      const cbNum = cbRaw && /^\d+$/.test(cbRaw) ? Number(cbRaw) : null;
+      const createdBy = cbNum !== null && validUserIds.has(cbNum) ? cbNum : null;
+      return {
+        id: Number(q.id),
+        courseId: Number(q.course_id),
+        topicId: intOrNull(q.topic_id),
+        subtopicId: intOrNull(q.subtopic_id),
+        title: q.title,
+        questionText: q.question_text,
+        questionType: q.question_type || "single_choice",
+        difficultyLevel: q.difficulty_level || "Medium",
+        explanationText: nullable(q.explanation_text),
+        sourceReference: nullable(q.source_reference),
+        status: q.status || "approved",
+        createdBy,
+      };
+    }),
+    12,
   );
 
   // ---- answer options ----
   const optionRows = readCsv("answer_options.csv");
-  console.log(`Seeding ${optionRows.length} answer options...`);
-  await db.insert(answerOptionsTable).values(
-    optionRows.map((o) => ({
+  const optionRowsValid = optionRows.filter((o) =>
+    validQuestionIds.has(Number(o.question_id)),
+  );
+  const optionsSkipped = optionRows.length - optionRowsValid.length;
+  if (optionsSkipped > 0)
+    console.warn(`Skipping ${optionsSkipped} answer_option rows with missing question FK.`);
+  console.log(`Seeding ${optionRowsValid.length} answer options...`);
+  await insertInChunks(
+    answerOptionsTable,
+    optionRowsValid.map((o) => ({
       id: Number(o.id),
       questionId: Number(o.question_id),
       answerText: o.answer_text,
       isCorrect: boolVal(o.is_correct),
       displayOrder: Number(o.display_order),
     })),
+    5,
   );
 
   // ---- course_offerings ----
@@ -215,9 +282,27 @@ async function main() {
   // lecturer teaches which course in which program. Strategy A: questions
   // and topics stay on the parent course; offerings only carry the
   // lecturer ↔ course ↔ program link.
-  const offeringRows = readCsv("course_offerings.csv");
+  const offeringRowsRaw = readCsv("course_offerings.csv");
+  const validProgramIds = new Set(programRows.map((p) => Number(p.id)));
+  const seenOfferingKeys = new Set<string>();
+  const offeringRows = offeringRowsRaw.filter((o) => {
+    if (
+      !validCourseIds.has(Number(o.course_id)) ||
+      !validProgramIds.has(Number(o.program_id)) ||
+      !validUserIds.has(Number(o.lecturer_id))
+    )
+      return false;
+    const key = `${o.course_id}:${o.program_id}:${o.lecturer_id}`;
+    if (seenOfferingKeys.has(key)) return false;
+    seenOfferingKeys.add(key);
+    return true;
+  });
+  const offeringsSkipped = offeringRowsRaw.length - offeringRows.length;
+  if (offeringsSkipped > 0)
+    console.warn(`Skipping ${offeringsSkipped} course_offering rows with missing FK.`);
   console.log(`Seeding ${offeringRows.length} course_offerings...`);
-  await db.insert(courseOfferingsTable).values(
+  await insertInChunks(
+    courseOfferingsTable,
     offeringRows.map((o) => ({
       id: Number(o.id),
       courseId: Number(o.course_id),
@@ -228,6 +313,7 @@ async function main() {
       academicYear: nullable(o.academic_year),
       status: o.status || "active",
     })),
+    8,
   );
 
   // ---- lecturer_programs ----
@@ -268,9 +354,15 @@ async function main() {
 
   // Find the canonical demo accounts so the notifications/messages below
   // attach to the right users even if the CSV order ever changes.
-  const studentRow = userRows.find((u) => u.email === "student@eps.com")!;
-  const lecturerRow = userRows.find((u) => u.email === "lecturer@eps.com")!;
-  const adminRow = userRows.find((u) => u.email === "admin@eps.com")!;
+  const studentRow =
+    userRows.find((u) => u.email === "student@eps.com") ??
+    userRows.find((u) => u.role === "student")!;
+  const lecturerRow =
+    userRows.find((u) => u.email === "lecturer@eps.com") ??
+    userRows.find((u) => u.role === "lecturer")!;
+  const adminRow =
+    userRows.find((u) => u.email === "admin@eps.com") ??
+    userRows.find((u) => u.role === "admin")!;
   const lecturerName = lecturerRow.full_name;
   const cs101 = courseRows.find((c) => c.course_code === "CS101");
   const db201 = courseRows.find((c) => c.course_code === "DB201");

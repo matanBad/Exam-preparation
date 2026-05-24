@@ -14,9 +14,11 @@ A full-stack exam preparation web app for students, lecturers, and admins. Stude
 
 ## Demo accounts (password: `123456`)
 
-- `student@eps.com` — enrolled in CS101 + DB201
-- `lecturer@eps.com`
-- `admin@eps.com`
+- `shai.fisher@ac.sce.ac.il` — student (id 1)
+- `liat.levi@sce.ac.il` — lecturer (id 2)
+- `admin@eps.com` — admin (id 3)
+
+The seed picks `student@eps.com` / `lecturer@eps.com` if present in `scripts/data/users.csv`, otherwise falls back to the first user of each role. The current CSV ships with the SCE accounts above.
 
 ## Stack
 
