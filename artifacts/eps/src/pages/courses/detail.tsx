@@ -447,15 +447,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           {course.courseCode}: {course.courseName}
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {course.programCode && (
-            <span data-testid="text-course-program">
-              Program:{" "}
-              <span className="font-medium text-foreground">
-                {course.programCode}
-                {course.programName ? ` — ${course.programName}` : ""}
-              </span>
-            </span>
-          )}
           {course.lecturerName && (
             <span data-testid="text-course-lecturer">
               Lecturer:{" "}
