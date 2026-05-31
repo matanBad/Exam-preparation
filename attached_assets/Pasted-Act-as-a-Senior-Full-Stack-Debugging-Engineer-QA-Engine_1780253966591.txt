@@ -1,0 +1,172 @@
+Act as a Senior Full-Stack Debugging Engineer, QA Engineer, and Security Reviewer for a Replit-based React + Node.js/Express project.
+
+Your task is to debug the issue systematically, trace the full request flow from UI to API to database, verify permission behavior in Edit mode vs Viewer/Published mode, and provide a minimal secure code fix without weakening protected write operations.
+
+I am experiencing an issue in my Exam Preparation System (EPS) project.
+
+Context from the EPS PRD:
+The system uses React + Axios on the frontend, Node.js + Express REST API on the backend, and a database layer.
+
+The PRD defines course-related APIs such as:
+- GET /courses
+- GET /courses/:id
+- GET /courses/:id/topics
+- GET /users/:id/courses
+
+The PRD also requires:
+- role-based access control
+- secure session validation
+- least-privilege permissions
+- academic data access limited by user role and course context
+
+Important access-rule clarification:
+There is a difference between the Dashboard and the Courses Page.
+
+Student behavior:
+- In the Student Dashboard, the student should see only the courses relevant to the current academic year and semester.
+- In the Courses Page, the student may see all courses that belong to the degree/program they are studying, regardless of current year or semester.
+
+Lecturer behavior:
+- In the Lecturer Dashboard, the lecturer should see only the courses they teach.
+- In the Courses Page, the lecturer should also see only the courses they teach.
+
+Admin behavior:
+- Admin users may access system-level course data according to admin permissions.
+
+Current problem:
+The courses list loads correctly in Edit mode, but in Viewer / Read-Only / Published mode it returns an empty result or fails to load.
+
+What I suspect:
+- A backend authentication or authorization middleware may be blocking GET requests for courses when the user is not an editor.
+- The GET courses route may incorrectly require editor/admin permissions.
+- Viewer mode may be using the wrong filtering logic, for example Dashboard filtering instead of Courses Page filtering.
+- The frontend Axios/fetch request may behave differently in Viewer mode, for example wrong base URL, missing credentials/cookies, or incorrect environment variables.
+- The database access logic may be doing a write operation during a read request, for example initializing data or calling db.set during GET, which may fail in Viewer mode.
+- Replit / published environment permissions may differ from workspace Edit mode.
+
+Please analyze the project carefully and do the following:
+
+1. Identify the relevant files:
+   - Express server entry file
+   - courses API routes
+   - authentication / authorization middleware
+   - database access layer
+   - frontend component or service that loads the courses list
+   - dashboard course-loading logic, if it is separate from the Courses Page logic
+
+2. Trace the full request flow for the Courses Page:
+   - frontend request
+   - API endpoint
+   - middleware chain
+   - database query
+   - filtering logic
+   - response returned to the frontend
+
+3. Check the following API routes specifically:
+   - GET /courses
+   - GET /courses/:id
+   - GET /courses/:id/topics
+   - GET /users/:id/courses
+
+   If the actual route names in the code are different, identify the matching routes.
+
+4. Check whether any GET route for courses is protected by middleware such as:
+   - requireEditor
+   - requireAdmin
+   - requireWorkspaceOwner
+   - requireEditPermission
+   - any middleware that depends on Replit workspace edit permissions
+
+5. Verify that read-only GET requests do not incorrectly require editor permissions.
+
+   Correct behavior should be:
+
+   Student:
+   - Dashboard: show only courses for the current academic year and semester.
+   - Courses Page: show all courses belonging to the student's degree/program, regardless of current year or semester.
+
+   Lecturer:
+   - Dashboard: show only courses taught by the lecturer.
+   - Courses Page: show only courses taught by the lecturer.
+
+   Admin:
+   - May access system-level course data according to admin permissions.
+
+   Public / Viewer / Read-Only mode:
+   - Should be able to load safe read-only course data when the page is intended to be viewable.
+   - Should not gain permission to create, edit, delete, approve, or manage course/question content.
+
+6. Check whether the Courses Page is accidentally reusing Dashboard filtering logic.
+
+   Specifically check whether the Courses Page is incorrectly filtering by:
+   - current academic year
+   - current semester
+   - current enrollment only
+   - editor/workspace permission
+   - lecturer/admin-only role
+
+   The Courses Page should use its own access logic, not blindly reuse Dashboard logic.
+
+7. Check whether the database read logic performs any write operation during GET requests.
+
+   Look for actions such as:
+   - db.set
+   - db.delete
+   - createDefaultCourses
+   - seedData
+   - updateMetadata
+   - auto-initialization during a GET request
+
+   If such logic exists, separate it from the read route.
+
+8. Check the frontend request:
+   - Axios/fetch URL
+   - base URL in Edit vs Viewer mode
+   - credentials / cookies configuration
+   - environment variables
+   - response status and response parsing
+   - whether the frontend hides an error and displays an empty list
+
+9. Diagnose the exact failure type:
+   - 401 / 403 = authentication or authorization issue
+   - 404 = wrong route or base URL
+   - 500 = backend/database error
+   - [] = route succeeds but filtering or authorization returns no data
+   - CORS / Network error = deployment or frontend-backend connection issue
+
+10. Provide a safe, minimal code modification.
+
+   The fix should:
+   - allow the Courses Page to load correctly in Viewer / Read-Only mode
+   - apply the correct role-based filtering rules
+   - not expose restricted academic data
+   - not allow unauthorized users to create, edit, delete, approve, or manage content
+   - preserve lecturer/admin edit functionality
+   - keep Dashboard filtering separate from Courses Page filtering
+   - follow the PRD principle of role-based access and least privilege
+
+11. Provide the answer in this structure:
+   A. Root cause
+   B. Relevant files found
+   C. Problematic middleware or logic
+   D. Whether the issue is caused by authorization, filtering, frontend request, environment, or database logic
+   E. Security-safe solution
+   F. Exact code patch
+   G. Explanation of why the patch is safe
+   H. Test plan for:
+      - Edit mode
+      - Viewer / Published mode
+      - Student Dashboard
+      - Student Courses Page
+      - Lecturer Dashboard
+      - Lecturer Courses Page
+      - Admin access
+
+Important:
+Do not simply remove all authentication or authorization.
+Only relax access for safe read-only course data where appropriate.
+Keep all write and management operations protected.
+Do not use Dashboard filtering rules for the Courses Page unless the product logic explicitly requires it.
+Make sure the fix covers both:
+1. permission / authorization problems
+2. UI → API → DB connection problems
