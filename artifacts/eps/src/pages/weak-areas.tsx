@@ -57,10 +57,6 @@ export default function WeakAreas() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Weak Areas</h1>
-          <p className="text-sm text-muted-foreground">
-            Topics and subtopics where your accuracy is lowest, based on your
-            mock exams and practice sessions.
-          </p>
         </div>
       </div>
 
