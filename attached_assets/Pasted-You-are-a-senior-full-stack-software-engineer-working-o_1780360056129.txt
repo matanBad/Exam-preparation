@@ -1,0 +1,800 @@
+You are a senior full-stack software engineer working on the EPS platform.
+
+Project:
+Exam Preparation System (EPS) – Team 4
+
+We are now implementing Sprint 3, Module 1:
+Practice Mode / Targeted Learning
+
+This module must be integrated into the existing Sprint 2 system without breaking current functionality.
+
+==================================================
+IMPORTANT CONTEXT
+==================================================
+
+The project already includes:
+- Role-based login for student, lecturer, admin
+- Student dashboard
+- Courses pages
+- Course details pages
+- Question Bank
+- Mock exam generation
+- Mock exam submission
+- Scoring
+- Review of incorrect answers
+- Top bar with notifications/messages
+- Profile page
+- Strategy A data model
+
+Current DB/data model includes CSV/database tables similar to:
+- users
+- courses
+- course_offerings
+- enrollments
+- topics
+- questions
+- answer_options
+- mock_exams
+- mock_exam_questions
+
+Important current relationships:
+- users.id
+- courses.id
+- enrollments.user_id
+- enrollments.course_id
+- course_offerings.course_id
+- course_offerings.program_id
+- course_offerings.lecturer_id
+- topics.course_id
+- topics.parent_topic_id
+- questions.course_id
+- questions.topic_id
+- questions.subtopic_id
+- answer_options.question_id
+- mock_exams.user_id
+- mock_exams.course_id
+- mock_exam_questions.exam_id
+- mock_exam_questions.question_id
+
+Important:
+Use the actual existing schema and column names in the project.
+Do not invent alternative names if the project already uses different names.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+Do NOT change:
+1. Login logic
+2. Authentication logic
+3. Existing role-based permissions
+4. Existing dashboard data logic unless explicitly required for the new Practice card
+5. Existing mock exam generation flow
+6. Existing mock exam submission flow
+7. Existing Question Bank flow
+8. Existing Courses flow
+9. Existing DB seed data unless a new practice seed file is required
+10. questions.course_id
+11. topics.course_id
+12. Strategy A
+
+Keep Strategy A:
+- courses = shared course catalog
+- course_offerings = course taught by a specific lecturer in a specific program
+- topics.course_id remains connected to the parent course
+- questions.course_id remains connected to the parent course
+- Do NOT move topics or questions to course_offerings
+- Use course_offerings only for visibility/context: program, lecturer, study_year, semester
+
+Do NOT expose:
+- draft questions to students
+- pending questions to students
+- archived questions to students
+- practice sessions of one student to another student
+
+Use only approved questions for Practice Mode:
+questions.status = approved
+
+==================================================
+SPRINT 3 USER STORIES COVERED
+==================================================
+
+Implement the Practice Mode / Targeted Learning module for:
+
+US-30:
+As a student, I can practice questions by topic, so that I can improve in specific areas.
+
+US-31:
+As a student, I can practice weak areas, so that I can focus on improving weaknesses.
+
+US-32:
+As a student, I can receive immediate feedback after answering, so that I can learn instantly.
+
+US-33:
+As a student, I can view explanations after answering, so that I understand mistakes.
+
+US-34:
+As a student, I can retry questions, so that I can improve performance.
+
+US-35:
+As a student, I can continue an unfinished practice session, so that I do not lose progress.
+
+US-36:
+As a student, I can record confidence level for answers, so that I can track my certainty.
+
+US-37:
+As a student, I can practice only previously incorrect questions, so that I focus on mistakes.
+
+Important:
+Do NOT implement the full Weak Area Analysis engine yet.
+Do NOT implement the full Recommendation engine yet.
+Do NOT implement Readiness Score yet.
+Do NOT implement Notifications/Streaks yet.
+
+However, save enough practice data so that future modules can calculate weak areas, recommendations, dashboards, streaks, and alerts.
+
+==================================================
+DATABASE / DATA MODEL REQUIREMENTS
+==================================================
+
+First inspect the existing project database/schema.
+
+If practice-related tables already exist, reuse and extend them carefully.
+If they do not exist, add the following two tables using the current project’s migration/seed style.
+
+Recommended table 1:
+practice_sessions
+
+Fields:
+- id
+- user_id
+- course_id
+- topic_id nullable
+- subtopic_id nullable
+- session_type
+- total_questions
+- status
+- started_at
+- completed_at nullable
+- created_at
+- updated_at
+
+session_type allowed values:
+- topic
+- subtopic
+- weak_area
+- mistakes
+- retry_incorrect
+
+status allowed values:
+- active
+- completed
+- abandoned
+
+Recommended table 2:
+practice_session_questions
+
+Fields:
+- id
+- practice_session_id
+- question_id
+- question_order
+- randomized_option_order
+- selected_answer_option_id nullable
+- selected_option_ids nullable
+- is_correct nullable
+- confidence_level nullable
+- response_time_seconds nullable
+- max_score nullable
+- earned_score nullable
+- answered_at nullable
+- status
+- created_at
+- updated_at
+
+status allowed values:
+- not_answered
+- answered
+- skipped
+
+confidence_level allowed values:
+- low
+- medium
+- high
+
+Important:
+The project already has mock_exam_questions with fields such as:
+- randomized_order
+- randomized_option_order
+- selected_answer_option_id
+- selected_option_ids
+- is_correct
+- response_time_seconds
+- max_score
+- earned_score
+
+Use the existing mock_exam_questions structure as a reference.
+Keep the Practice structure consistent with the existing exam structure where possible.
+
+Do not modify mock_exams or mock_exam_questions unless absolutely necessary.
+
+==================================================
+SCORING REQUIREMENTS
+==================================================
+
+Reuse existing scoring fields and grading logic where available:
+- max_score
+- earned_score
+- selected_answer_option_id
+- selected_option_ids
+- is_correct
+
+If the project already calculates question points by difficulty, reuse that logic.
+
+If no scoring utility exists, implement a small reusable grading helper:
+- Easy questions are worth less than Medium
+- Medium questions are worth less than Hard
+- Single-choice questions receive full points or zero
+- Multiple-choice questions may receive partial credit
+
+Suggested default point values if not already defined:
+- Easy = 1 point
+- Medium = 2 points
+- Hard = 3 points
+
+For multiple-choice partial credit:
+- Award proportional credit for correct selected options
+- Penalize or reduce credit for incorrect selected options
+- Never allow earned_score below 0
+- Never allow earned_score above max_score
+
+Practice Mode must show immediate correctness feedback.
+Final practice summary should show:
+- total questions
+- answered questions
+- correct answers
+- earned points
+- total possible points
+- accuracy percentage
+
+==================================================
+BACKEND API REQUIREMENTS
+==================================================
+
+Add backend routes/services for Practice Mode.
+Use the current project route style and authentication middleware.
+
+Required endpoints:
+
+1. Generate practice session
+
+POST /api/practice/generate
+
+Body:
+{
+  "course_id": number,
+  "topic_id": number optional,
+  "subtopic_id": number optional,
+  "session_type": "topic" | "subtopic" | "weak_area" | "mistakes" | "retry_incorrect",
+  "question_count": number
+}
+
+Behavior:
+- Only students can call this endpoint.
+- Verify the course is visible to the student.
+- Student course visibility must respect Strategy A:
+  student program + enrollment + existing course_offering + active course
+- Use only approved questions.
+- Exclude archived, draft, and pending questions.
+- For topic practice:
+  filter by course_id and topic_id.
+- For subtopic practice:
+  filter by course_id, topic_id, and subtopic_id.
+- For mistakes practice:
+  use questions the student previously answered incorrectly.
+  Sources:
+  1. practice_session_questions where is_correct = false or earned_score < max_score
+  2. mock_exam_questions where is_correct = false or earned_score < max_score
+- Avoid duplicate questions inside the same practice session.
+- Randomize selected question order.
+- Randomize answer option order per question.
+- Store randomized_option_order.
+- Create practice_sessions row.
+- Create practice_session_questions rows.
+- Return the created practice_session id and basic metadata.
+
+If no questions are available:
+Return a clear message and do not create an empty session.
+
+Examples:
+- No approved questions for selected topic
+- No previous mistakes available
+- Not enough questions available
+
+2. Get practice session
+
+GET /api/practice/:sessionId
+
+Behavior:
+- Only the owner student can access the session.
+- Return session metadata.
+- Return questions in stored question_order.
+- Return answer options in stored randomized_option_order.
+- Do not reveal correct answers before the student submits an answer.
+- If a question was already answered, include:
+  - selected answers
+  - is_correct
+  - earned_score
+  - max_score
+  - confidence_level
+  - explanation_text
+  - correct answer ids
+
+3. Submit one practice answer
+
+POST /api/practice/:sessionId/submit-answer
+
+Body:
+{
+  "question_id": number,
+  "selected_answer_option_id": number optional,
+  "selected_option_ids": number[] optional,
+  "confidence_level": "low" | "medium" | "high",
+  "response_time_seconds": number optional
+}
+
+Behavior:
+- Only the owner student can submit answers for the session.
+- Validate that the question belongs to the session.
+- Validate that the selected answer option ids belong to that question.
+- Validate confidence_level.
+- Grade the answer immediately.
+- Save:
+  - selected_answer_option_id for single-choice if used
+  - selected_option_ids for multiple-choice or general answer storage
+  - is_correct
+  - confidence_level
+  - response_time_seconds
+  - max_score
+  - earned_score
+  - answered_at
+  - status = answered
+- Update practice_sessions:
+  - answered_count/correct_count if such fields exist
+  - updated_at
+- Return immediate feedback:
+{
+  "is_correct": boolean,
+  "max_score": number,
+  "earned_score": number,
+  "correct_answer_ids": number[],
+  "explanation_text": string,
+  "feedback": string
+}
+
+4. Finish practice session
+
+POST /api/practice/:sessionId/finish
+
+Behavior:
+- Only the owner student can finish the session.
+- Set status = completed.
+- Set completed_at.
+- Return summary:
+  - total_questions
+  - answered_questions
+  - correct_answers
+  - earned_score
+  - total_possible_score
+  - accuracy_percentage
+  - low_confidence_count
+  - incorrect_count
+
+5. Practice history
+
+GET /api/practice/history
+
+Behavior:
+- Only students can access their own practice history.
+- Return:
+  - completed sessions
+  - active unfinished sessions
+  - course name
+  - topic/subtopic names if available
+  - status
+  - created_at / completed_at
+  - summary numbers
+
+6. Continue unfinished session
+
+This can use:
+GET /api/practice/:sessionId
+
+Also provide active sessions in:
+GET /api/practice/history
+
+7. Generate retry incorrect practice
+
+Either reuse:
+POST /api/practice/generate
+
+with:
+{
+  "session_type": "retry_incorrect" or "mistakes"
+}
+
+Behavior:
+- Pull previously incorrect questions from practice and mock exam history.
+- Use only questions that still exist and are approved.
+- Exclude archived/draft/pending questions.
+
+==================================================
+FRONTEND REQUIREMENTS
+==================================================
+
+Add Practice Mode to the student UI only.
+
+Use the existing visual style:
+- Sidebar
+- Top bar
+- White cards
+- Clean spacing
+- Existing buttons, inputs, filters, badges
+- Same design language as Courses and Question Bank pages
+
+Do not redesign the whole app.
+
+1. Sidebar
+
+Add a student-only sidebar item:
+Practice
+
+Suggested placement:
+Dashboard
+Courses
+Practice
+Exams / Submitted Exams if already exists
+My Account
+
+Do not show Practice in lecturer/admin sidebar unless you intentionally add a disabled analytics placeholder, which is not required now.
+
+2. Student Dashboard
+
+Add a Practice Mode card:
+Title:
+Practice Mode
+
+Description:
+Practice by topic, weak areas, or previous mistakes.
+
+Button:
+Start Practice
+
+Clicking it navigates to:
+/practice
+
+If the student has unfinished practice sessions, also show a compact card/section:
+Unfinished Practice
+X active session(s)
+Continue
+
+This should navigate to the unfinished practice session or practice history page.
+
+Keep dashboard spacing consistent.
+Do not remove existing dashboard cards.
+
+3. Practice Main Page
+
+Create route/page:
+/practice
+
+Title:
+Practice
+
+Subtitle:
+Choose how you want to practice.
+
+Show cards:
+- Practice by Topic
+- Practice Weak Areas
+- Practice Previous Mistakes
+- Continue Unfinished Practice
+
+Card behavior:
+Practice by Topic:
+Active now. Opens setup flow.
+
+Practice Weak Areas:
+Since the full Weak Area engine is not implemented yet, do not fake analytics.
+Either:
+- show disabled state: “Available after more practice data”
+or
+- use the same mistakes logic temporarily if enough previous mistakes exist, clearly labeled as based on previous mistakes.
+Prefer not to create misleading weak-area results yet.
+
+Practice Previous Mistakes:
+Active if the student has previous incorrect answers from mock exams or practice sessions.
+If no mistakes exist, show clear empty state:
+No previous mistakes are available yet.
+
+Continue Unfinished Practice:
+Active if the student has active practice sessions.
+Otherwise show empty state.
+
+4. Practice Setup Page
+
+For Practice by Topic, show form fields:
+- Course dropdown
+- Topic dropdown
+- Subtopic dropdown optional
+- Number of questions
+- Start Practice button
+
+Data rules:
+- Course dropdown shows only courses visible to the student.
+- Topic dropdown loads topics for selected course.
+- Subtopic dropdown loads subtopics for selected topic.
+- Number of questions should not exceed available approved questions if possible.
+- If no questions exist, show clear message.
+
+Route suggestion:
+/practice/setup
+
+5. Practice Session Page
+
+Route:
+/practice/:sessionId
+
+Display:
+- Practice Session title
+- Course name
+- Topic/subtopic if relevant
+- Question progress, for example: Question 3 of 10
+- Question text
+- Question image if the project supports image_url
+- Answer options
+- Confidence level selector:
+  Low / Medium / High
+- Submit Answer button
+
+Before answer submission:
+- Do not show correct answer
+- Do not show explanation
+- Require confidence level before submit, or default to medium if this is better for current UX
+
+After answer submission:
+Show immediate feedback:
+- Correct / Incorrect
+- earned_score / max_score
+- correct answer
+- explanation_text
+- Next Question button
+
+If the answer is incorrect:
+Show a subtle action or note:
+This question will be available in mistake practice.
+
+Do not make the page feel like a timed exam.
+Practice is learning-oriented, not exam simulation.
+
+6. Practice Summary Page
+
+Route suggestion:
+/practice/:sessionId/summary
+
+Show:
+- Practice Summary
+- Total questions
+- Answered questions
+- Correct answers
+- Accuracy percentage
+- Earned score / total possible score
+- Low confidence answers
+- Incorrect answers
+
+Buttons:
+- Retry Incorrect Questions
+- Back to Practice
+- Back to Dashboard
+
+Retry Incorrect Questions:
+Creates a new practice session using only incorrect questions from this session.
+
+7. Practice History Page or section
+
+Can be included inside /practice or as:
+/practice/history
+
+Show:
+- Active unfinished sessions
+- Completed sessions
+- Course
+- Topic/subtopic
+- Date
+- Accuracy
+- Status
+- Continue button for active sessions
+- View summary button for completed sessions
+
+==================================================
+VISIBILITY AND PERMISSIONS
+==================================================
+
+Student Practice visibility:
+A student can practice a course only if:
+1. The student is enrolled in the course through enrollments.
+2. The student belongs to the relevant program.
+3. There is a course_offering for that course and program.
+4. The course is active if courses.status exists.
+
+Use the same visibility helper/query used by the existing Student Courses page if available.
+Do not duplicate incompatible logic.
+
+Question visibility:
+Students can only practice:
+- questions.status = approved
+- questions.course_id belongs to a visible course
+- not archived
+- not draft
+- not pending
+
+Practice session ownership:
+- A student can only access and modify their own practice sessions.
+- Lecturer/admin cannot submit student practice answers.
+- Another student cannot access someone else’s practice session by URL.
+
+==================================================
+EDGE CASES TO HANDLE
+==================================================
+
+1. Student selects topic with no approved questions
+Show message and do not create session.
+
+2. Student selects more questions than available
+Either:
+- cap to available count with clear message
+or
+- block and ask to choose lower number.
+
+3. Student has no previous mistakes
+Show empty state:
+No previous mistakes are available yet.
+
+4. Student tries to access another student’s session URL
+Return forbidden / redirect.
+
+5. Student refreshes practice page after answering some questions
+Previously answered state must persist.
+
+6. Student exits session before finishing
+Session remains active and appears under Continue Unfinished Practice.
+
+7. Question has multiple correct answers
+Support selected_option_ids and partial scoring.
+
+8. Question has single correct answer
+Support selected_answer_option_id or selected_option_ids with one item, depending on current code style.
+
+9. Archived/draft/pending question appears in old history
+Do not include it in newly generated practice sessions.
+
+10. Deleted/missing answer option from old history
+Handle gracefully without crashing.
+
+11. User has no confidence selected
+Show validation message or default to medium.
+
+12. Duplicate questions from both practice mistakes and exam mistakes
+Deduplicate by question_id.
+
+==================================================
+QUALITY / CODE REQUIREMENTS
+==================================================
+
+Keep code clean and modular.
+
+Recommended structure:
+- practice routes
+- practice service
+- practice repository/data-access logic
+- grading helper if needed
+- frontend practice pages/components
+
+Reuse existing utilities:
+- auth middleware
+- role guard
+- student course visibility logic
+- question grading logic
+- answer option randomization logic
+- existing UI components
+
+Do not create large duplicated blocks of query logic if helpers already exist.
+
+Do not hardcode demo user ids.
+
+Do not hardcode course ids.
+
+Do not hardcode program ids.
+
+Do not use fake weak areas.
+
+Do not silently ignore errors.
+
+Show clear user-friendly error messages.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete when:
+
+1. Student sees Practice in the sidebar.
+2. Student dashboard has a Practice Mode card.
+3. Student can open /practice.
+4. Student can start Practice by Topic.
+5. Student can select course, topic, optional subtopic, and question count.
+6. Practice uses only approved questions.
+7. Practice does not show archived/draft/pending questions.
+8. Student can answer a practice question.
+9. Student receives immediate correct/incorrect feedback.
+10. Student sees explanation after submitting an answer.
+11. Student can select confidence level.
+12. Confidence level is saved.
+13. Practice answer is saved persistently.
+14. Refreshing the page does not lose answered progress.
+15. Student can leave and continue an unfinished practice session.
+16. Student can finish practice and view summary.
+17. Student can retry incorrect questions.
+18. Practice Previous Mistakes uses mistakes from practice history and mock exam history.
+19. If no mistakes exist, a clear empty state is shown.
+20. Student cannot access another student’s practice session.
+21. Existing mock exam flow still works.
+22. Existing question bank flow still works.
+23. Existing courses flow still works.
+24. Existing login and permissions still work.
+25. Strategy A is preserved.
+26. questions.course_id was not changed.
+27. topics.course_id was not changed.
+28. No unrelated UI or DB changes were made.
+
+==================================================
+VALIDATION AFTER IMPLEMENTATION
+==================================================
+
+After implementing, run the project and validate manually:
+
+Student flow:
+1. Log in as a student.
+2. Open Dashboard.
+3. Confirm Practice card appears.
+4. Open Practice from sidebar.
+5. Start Practice by Topic.
+6. Select a course visible to the student.
+7. Select topic/subtopic.
+8. Start session.
+9. Answer question with confidence level.
+10. Confirm immediate feedback and explanation.
+11. Refresh page and confirm progress persists.
+12. Leave page and return through Continue Unfinished Practice.
+13. Finish session and confirm summary.
+14. Retry incorrect questions.
+
+Security:
+1. Try opening another student’s practice session URL.
+2. Confirm access is blocked.
+
+Regression:
+1. Generate a mock exam.
+2. Submit a mock exam.
+3. Review exam results.
+4. Open Question Bank as lecturer/admin.
+5. Open Courses as student/lecturer/admin.
+6. Confirm no existing behavior broke.
+
+At the end, summarize:
+- Which files were changed
+- Which tables/migrations were added
+- Which routes were added
+- Which frontend pages/components were added
+- How Strategy A was preserved
+- How existing Sprint 2 functionality was protected

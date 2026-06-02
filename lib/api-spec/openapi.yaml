@@ -17,6 +17,7 @@ tags:
   - name: users
   - name: admin
   - name: programs
+  - name: practice
 paths:
   /healthz:
     get:
@@ -724,6 +725,102 @@ paths:
                 items:
                   $ref: "#/components/schemas/Exam"
 
+  /practice/generate:
+    post:
+      operationId: generatePractice
+      tags: [practice]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePracticeRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeSessionWithQuestions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /practice/history:
+    get:
+      operationId: getPracticeHistory
+      tags: [practice]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeHistory"
+
+  /practice/{sessionId}:
+    get:
+      operationId: getPracticeSession
+      tags: [practice]
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeSessionWithQuestions"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /practice/{sessionId}/answer:
+    post:
+      operationId: submitPracticeAnswer
+      tags: [practice]
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitPracticeAnswerRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeAnswerFeedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /practice/{sessionId}/finish:
+    post:
+      operationId: finishPracticeSession
+      tags: [practice]
+      parameters:
+        - $ref: "#/components/parameters/SessionIdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PracticeSummary"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /admin/users:
     get:
       operationId: listUsers
@@ -903,6 +1000,12 @@ components:
     IdPath:
       in: path
       name: id
+      required: true
+      schema:
+        type: integer
+    SessionIdPath:
+      in: path
+      name: sessionId
       required: true
       schema:
         type: integer
@@ -1485,6 +1588,181 @@ components:
           type: array
           items: { $ref: "#/components/schemas/ReviewItem" }
       required: [exam, items]
+
+    ConfidenceLevel:
+      type: string
+      enum: [low, medium, high]
+
+    PracticeSessionType:
+      type: string
+      enum: [topic, subtopic, mixed, mistakes]
+
+    PracticeSessionStatus:
+      type: string
+      enum: [active, completed, abandoned]
+
+    PracticeQuestionStatus:
+      type: string
+      enum: [not_answered, answered]
+
+    GeneratePracticeRequest:
+      type: object
+      properties:
+        courseId: { type: integer }
+        topicId: { type: ["integer", "null"], description: "Optional top-level topic to focus on." }
+        subtopicId: { type: ["integer", "null"], description: "Optional subtopic to focus on (must be a child of topicId)." }
+        questionCount:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: "Number of questions to practice. Defaults to 10 if omitted."
+        sessionType:
+          allOf:
+            - $ref: "#/components/schemas/PracticeSessionType"
+          nullable: true
+          description: "How the pool is chosen. Defaults to topic/subtopic/mixed based on the filters provided."
+      required: [courseId]
+
+    PracticeQuestionOption:
+      type: object
+      properties:
+        id: { type: integer }
+        answerText: { type: string }
+      required: [id, answerText]
+
+    PracticeQuestion:
+      type: object
+      properties:
+        id: { type: integer, description: "practice_session_questions row id." }
+        questionId: { type: integer }
+        title: { type: string }
+        questionText: { type: string }
+        questionType: { $ref: "#/components/schemas/QuestionType" }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        topicName: { type: ["string", "null"] }
+        questionOrder: { type: integer }
+        maxScore: { type: number, description: "Points this question is worth (Easy=1, Medium=2, Hard=3)." }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/PracticeQuestionOption" }
+        status: { $ref: "#/components/schemas/PracticeQuestionStatus" }
+        selectedAnswerOptionId: { type: ["integer", "null"] }
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+        confidenceLevel:
+          allOf:
+            - $ref: "#/components/schemas/ConfidenceLevel"
+          nullable: true
+        isCorrect: { type: ["boolean", "null"] }
+        earnedScore: { type: ["number", "null"] }
+        responseTimeSeconds: { type: ["integer", "null"] }
+        explanationText:
+          type: ["string", "null"]
+          description: "Only populated once the question has been answered."
+        correctAnswerOptionIds:
+          type: array
+          items: { type: integer }
+          description: "Correct option ids. Empty until the question has been answered (avoids leaking answers early)."
+      required:
+        [id, questionId, title, questionText, questionType, difficultyLevel, questionOrder, maxScore, options, status, selectedAnswerOptionIds, correctAnswerOptionIds]
+
+    PracticeSession:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        sessionType: { $ref: "#/components/schemas/PracticeSessionType" }
+        status: { $ref: "#/components/schemas/PracticeSessionStatus" }
+        totalQuestions: { type: integer }
+        answeredCount: { type: integer }
+        correctCount: { type: integer }
+        earnedScore: { type: number }
+        totalMaxScore: { type: number }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required:
+        [id, userId, courseId, sessionType, status, totalQuestions, answeredCount, correctCount, earnedScore, totalMaxScore, startedAt, createdAt]
+
+    PracticeSessionWithQuestions:
+      allOf:
+        - $ref: "#/components/schemas/PracticeSession"
+        - type: object
+          properties:
+            questions:
+              type: array
+              items: { $ref: "#/components/schemas/PracticeQuestion" }
+          required: [questions]
+
+    SubmitPracticeAnswerRequest:
+      type: object
+      properties:
+        practiceQuestionId: { type: integer, description: "practice_session_questions row id." }
+        selectedAnswerOptionId: { type: ["integer", "null"], description: "Legacy single-choice selection." }
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+          description: "All option ids the student selected. Empty array means unanswered."
+        confidenceLevel:
+          allOf:
+            - $ref: "#/components/schemas/ConfidenceLevel"
+          nullable: true
+        responseTimeSeconds: { type: ["integer", "null"] }
+      required: [practiceQuestionId]
+
+    PracticeAnswerFeedback:
+      type: object
+      properties:
+        practiceQuestionId: { type: integer }
+        questionId: { type: integer }
+        isCorrect: { type: boolean }
+        maxScore: { type: number }
+        earnedScore: { type: number }
+        correctAnswerOptionIds:
+          type: array
+          items: { type: integer }
+        selectedAnswerOptionIds:
+          type: array
+          items: { type: integer }
+        explanationText: { type: ["string", "null"] }
+        answeredCount: { type: integer, description: "Running count of answered questions in this session." }
+        correctCount: { type: integer, description: "Running count of fully-correct questions in this session." }
+      required:
+        [practiceQuestionId, questionId, isCorrect, maxScore, earnedScore, correctAnswerOptionIds, selectedAnswerOptionIds, answeredCount, correctCount]
+
+    PracticeSummary:
+      type: object
+      properties:
+        sessionId: { type: integer }
+        status: { $ref: "#/components/schemas/PracticeSessionStatus" }
+        totalQuestions: { type: integer }
+        answeredCount: { type: integer }
+        correctCount: { type: integer }
+        incorrectCount: { type: integer }
+        earnedScore: { type: number }
+        totalMaxScore: { type: number }
+        accuracyPercentage: { type: number, description: "correctCount / answeredCount * 100 (0 if none answered)." }
+        lowConfidenceCount: { type: integer, description: "Answered questions the student marked low confidence." }
+      required:
+        [sessionId, status, totalQuestions, answeredCount, correctCount, incorrectCount, earnedScore, totalMaxScore, accuracyPercentage, lowConfidenceCount]
+
+    PracticeHistory:
+      type: object
+      properties:
+        active:
+          type: array
+          items: { $ref: "#/components/schemas/PracticeSession" }
+        completed:
+          type: array
+          items: { $ref: "#/components/schemas/PracticeSession" }
+      required: [active, completed]
 
     AdminOverview:
       type: object

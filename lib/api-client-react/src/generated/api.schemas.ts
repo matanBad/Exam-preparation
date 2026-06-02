@@ -569,6 +569,184 @@ export interface ExamReview {
   items: ReviewItem[];
 }
 
+export type ConfidenceLevel =
+  (typeof ConfidenceLevel)[keyof typeof ConfidenceLevel];
+
+export const ConfidenceLevel = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export type PracticeSessionType =
+  (typeof PracticeSessionType)[keyof typeof PracticeSessionType];
+
+export const PracticeSessionType = {
+  topic: "topic",
+  subtopic: "subtopic",
+  mixed: "mixed",
+  mistakes: "mistakes",
+} as const;
+
+export type PracticeSessionStatus =
+  (typeof PracticeSessionStatus)[keyof typeof PracticeSessionStatus];
+
+export const PracticeSessionStatus = {
+  active: "active",
+  completed: "completed",
+  abandoned: "abandoned",
+} as const;
+
+export type PracticeQuestionStatus =
+  (typeof PracticeQuestionStatus)[keyof typeof PracticeQuestionStatus];
+
+export const PracticeQuestionStatus = {
+  not_answered: "not_answered",
+  answered: "answered",
+} as const;
+
+export interface GeneratePracticeRequest {
+  courseId: number;
+  /**
+   * Optional top-level topic to focus on.
+   * @nullable
+   */
+  topicId?: number | null;
+  /**
+   * Optional subtopic to focus on (must be a child of topicId).
+   * @nullable
+   */
+  subtopicId?: number | null;
+  /**
+   * Number of questions to practice. Defaults to 10 if omitted.
+   * @minimum 1
+   * @maximum 50
+   */
+  questionCount?: number;
+  /** How the pool is chosen. Defaults to topic/subtopic/mixed based on the filters provided. */
+  sessionType?: PracticeSessionType | null;
+}
+
+export interface PracticeQuestionOption {
+  id: number;
+  answerText: string;
+}
+
+export interface PracticeQuestion {
+  /** practice_session_questions row id. */
+  id: number;
+  questionId: number;
+  title: string;
+  questionText: string;
+  questionType: QuestionType;
+  difficultyLevel: Difficulty;
+  /** @nullable */
+  topicName?: string | null;
+  questionOrder: number;
+  /** Points this question is worth (Easy=1, Medium=2, Hard=3). */
+  maxScore: number;
+  options: PracticeQuestionOption[];
+  status: PracticeQuestionStatus;
+  /** @nullable */
+  selectedAnswerOptionId?: number | null;
+  selectedAnswerOptionIds: number[];
+  confidenceLevel?: ConfidenceLevel | null;
+  /** @nullable */
+  isCorrect?: boolean | null;
+  /** @nullable */
+  earnedScore?: number | null;
+  /** @nullable */
+  responseTimeSeconds?: number | null;
+  /**
+   * Only populated once the question has been answered.
+   * @nullable
+   */
+  explanationText?: string | null;
+  /** Correct option ids. Empty until the question has been answered (avoids leaking answers early). */
+  correctAnswerOptionIds: number[];
+}
+
+export interface PracticeSession {
+  id: number;
+  userId: number;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  sessionType: PracticeSessionType;
+  status: PracticeSessionStatus;
+  totalQuestions: number;
+  answeredCount: number;
+  correctCount: number;
+  earnedScore: number;
+  totalMaxScore: number;
+  startedAt: string;
+  completedAt?: string | null;
+  createdAt: string;
+}
+
+export type PracticeSessionWithQuestions = PracticeSession & {
+  questions: PracticeQuestion[];
+};
+
+export interface SubmitPracticeAnswerRequest {
+  /** practice_session_questions row id. */
+  practiceQuestionId: number;
+  /**
+   * Legacy single-choice selection.
+   * @nullable
+   */
+  selectedAnswerOptionId?: number | null;
+  /** All option ids the student selected. Empty array means unanswered. */
+  selectedAnswerOptionIds?: number[];
+  confidenceLevel?: ConfidenceLevel | null;
+  /** @nullable */
+  responseTimeSeconds?: number | null;
+}
+
+export interface PracticeAnswerFeedback {
+  practiceQuestionId: number;
+  questionId: number;
+  isCorrect: boolean;
+  maxScore: number;
+  earnedScore: number;
+  correctAnswerOptionIds: number[];
+  selectedAnswerOptionIds: number[];
+  /** @nullable */
+  explanationText?: string | null;
+  /** Running count of answered questions in this session. */
+  answeredCount: number;
+  /** Running count of fully-correct questions in this session. */
+  correctCount: number;
+}
+
+export interface PracticeSummary {
+  sessionId: number;
+  status: PracticeSessionStatus;
+  totalQuestions: number;
+  answeredCount: number;
+  correctCount: number;
+  incorrectCount: number;
+  earnedScore: number;
+  totalMaxScore: number;
+  /** correctCount / answeredCount * 100 (0 if none answered). */
+  accuracyPercentage: number;
+  /** Answered questions the student marked low confidence. */
+  lowConfidenceCount: number;
+}
+
+export interface PracticeHistory {
+  active: PracticeSession[];
+  completed: PracticeSession[];
+}
+
 export type AdminOverviewTotals = {
   users: number;
   students: number;

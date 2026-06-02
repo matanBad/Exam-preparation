@@ -1,0 +1,1 @@
+- [Practice Mode grading & feedback](practice-mode.md) — raw difficulty points, partial credit rules, empty-answer must 400, reveal answers only after answering.

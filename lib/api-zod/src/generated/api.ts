@@ -1119,6 +1119,208 @@ export const GetUserExamsResponseItem = zod.object({
 });
 export const GetUserExamsResponse = zod.array(GetUserExamsResponseItem);
 
+export const generatePracticeBodyQuestionCountMax = 50;
+
+export const GeneratePracticeBody = zod.object({
+  courseId: zod.number(),
+  topicId: zod
+    .number()
+    .nullish()
+    .describe("Optional top-level topic to focus on."),
+  subtopicId: zod
+    .number()
+    .nullish()
+    .describe("Optional subtopic to focus on (must be a child of topicId)."),
+  questionCount: zod
+    .number()
+    .min(1)
+    .max(generatePracticeBodyQuestionCountMax)
+    .optional()
+    .describe("Number of questions to practice. Defaults to 10 if omitted."),
+  sessionType: zod
+    .enum(["topic", "subtopic", "mixed", "mistakes"])
+    .nullish()
+    .describe(
+      "How the pool is chosen. Defaults to topic\/subtopic\/mixed based on the filters provided.",
+    ),
+});
+
+export const GetPracticeHistoryResponse = zod.object({
+  active: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+      status: zod.enum(["active", "completed", "abandoned"]),
+      totalQuestions: zod.number(),
+      answeredCount: zod.number(),
+      correctCount: zod.number(),
+      earnedScore: zod.number(),
+      totalMaxScore: zod.number(),
+      startedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  completed: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+      status: zod.enum(["active", "completed", "abandoned"]),
+      totalQuestions: zod.number(),
+      answeredCount: zod.number(),
+      correctCount: zod.number(),
+      earnedScore: zod.number(),
+      totalMaxScore: zod.number(),
+      startedAt: zod.coerce.date(),
+      completedAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const GetPracticeSessionParams = zod.object({
+  sessionId: zod.coerce.number(),
+});
+
+export const GetPracticeSessionResponse = zod
+  .object({
+    id: zod.number(),
+    userId: zod.number(),
+    courseId: zod.number(),
+    courseName: zod.string().nullish(),
+    topicId: zod.number().nullish(),
+    topicName: zod.string().nullish(),
+    subtopicId: zod.number().nullish(),
+    subtopicName: zod.string().nullish(),
+    sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+    status: zod.enum(["active", "completed", "abandoned"]),
+    totalQuestions: zod.number(),
+    answeredCount: zod.number(),
+    correctCount: zod.number(),
+    earnedScore: zod.number(),
+    totalMaxScore: zod.number(),
+    startedAt: zod.coerce.date(),
+    completedAt: zod.coerce.date().nullish(),
+    createdAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      questions: zod.array(
+        zod.object({
+          id: zod.number().describe("practice_session_questions row id."),
+          questionId: zod.number(),
+          title: zod.string(),
+          questionText: zod.string(),
+          questionType: zod.enum(["single_choice", "multiple_choice"]),
+          difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
+          topicName: zod.string().nullish(),
+          questionOrder: zod.number(),
+          maxScore: zod
+            .number()
+            .describe(
+              "Points this question is worth (Easy=1, Medium=2, Hard=3).",
+            ),
+          options: zod.array(
+            zod.object({
+              id: zod.number(),
+              answerText: zod.string(),
+            }),
+          ),
+          status: zod.enum(["not_answered", "answered"]),
+          selectedAnswerOptionId: zod.number().nullish(),
+          selectedAnswerOptionIds: zod.array(zod.number()),
+          confidenceLevel: zod.enum(["low", "medium", "high"]).nullish(),
+          isCorrect: zod.boolean().nullish(),
+          earnedScore: zod.number().nullish(),
+          responseTimeSeconds: zod.number().nullish(),
+          explanationText: zod
+            .string()
+            .nullish()
+            .describe("Only populated once the question has been answered."),
+          correctAnswerOptionIds: zod
+            .array(zod.number())
+            .describe(
+              "Correct option ids. Empty until the question has been answered (avoids leaking answers early).",
+            ),
+        }),
+      ),
+    }),
+  );
+
+export const SubmitPracticeAnswerParams = zod.object({
+  sessionId: zod.coerce.number(),
+});
+
+export const SubmitPracticeAnswerBody = zod.object({
+  practiceQuestionId: zod
+    .number()
+    .describe("practice_session_questions row id."),
+  selectedAnswerOptionId: zod
+    .number()
+    .nullish()
+    .describe("Legacy single-choice selection."),
+  selectedAnswerOptionIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "All option ids the student selected. Empty array means unanswered.",
+    ),
+  confidenceLevel: zod.enum(["low", "medium", "high"]).nullish(),
+  responseTimeSeconds: zod.number().nullish(),
+});
+
+export const SubmitPracticeAnswerResponse = zod.object({
+  practiceQuestionId: zod.number(),
+  questionId: zod.number(),
+  isCorrect: zod.boolean(),
+  maxScore: zod.number(),
+  earnedScore: zod.number(),
+  correctAnswerOptionIds: zod.array(zod.number()),
+  selectedAnswerOptionIds: zod.array(zod.number()),
+  explanationText: zod.string().nullish(),
+  answeredCount: zod
+    .number()
+    .describe("Running count of answered questions in this session."),
+  correctCount: zod
+    .number()
+    .describe("Running count of fully-correct questions in this session."),
+});
+
+export const FinishPracticeSessionParams = zod.object({
+  sessionId: zod.coerce.number(),
+});
+
+export const FinishPracticeSessionResponse = zod.object({
+  sessionId: zod.number(),
+  status: zod.enum(["active", "completed", "abandoned"]),
+  totalQuestions: zod.number(),
+  answeredCount: zod.number(),
+  correctCount: zod.number(),
+  incorrectCount: zod.number(),
+  earnedScore: zod.number(),
+  totalMaxScore: zod.number(),
+  accuracyPercentage: zod
+    .number()
+    .describe("correctCount \/ answeredCount \* 100 (0 if none answered)."),
+  lowConfidenceCount: zod
+    .number()
+    .describe("Answered questions the student marked low confidence."),
+});
+
 export const ListUsersQueryParams = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]).optional(),
 });

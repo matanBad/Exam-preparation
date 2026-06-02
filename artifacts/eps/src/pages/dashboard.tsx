@@ -4,6 +4,7 @@ import {
   useListCourses,
   useListQuestions,
   useGetAdminOverview,
+  useGetPracticeHistory,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -15,6 +16,9 @@ function StudentDashboard({ user }: { user: EpsUser }) {
   // then filter to the student's current term only.
   const { data: allCourses } = useListCourses();
   const { data: exams } = useGetUserExams(user.id);
+  const { data: practice } = useGetPracticeHistory();
+  const activePractice = practice?.active ?? [];
+  const completedPractice = practice?.completed ?? [];
   const courses = (allCourses ?? []).filter((c) => {
     if (!user.currentStudyYear || !user.currentSemester) return true;
     if (c.studyYear == null || c.offeringSemester == null) return false;
@@ -27,6 +31,13 @@ function StudentDashboard({ user }: { user: EpsUser }) {
   return (
     <div className="space-y-3 -mt-2">
       <div className="flex justify-end">
+        <Link
+          href="/practice"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent h-10 px-4 py-2 mr-2"
+          data-testid="btn-start-practice"
+        >
+          Practice Mode
+        </Link>
         <Link
           href="/exams/new"
           className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-700 text-white hover:bg-green-800 h-10 px-4 py-2"
@@ -130,6 +141,61 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card data-testid="card-unfinished-practice">
+          <CardHeader>
+            <CardTitle>Unfinished practice</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activePractice.length ? (
+              <ul className="space-y-2">
+                {activePractice.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex justify-between items-center border-b pb-2 last:border-0"
+                  >
+                    <span className="text-sm">
+                      {s.courseName ?? `Course ${s.courseId}`}
+                      <span className="ml-2 text-xs uppercase text-muted-foreground">
+                        {s.answeredCount}/{s.totalQuestions} answered
+                      </span>
+                    </span>
+                    <Link
+                      href={`/practice/${s.id}`}
+                      className="text-primary hover:underline text-sm"
+                      data-testid={`link-resume-practice-${s.id}`}
+                    >
+                      Resume
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">
+                No practice sessions in progress.{" "}
+                <Link href="/practice" className="text-primary hover:underline">
+                  Start one
+                </Link>
+                .
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-weak-areas" className="opacity-70">
+          <CardHeader>
+            <CardTitle>Weak areas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-sm">
+              {completedPractice.length
+                ? "Personalized recommendations will appear here as more practice data is collected."
+                : "Available after more practice data is collected."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

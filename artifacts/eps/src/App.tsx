@@ -18,6 +18,10 @@ import ExamNew from "@/pages/exams/new";
 import ExamTake from "@/pages/exams/take";
 import ExamResult from "@/pages/exams/result";
 import ExamReview from "@/pages/exams/review";
+import PracticeIndex from "@/pages/practice/index";
+import PracticeSession from "@/pages/practice/session";
+import PracticeSummary from "@/pages/practice/summary";
+import PracticeHistory from "@/pages/practice/history";
 import QuestionsList from "@/pages/questions/list";
 import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
@@ -108,6 +112,19 @@ function Router() {
       </Route>
       <Route path="/exams/:id/review">
         {(params) => <ProtectedRoute component={ExamReview} params={params} allowedRoles={['student']} />}
+      </Route>
+
+      <Route path="/practice">
+        <ProtectedRoute component={PracticeIndex} allowedRoles={['student']} />
+      </Route>
+      <Route path="/practice/history">
+        <ProtectedRoute component={PracticeHistory} allowedRoles={['student']} />
+      </Route>
+      <Route path="/practice/:sessionId/summary">
+        {(params) => <ProtectedRoute component={PracticeSummary} params={params} allowedRoles={['student']} />}
+      </Route>
+      <Route path="/practice/:sessionId">
+        {(params) => <ProtectedRoute component={PracticeSession} params={params} allowedRoles={['student']} />}
       </Route>
 
       <Route path="/lecturer/questions">

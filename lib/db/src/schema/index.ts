@@ -332,6 +332,105 @@ export const messagesTable = pgTable(
   }),
 );
 
+// --- Sprint 3: Practice Mode / Targeted Learning ---
+// A practice session is a self-directed, untimed learning run scoped to a
+// course and optionally a topic/subtopic. Unlike mock exams, questions are
+// answered one at a time with immediate feedback. We persist enough detail
+// (per-question correctness, confidence, response time) to power future
+// weak-area / recommendation engines without building them now.
+export const practiceSessionsTable = pgTable(
+  "practice_sessions",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => coursesTable.id, { onDelete: "cascade" }),
+    // Optional narrowing of the question pool. topicId is a top-level topic;
+    // subtopicId is a child topic (topics.parentTopicId points at its parent).
+    topicId: integer("topic_id").references(() => topicsTable.id, {
+      onDelete: "set null",
+    }),
+    subtopicId: integer("subtopic_id").references(() => topicsTable.id, {
+      onDelete: "set null",
+    }),
+    // How the pool was chosen: topic | subtopic | mixed | mistakes.
+    sessionType: text("session_type").notNull().default("topic"),
+    // active | completed | abandoned
+    status: text("status").notNull().default("active"),
+    totalQuestions: integer("total_questions").notNull().default(0),
+    // Denormalized running totals so history/summary don't need to recompute.
+    answeredCount: integer("answered_count").notNull().default(0),
+    correctCount: integer("correct_count").notNull().default(0),
+    earnedScore: doublePrecision("earned_score").notNull().default(0),
+    totalMaxScore: doublePrecision("total_max_score").notNull().default(0),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("practice_sessions_user_idx").on(t.userId),
+    statusIdx: index("practice_sessions_status_idx").on(t.status),
+  }),
+);
+
+export const practiceSessionQuestionsTable = pgTable(
+  "practice_session_questions",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: integer("session_id")
+      .notNull()
+      .references(() => practiceSessionsTable.id, { onDelete: "cascade" }),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questionsTable.id, { onDelete: "cascade" }),
+    questionOrder: integer("question_order").notNull().default(0),
+    // JSON-encoded array of answer_option ids in randomized display order.
+    randomizedOptionOrder: text("randomized_option_order")
+      .notNull()
+      .default("[]"),
+    selectedAnswerOptionId: integer("selected_answer_option_id").references(
+      () => answerOptionsTable.id,
+      { onDelete: "set null" },
+    ),
+    // JSON-encoded array of selected answer_option ids (supports multi-select).
+    selectedOptionIds: text("selected_option_ids").notNull().default("[]"),
+    isCorrect: boolean("is_correct"),
+    // Self-reported confidence: low | medium | high. Persisted for future
+    // weak-area analysis; null until the question is answered.
+    confidenceLevel: text("confidence_level"),
+    responseTimeSeconds: integer("response_time_seconds"),
+    // Practice points are the raw difficulty weight (Easy=1, Medium=2, Hard=3),
+    // snapshotted at generation time so later question edits don't change scores.
+    maxScore: doublePrecision("max_score").notNull().default(1),
+    earnedScore: doublePrecision("earned_score"),
+    // not_answered | answered
+    status: text("status").notNull().default("not_answered"),
+    answeredAt: timestamp("answered_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    sessionIdx: index("practice_session_questions_session_idx").on(t.sessionId),
+    questionIdx: index("practice_session_questions_question_idx").on(
+      t.questionId,
+    ),
+  }),
+);
+
 export type User = typeof usersTable.$inferSelect;
 export type Course = typeof coursesTable.$inferSelect;
 export type Topic = typeof topicsTable.$inferSelect;
@@ -340,3 +439,6 @@ export type AnswerOption = typeof answerOptionsTable.$inferSelect;
 export type Enrollment = typeof enrollmentsTable.$inferSelect;
 export type MockExam = typeof mockExamsTable.$inferSelect;
 export type MockExamQuestion = typeof mockExamQuestionsTable.$inferSelect;
+export type PracticeSession = typeof practiceSessionsTable.$inferSelect;
+export type PracticeSessionQuestion =
+  typeof practiceSessionQuestionsTable.$inferSelect;
