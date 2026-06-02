@@ -95,10 +95,6 @@ export default function PracticeIndex() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Practice Mode</h1>
-          <p className="text-sm text-muted-foreground">
-            Targeted, untimed practice with instant feedback. Your results help
-            you focus where it matters.
-          </p>
         </div>
       </div>
 
