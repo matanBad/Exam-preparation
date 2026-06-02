@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Target, History, Lightbulb } from "lucide-react";
+import { Sparkles, History, Lightbulb } from "lucide-react";
 
 export default function PracticeIndex() {
   const user = getAuthUser();
@@ -90,9 +90,6 @@ export default function PracticeIndex() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 text-primary">
-          <Target className="w-6 h-6" />
-        </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Practice Mode</h1>
         </div>
