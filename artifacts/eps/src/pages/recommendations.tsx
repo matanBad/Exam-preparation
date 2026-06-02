@@ -260,9 +260,6 @@ export default function Recommendations() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recommendations</h1>
-          <p className="text-sm text-muted-foreground">
-            Personalized next steps to improve your weakest areas.
-          </p>
         </div>
       </div>
 
