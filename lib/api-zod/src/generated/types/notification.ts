@@ -14,6 +14,8 @@ export interface Notification {
   message: string;
   relatedEntityType?: string | null;
   relatedEntityId?: number | null;
+  /** Optional in-app navigation target. Null for legacy rows. */
+  actionUrl?: string | null;
   status: NotificationStatus;
   createdAt: Date;
   readAt?: Date | null;

@@ -29,6 +29,7 @@ import {
 } from "../lib/grading";
 import { checkStudentCourseAccess } from "../lib/student-access";
 import { recalculateForUser } from "../lib/analytics";
+import { handlePracticeCompleted } from "../lib/engagement";
 
 const router: IRouter = Router();
 
@@ -569,6 +570,10 @@ router.post(
         "Failed to recalculate analytics after practice finish",
       );
     }
+
+    // Update streak / milestones / engagement notifications. Self-contained
+    // best-effort (never throws), so it cannot fail the session finish.
+    await handlePracticeCompleted(session.userId);
 
     res.json(
       FinishPracticeSessionResponse.parse({

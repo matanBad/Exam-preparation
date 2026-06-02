@@ -1219,6 +1219,41 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /engagement/summary:
+    get:
+      operationId: getEngagementSummary
+      tags: [engagement]
+      description: >-
+        The authenticated student's engagement summary (streak, milestone count,
+        unread notifications). Also runs idempotent opportunistic study-reminder
+        and weak-area alert checks on load.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngagementSummary"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /engagement/milestones:
+    get:
+      operationId: getEngagementMilestones
+      tags: [engagement]
+      description: The authenticated student's achieved milestones, most recent first.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Milestone"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
   parameters:
     IdPath:
@@ -1397,6 +1432,7 @@ components:
         message: { type: string }
         relatedEntityType: { type: string, nullable: true }
         relatedEntityId: { type: integer, nullable: true }
+        actionUrl: { type: string, nullable: true, description: "Optional in-app navigation target. Null for legacy rows." }
         status: { type: string, enum: [unread, read] }
         createdAt: { type: string, format: date-time }
         readAt: { type: string, format: date-time, nullable: true }
@@ -2188,6 +2224,25 @@ components:
           items: { $ref: "#/components/schemas/ProgressPoint" }
       required:
         [recentScores, topicPerformance, weakAreasCount, strongAreasCount, activeRecommendationsCount, readinessLabel, practiceSessionsCount, progressTrend]
+
+    EngagementSummary:
+      type: object
+      properties:
+        currentStreak: { type: integer }
+        longestStreak: { type: integer }
+        milestonesCount: { type: integer }
+        unreadNotificationsCount: { type: integer }
+        lastActivityDate: { type: string, nullable: true, description: "YYYY-MM-DD of the last qualifying activity, or null." }
+      required: [currentStreak, longestStreak, milestonesCount, unreadNotificationsCount]
+
+    Milestone:
+      type: object
+      properties:
+        milestoneType: { type: string }
+        milestoneKey: { type: string }
+        title: { type: string }
+        achievedAt: { type: string, format: date-time }
+      required: [milestoneType, milestoneKey, title, achievedAt]
 
     ProblematicQuestion:
       type: object

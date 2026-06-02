@@ -302,6 +302,10 @@ export const notificationsTable = pgTable(
     message: text("message").notNull(),
     relatedEntityType: text("related_entity_type"),
     relatedEntityId: integer("related_entity_id"),
+    // Optional in-app navigation target (e.g. "/practice"). Nullable and
+    // backward-compatible: existing rows have null and the UI falls back to
+    // type-based navigation.
+    actionUrl: text("action_url"),
     status: text("status").notNull().default("unread"), // unread | read
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     readAt: timestamp("read_at", { withTimezone: true }),
@@ -533,6 +537,69 @@ export const recommendationsTable = pgTable(
   }),
 );
 
+// --- Sprint 3 Module 4: Notifications & Engagement ---
+// One row per student tracking their study streak. A "qualifying activity" is a
+// completed practice session or a submitted mock exam. lastActivityDate stores
+// the server calendar date (YYYY-MM-DD) of the most recent qualifying activity
+// so increments happen at most once per calendar day.
+export const learningStreaksTable = pgTable(
+  "learning_streaks",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    currentStreak: integer("current_streak").notNull().default(0),
+    longestStreak: integer("longest_streak").notNull().default(0),
+    // Calendar date (no time component) of the last qualifying activity.
+    lastActivityDate: text("last_activity_date"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userUniq: uniqueIndex("learning_streaks_user_idx").on(t.userId),
+  }),
+);
+
+// Achieved milestones per student. The unique (userId, milestoneKey) index is
+// the source of truth for milestone de-duplication: a milestone is created at
+// most once per user. notificationId links to the milestone notification when
+// one was created.
+export const studentMilestonesTable = pgTable(
+  "student_milestones",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    // Grouping label: practice | exam | streak | recommendation.
+    milestoneType: text("milestone_type").notNull(),
+    // Stable key, e.g. first_practice_completed. Unique per user.
+    milestoneKey: text("milestone_key").notNull(),
+    achievedAt: timestamp("achieved_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    notificationId: integer("notification_id").references(
+      () => notificationsTable.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userKeyUniq: uniqueIndex("student_milestones_user_key_idx").on(
+      t.userId,
+      t.milestoneKey,
+    ),
+    userIdx: index("student_milestones_user_idx").on(t.userId),
+  }),
+);
+
 export type User = typeof usersTable.$inferSelect;
 export type Course = typeof coursesTable.$inferSelect;
 export type Topic = typeof topicsTable.$inferSelect;
@@ -546,3 +613,5 @@ export type PracticeSessionQuestion =
   typeof practiceSessionQuestionsTable.$inferSelect;
 export type PerformanceSummary = typeof performanceSummaryTable.$inferSelect;
 export type Recommendation = typeof recommendationsTable.$inferSelect;
+export type LearningStreak = typeof learningStreaksTable.$inferSelect;
+export type StudentMilestone = typeof studentMilestonesTable.$inferSelect;

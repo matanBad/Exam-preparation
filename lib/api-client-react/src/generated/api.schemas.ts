@@ -183,6 +183,8 @@ export interface Notification {
   message: string;
   relatedEntityType?: string | null;
   relatedEntityId?: number | null;
+  /** Optional in-app navigation target. Null for legacy rows. */
+  actionUrl?: string | null;
   status: NotificationStatus;
   createdAt: string;
   readAt?: string | null;
@@ -990,6 +992,22 @@ export interface StudentDashboardAnalytics {
    */
   recentPracticeAccuracy?: number | null;
   progressTrend: ProgressPoint[];
+}
+
+export interface EngagementSummary {
+  currentStreak: number;
+  longestStreak: number;
+  milestonesCount: number;
+  unreadNotificationsCount: number;
+  /** YYYY-MM-DD of the last qualifying activity, or null. */
+  lastActivityDate?: string | null;
+}
+
+export interface Milestone {
+  milestoneType: string;
+  milestoneKey: string;
+  title: string;
+  achievedAt: string;
 }
 
 export interface ProblematicQuestion {

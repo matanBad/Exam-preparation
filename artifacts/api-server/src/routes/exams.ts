@@ -27,6 +27,7 @@ import {
 import { requireAuth } from "../middlewares/auth";
 import { createNotification, notifyUsersByRole } from "../lib/notifications";
 import { recalculateForUser } from "../lib/analytics";
+import { handleExamSubmitted } from "../lib/engagement";
 
 const router: IRouter = Router();
 
@@ -539,6 +540,10 @@ router.post(
     } catch (err) {
       req.log?.warn({ err }, "Failed to recalculate analytics after exam submit");
     }
+
+    // Update streak / milestones / engagement notifications. Self-contained
+    // best-effort (never throws), so it cannot fail the submission.
+    await handleExamSubmitted(exam.userId);
 
     res.json(
       SubmitExamResponse.parse({

@@ -13,6 +13,7 @@ import practiceRouter from "./practice";
 import analyticsRouter from "./analytics";
 import recommendationsRouter from "./recommendations";
 import dashboardRouter from "./dashboard";
+import engagementRouter from "./engagement";
 
 const router: IRouter = Router();
 
@@ -26,6 +27,7 @@ router.use(practiceRouter);
 router.use(analyticsRouter);
 router.use(recommendationsRouter);
 router.use(dashboardRouter);
+router.use(engagementRouter);
 router.use(usersRouter);
 router.use(adminRouter);
 router.use(notificationsRouter);

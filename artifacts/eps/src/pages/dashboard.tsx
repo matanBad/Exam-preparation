@@ -7,6 +7,7 @@ import {
   useGetPracticeHistory,
   useGetStudentDashboardAnalytics,
   useGetLecturerDashboardAnalytics,
+  useGetEngagementSummary,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -18,6 +19,8 @@ import {
   Dumbbell,
   AlertTriangle,
   Users,
+  Flame,
+  Trophy,
 } from "lucide-react";
 import {
   LineChart,
@@ -90,6 +93,8 @@ function StudentDashboard({ user }: { user: EpsUser }) {
       </div>
 
       <StudentAnalytics />
+
+      <StudentEngagement />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
@@ -226,6 +231,42 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Student-only engagement row: learning streak + milestones earned. Both link
+// through to the dedicated /engagement page. Real data from the engagement
+// summary endpoint; the summary call also triggers opportunistic reminder /
+// weak-area checks server-side.
+function StudentEngagement() {
+  const { data, isLoading } = useGetEngagementSummary();
+
+  if (isLoading || !data) return null;
+
+  const streakSub =
+    data.currentStreak > 0
+      ? `Longest: ${data.longestStreak} day${data.longestStreak === 1 ? "" : "s"}`
+      : "Practice today to start one";
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <MetricTile
+        icon={<Flame className="w-3.5 h-3.5" />}
+        label="Learning Streak"
+        value={`${data.currentStreak} day${data.currentStreak === 1 ? "" : "s"}`}
+        sub={streakSub}
+        href="/engagement"
+        testid="metric-streak"
+      />
+      <MetricTile
+        icon={<Trophy className="w-3.5 h-3.5" />}
+        label="Milestones"
+        value={String(data.milestonesCount)}
+        sub="View achievements →"
+        href="/engagement"
+        testid="metric-milestones"
+      />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import PracticeSummary from "@/pages/practice/summary";
 import PracticeHistory from "@/pages/practice/history";
 import WeakAreas from "@/pages/weak-areas";
 import Recommendations from "@/pages/recommendations";
+import Engagement from "@/pages/engagement";
 import QuestionsList from "@/pages/questions/list";
 import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
@@ -129,6 +130,9 @@ function Router() {
       </Route>
       <Route path="/recommendations">
         <ProtectedRoute component={Recommendations} allowedRoles={['student']} />
+      </Route>
+      <Route path="/engagement">
+        <ProtectedRoute component={Engagement} allowedRoles={['student']} />
       </Route>
       <Route path="/practice/:sessionId/summary">
         {(params) => <ProtectedRoute component={PracticeSummary} params={params} allowedRoles={['student']} />}

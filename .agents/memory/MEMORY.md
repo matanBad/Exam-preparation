@@ -1,2 +1,1 @@
-- [Practice Mode grading & feedback](practice-mode.md) — raw difficulty points, partial credit rules, empty-answer must 400, reveal answers only after answering.
-- [OpenAPI/Orval codegen gotchas](openapi-orval-codegen.md) — never name a schema `<OperationId>Response` (TS2308); generated nullable fields are optional (`?`).
+- [Engagement notification dedup](notification-dedup.md) — entity alerts dedup permanently by entity (not read-state); reminders per-day via `since`; milestones via unique index.

@@ -1,0 +1,984 @@
+You are a senior full-stack software engineer working on the EPS platform.
+
+Project:
+Exam Preparation System (EPS) – Team 4
+
+We are now implementing Sprint 3, Module 4:
+Notifications & Engagement
+
+This module must be integrated into the existing Sprint 2 system and the Sprint 3 modules already implemented:
+1. Practice Mode / Targeted Learning
+2. Weak Area Analysis & Recommendations
+3. Dashboards & Analytics
+
+Do not break any existing functionality.
+
+==================================================
+IMPORTANT CONTEXT
+==================================================
+
+The project already includes:
+- Role-based login for student, lecturer, admin
+- Student dashboard
+- Lecturer dashboard
+- Admin dashboard
+- Courses pages
+- Course details pages
+- Question Bank
+- Mock exam generation
+- Mock exam submission
+- Scoring
+- Review of incorrect answers
+- Practice Mode / Targeted Learning
+- Weak Area Analysis
+- Recommendations
+- Revision Plan
+- Dashboards & Analytics
+- Top bar with notifications/messages
+- Profile page
+- Strategy A data model
+
+The app already had or may already have:
+- Notifications icon in the top bar
+- Notifications dropdown
+- User-specific notifications
+- read/unread state
+- mark as read
+- mark all as read
+- notification persistence in DB
+
+Important:
+Do NOT rebuild the notification system from scratch if it already exists.
+Reuse and extend the existing notifications infrastructure.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+Do NOT change:
+1. Login logic
+2. Authentication logic
+3. Existing role-based permissions
+4. Existing mock exam generation flow
+5. Existing mock exam submission flow
+6. Existing Practice Mode flow
+7. Existing Weak Areas / Recommendations flow
+8. Existing Dashboard Analytics flow
+9. Existing Question Bank flow
+10. Existing Courses flow
+11. Existing DB seed data unless a minimal migration is required
+12. questions.course_id
+13. topics.course_id
+14. Strategy A
+
+Keep Strategy A:
+- courses = shared course catalog
+- course_offerings = course taught by a specific lecturer in a specific program
+- topics.course_id remains connected to the parent course
+- questions.course_id remains connected to the parent course
+- Do NOT move topics or questions to course_offerings
+- Use course_offerings only for visibility/context: program, lecturer, study_year, semester
+
+Do NOT expose:
+- notifications of one user to another user
+- milestones of one student to another student
+- streak data of one student to another student
+- fake notifications
+- fake milestones
+- fake streaks
+
+Use real user activity only.
+
+==================================================
+SPRINT 3 USER STORIES COVERED
+==================================================
+
+Implement Notifications & Engagement for:
+
+US-50:
+As a student, I can receive study reminders, so that I stay consistent.
+
+US-51:
+As a student, I can receive weak-area alerts, so that I focus on improvement.
+
+US-52:
+As a student, I can track learning streaks, so that I stay motivated.
+
+US-53:
+As a system, I can notify milestones, so that students are encouraged to continue.
+
+Important:
+Do NOT implement email notifications unless the project already has stable email support.
+Do NOT implement push notifications.
+Do NOT implement leaderboards.
+Do NOT implement advanced gamification.
+Do NOT implement complex notification preferences unless already present.
+
+Focus on:
+- in-system notifications
+- top bar notification dropdown integration
+- streak tracking
+- milestone tracking
+- dashboard engagement summary
+
+==================================================
+DATABASE REQUIREMENTS
+==================================================
+
+First inspect the existing project database/schema.
+
+--------------------------------------------------
+1. Notifications
+--------------------------------------------------
+
+If a notifications table already exists, reuse it.
+
+Expected or recommended fields:
+- id
+- user_id
+- type
+- title
+- message
+- related_entity_type nullable
+- related_entity_id nullable
+- action_url nullable
+- status
+- created_at
+- read_at nullable
+
+If the existing table does not have action_url, add it only if the project migration style allows it safely.
+If adding action_url is risky, store navigation target in related_entity_type / related_entity_id or handle it in frontend by type.
+
+Allowed notification status:
+- unread
+- read
+
+New notification types to support:
+- study_reminder
+- weak_area_alert
+- streak_update
+- milestone
+- recommendation_alert
+
+Important:
+- Notifications must be user-specific.
+- Never show global notifications to all users unless explicitly intended.
+- Do not duplicate existing notification rows for the same condition.
+
+--------------------------------------------------
+2. Learning Streaks
+--------------------------------------------------
+
+Add table if it does not exist:
+
+learning_streaks
+
+Fields:
+- id
+- user_id
+- current_streak
+- longest_streak
+- last_activity_date
+- created_at
+- updated_at
+
+Rules:
+- One row per student.
+- user_id must reference users.id.
+- Do not create streak rows for lecturer/admin unless needed.
+- current_streak default = 0.
+- longest_streak default = 0.
+
+--------------------------------------------------
+3. Student Milestones
+--------------------------------------------------
+
+Add table if it does not exist:
+
+student_milestones
+
+Fields:
+- id
+- user_id
+- milestone_type
+- milestone_key
+- achieved_at
+- notification_id nullable
+- created_at
+
+Rules:
+- One milestone should not be created more than once for the same user and milestone_key.
+- Use a unique constraint or application-level deduplication:
+  user_id + milestone_key should be unique.
+- notification_id should link to the created notification if possible.
+
+Milestone examples:
+- first_practice_completed
+- five_practice_sessions
+- ten_practice_sessions
+- first_mock_exam_completed
+- first_exam_above_80
+- three_day_streak
+- seven_day_streak
+- first_weak_area_improved
+- first_recommendation_completed
+
+==================================================
+ENGAGEMENT SERVICE REQUIREMENTS
+==================================================
+
+Create a reusable Engagement Service.
+
+Recommended functions:
+
+1. handlePracticeCompleted(userId, practiceSessionId)
+Called after a practice session is completed.
+
+Responsibilities:
+- update learning streak
+- check practice-related milestones
+- possibly create milestone notification
+- possibly clear or update study reminder conditions
+
+2. handleExamSubmitted(userId, examId)
+Called after a mock exam is submitted.
+
+Responsibilities:
+- update learning streak
+- check exam-related milestones
+- create milestone notification if relevant
+
+3. handleAnalyticsUpdated(userId)
+Called after Weak Area / Performance Summary recalculation.
+
+Responsibilities:
+- detect new weak areas
+- create weak_area_alert notifications for high-priority weak areas
+- create recommendation_alert notifications for new high-priority recommendations
+
+4. updateLearningStreak(userId, activityDate)
+Responsibilities:
+- If no streak exists, create one.
+- If activityDate equals last_activity_date, do not increment again.
+- If activityDate is exactly one calendar day after last_activity_date, increment current_streak.
+- If activityDate is more than one day after last_activity_date, reset current_streak to 1.
+- Update longest_streak if current_streak exceeds longest_streak.
+- Update last_activity_date.
+- Create streak_update notification only when meaningful milestones are reached, such as 3-day streak or 7-day streak.
+- Do not create a notification every day unless there is a milestone.
+
+5. checkMilestones(userId)
+Responsibilities:
+Check real activity data and create milestones once.
+
+Milestone rules:
+- first_practice_completed:
+  when completed practice sessions count >= 1
+- five_practice_sessions:
+  when completed practice sessions count >= 5
+- ten_practice_sessions:
+  when completed practice sessions count >= 10
+- first_mock_exam_completed:
+  when submitted mock exams count >= 1
+- first_exam_above_80:
+  when any submitted mock exam score >= 80
+- three_day_streak:
+  when current_streak >= 3
+- seven_day_streak:
+  when current_streak >= 7
+- first_recommendation_completed:
+  when completed recommendations count >= 1
+- first_weak_area_improved:
+  if performance_summary shows a topic improved from weak to needs_practice/strong, only if previous state is available.
+  If previous state is not tracked, skip this milestone for now instead of faking it.
+
+6. createNotificationIfNotExists(userId, type, milestoneKeyOrDedupKey, title, message, actionUrl)
+Responsibilities:
+- prevent duplicate notifications for the same event.
+- create notification with status = unread.
+- return existing notification if already created.
+
+==================================================
+STUDY REMINDER REQUIREMENTS
+==================================================
+
+Implement study reminders without spamming users.
+
+A study reminder may be created when:
+- student has had no completed practice session or submitted exam for 2+ days
+AND one of the following is true:
+  - student has active recommendations
+  - student has weak areas
+  - student has unfinished practice sessions
+
+Suggested notification:
+Type:
+study_reminder
+
+Title:
+Study Reminder
+
+Message:
+You have topics waiting for practice. Continue your preparation today.
+
+Action target:
+/practice
+or /recommendations if active recommendations exist.
+
+Anti-spam rule:
+- Do not create more than one study_reminder per student per day.
+- Do not create study reminders for students with no activity history and no recommendations unless the product already expects onboarding reminders.
+- Do not send reminders to lecturers/admins.
+
+Implementation options:
+- If the app has a scheduler/cron-like mechanism, use it.
+- If not, run the reminder check opportunistically when the student logs in or opens the dashboard.
+- Make sure the logic is idempotent and does not duplicate notifications on every page refresh.
+
+==================================================
+WEAK AREA ALERT REQUIREMENTS
+==================================================
+
+Create weak area alerts based on real analytics.
+
+Trigger:
+- performance_summary row has weakness_level = weak
+OR
+- recommendation priority = high and status = active
+
+Notification:
+Type:
+weak_area_alert
+
+Title:
+Weak Area Alert
+
+Message example:
+Nested Loops needs more practice. Start a focused practice session.
+
+Action target:
+/weak-areas
+or /recommendations
+
+Rules:
+- Do not create duplicate alerts for the same user/course/topic/subtopic while the weakness is still active.
+- Do not create alerts for weak areas with insufficient attempts.
+- Do not create alerts for inaccessible courses.
+- Do not create alerts from fake or placeholder analytics.
+
+==================================================
+STREAK REQUIREMENTS
+==================================================
+
+Track learning streaks for students.
+
+Qualifying activities:
+- completed practice session
+- submitted mock exam
+
+Do not count:
+- opening the dashboard
+- viewing a course
+- viewing a recommendation
+- submitting a single practice answer unless the session is completed
+
+Streak calculation:
+- Same calendar day as last_activity_date:
+  do not increment
+- Next calendar day:
+  current_streak += 1
+- Gap greater than one day:
+  current_streak = 1
+- No previous activity:
+  current_streak = 1
+- longest_streak = max(longest_streak, current_streak)
+
+Timezone:
+Use server/project date consistently.
+If the project already has timezone handling, reuse it.
+Do not overcomplicate timezone logic.
+
+Notifications:
+- Do not notify for every streak update.
+- Notify only on milestone streaks:
+  - 3-day streak
+  - 7-day streak
+  - optionally 14-day streak if easy
+
+==================================================
+MILESTONE REQUIREMENTS
+==================================================
+
+Create milestone notifications only once per user per milestone.
+
+Milestone notification examples:
+
+1. first_practice_completed
+Title:
+First Practice Completed
+
+Message:
+Great start! You completed your first practice session.
+
+Action:
+/practice
+
+2. five_practice_sessions
+Title:
+5 Practice Sessions Completed
+
+Message:
+Nice consistency! You have completed 5 practice sessions.
+
+Action:
+/dashboard or /practice
+
+3. first_mock_exam_completed
+Title:
+First Mock Exam Completed
+
+Message:
+You completed your first mock exam. Review your results and keep improving.
+
+Action:
+student exam history or dashboard
+
+4. first_exam_above_80
+Title:
+Strong Exam Result
+
+Message:
+You scored above 80% on a mock exam. Keep up the good work.
+
+Action:
+dashboard
+
+5. three_day_streak
+Title:
+3-Day Learning Streak
+
+Message:
+You practiced consistently for 3 days.
+
+Action:
+dashboard
+
+6. seven_day_streak
+Title:
+7-Day Learning Streak
+
+Message:
+Excellent consistency! You reached a 7-day learning streak.
+
+Action:
+dashboard
+
+7. first_recommendation_completed
+Title:
+First Recommendation Completed
+
+Message:
+You completed your first personalized recommendation.
+
+Action:
+/recommendations
+
+Rules:
+- Store each achieved milestone in student_milestones.
+- Link notification_id if possible.
+- Do not create duplicate milestone notifications.
+- Do not create milestones without real activity data.
+
+==================================================
+BACKEND API REQUIREMENTS
+==================================================
+
+Reuse existing notification endpoints if they already exist.
+
+--------------------------------------------------
+1. Notifications
+--------------------------------------------------
+
+Expected endpoints:
+
+GET /api/notifications
+Student/lecturer/admin:
+- Return only notifications for current authenticated user.
+- Sort unread first or newest first depending on current UX.
+- Include:
+  id, type, title, message, status, created_at, read_at, action_url if available
+
+PATCH /api/notifications/:id/read
+- Mark only current user’s notification as read.
+- Forbidden if notification does not belong to current user.
+
+PATCH /api/notifications/read-all
+- Mark all current user notifications as read.
+
+Do not create duplicate notification endpoints if these already exist.
+Extend existing ones if needed.
+
+--------------------------------------------------
+2. Engagement Summary
+--------------------------------------------------
+
+Endpoint:
+GET /api/engagement/summary
+
+Student only.
+
+Return:
+{
+  "current_streak": 4,
+  "longest_streak": 7,
+  "milestones_count": 5,
+  "unread_notifications_count": 3,
+  "last_activity_date": "2026-05-20"
+}
+
+If no streak exists:
+Return current_streak = 0, longest_streak = 0.
+
+--------------------------------------------------
+3. Milestones
+--------------------------------------------------
+
+Endpoint:
+GET /api/engagement/milestones
+
+Student only.
+
+Return the authenticated student’s achieved milestones:
+[
+  {
+    "milestone_type": "practice",
+    "milestone_key": "five_practice_sessions",
+    "title": "5 Practice Sessions Completed",
+    "achieved_at": "2026-05-20"
+  }
+]
+
+Do not return another student’s milestones.
+
+--------------------------------------------------
+4. Optional Trigger Endpoint for Development
+--------------------------------------------------
+
+Optional, for testing only:
+POST /api/engagement/recalculate
+
+Student only or admin only, depending on project style.
+
+Behavior:
+- Recalculate streak/milestones/weak-area alerts for current student.
+- Must be idempotent.
+- Must not duplicate notifications.
+
+If adding this endpoint is unnecessary, skip it and use service calls only.
+
+==================================================
+FRONTEND REQUIREMENTS
+==================================================
+
+Use the existing visual style:
+- Top bar notification bell
+- Notification dropdown
+- Compact dashboard cards
+- White cards
+- Clean spacing
+- Existing badges and buttons
+- Same design language as dashboard/practice/recommendations pages
+
+Do not redesign the whole app.
+
+--------------------------------------------------
+1. Top Bar Notifications
+--------------------------------------------------
+
+Update existing notification dropdown to support new notification types:
+- study_reminder
+- weak_area_alert
+- streak_update
+- milestone
+- recommendation_alert
+
+Each notification should show:
+- title
+- message
+- created_at
+- read/unread state
+- action link if available
+
+Click behavior:
+- If notification has action_url, navigate to it.
+- Mark notification as read when clicked or when “mark as read” is clicked, consistent with current behavior.
+
+Badge:
+- Show unread count only for current user.
+- Badge should update after mark as read / mark all as read.
+
+Do not show notifications inside main dashboard lists unless specifically represented by engagement cards.
+The top bar remains the main notification center.
+
+--------------------------------------------------
+2. Student Dashboard Engagement Cards
+--------------------------------------------------
+
+Add compact engagement section/cards to Student Dashboard.
+
+Card 1:
+Learning Streak
+
+Content:
+- Current streak: X days
+- Longest streak: Y days
+
+If no streak:
+- Current streak: 0 days
+- Message: Complete a practice session or mock exam to start a streak.
+
+Card 2:
+Milestones
+
+Content:
+- X achievements unlocked
+- Button: View Milestones
+
+Button behavior:
+- Opens a small milestones section/modal/page.
+- If creating a new route is easy, use /engagement.
+- If not, show milestones inside dashboard section.
+
+Keep dashboard compact.
+Do not make long milestone lists directly on the dashboard.
+
+--------------------------------------------------
+3. Engagement / Milestones Page
+--------------------------------------------------
+
+Optional but recommended route:
+/engagement
+
+Student only.
+
+Title:
+Engagement
+
+Subtitle:
+Track your study consistency and milestones.
+
+Sections:
+1. Learning Streak
+- current streak
+- longest streak
+- last activity date
+
+2. Milestones
+- list of achieved milestones
+- achieved date
+
+3. Recent Engagement Notifications
+Optional:
+- recent milestone/streak notifications only
+
+Empty state:
+No milestones yet.
+Complete practice sessions or mock exams to unlock milestones.
+
+Do not add leaderboard or social comparison.
+
+--------------------------------------------------
+4. Weak Area Alert Flow
+--------------------------------------------------
+
+When student receives a weak_area_alert:
+- clicking it should navigate to /weak-areas or /recommendations
+- the page should already exist from previous modules
+- do not duplicate weak area UI in notification dropdown
+
+--------------------------------------------------
+5. Study Reminder Flow
+--------------------------------------------------
+
+When student receives a study_reminder:
+- clicking it should navigate to /practice or /recommendations
+- do not create a new reminder page
+
+==================================================
+VISIBILITY AND PERMISSIONS
+==================================================
+
+Student:
+- Can see only own notifications.
+- Can see only own streak.
+- Can see only own milestones.
+- Can receive study reminders, weak-area alerts, streak updates, and milestones.
+
+Lecturer:
+- Existing lecturer notifications must continue working.
+- Do not send student study reminders to lecturers.
+- Do not show student streak/milestone data to lecturers in this module.
+
+Admin:
+- Existing admin notifications must continue working.
+- Do not show student engagement data globally unless already supported.
+
+Security:
+- Never trust user_id from request body.
+- Use authenticated current user id.
+- Verify notification.user_id = current user id before mark/read.
+- Verify milestone.user_id = current user id.
+- Verify streak.user_id = current user id.
+
+==================================================
+INTEGRATION POINTS
+==================================================
+
+Add calls to Engagement Service after these events:
+
+1. Practice session completed
+After existing practice finish logic succeeds:
+engagementService.handlePracticeCompleted(currentUser.id, practiceSessionId)
+
+2. Mock exam submitted
+After existing exam submission and scoring succeeds:
+engagementService.handleExamSubmitted(currentUser.id, examId)
+
+3. Analytics recalculated
+After Weak Area Analysis / Recommendations recalculation succeeds:
+engagementService.handleAnalyticsUpdated(currentUser.id)
+
+4. Recommendation completed
+After recommendation status is set to completed:
+engagementService.checkMilestones(currentUser.id)
+
+Do not break existing flows if engagement logic fails.
+If engagement notification creation fails, log the error but do not fail exam submission or practice completion.
+
+==================================================
+EDGE CASES TO HANDLE
+==================================================
+
+1. Student completes multiple activities on the same day
+Streak should not increment more than once for the same date.
+
+2. Student skips a day
+Streak resets to 1 on next qualifying activity.
+
+3. Student completes first activity ever
+Streak starts at 1.
+
+4. Student refreshes dashboard multiple times
+Study reminders and engagement notifications should not duplicate.
+
+5. Analytics recalculation runs multiple times
+Weak-area alerts should not duplicate.
+
+6. Milestone already achieved
+Do not create it again.
+
+7. Notification already exists for same milestone
+Do not create duplicate notification.
+
+8. User has no activity
+Show streak = 0 and no milestones.
+
+9. Existing notifications table has slightly different column names
+Adapt to current schema instead of creating a duplicate system.
+
+10. Missing action_url column
+Use existing related_entity fields or type-based navigation in frontend.
+
+11. Existing old notification data
+Keep it working.
+
+12. Lecturer/admin notification dropdown
+Must continue showing their existing notifications correctly.
+
+13. Engagement service error
+Do not block main user flow.
+
+14. Deleted course/topic related to weak-area alert
+Notification should still render safely or navigate to /weak-areas.
+
+15. No scheduler exists
+Run study reminder checks on student dashboard load/login in an idempotent way.
+
+==================================================
+QUALITY / CODE REQUIREMENTS
+==================================================
+
+Keep code clean and modular.
+
+Recommended backend structure:
+- engagement service
+- notification service extension
+- streak helper
+- milestone helper
+- reminder helper
+- engagement routes
+- notification routes reuse/update
+
+Recommended frontend structure:
+- EngagementSummaryCard
+- LearningStreakCard
+- MilestonesCard
+- MilestonesList
+- EngagementPage if route is added
+- NotificationDropdown update
+
+Reuse existing:
+- auth middleware
+- role guard
+- existing notifications API/client
+- existing dashboard card components
+- existing badges/buttons
+- existing date formatting
+- existing top bar
+
+Do not hardcode demo users.
+Do not hardcode course ids.
+Do not hardcode topic ids.
+Do not fake milestones.
+Do not fake streaks.
+Do not spam notifications.
+Do not silently ignore errors.
+
+Use clear empty states and user-friendly messages.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete when:
+
+Notifications:
+1. Existing notification dropdown still works.
+2. Notifications remain user-specific.
+3. Mark as read still persists.
+4. Mark all as read still persists.
+5. New notification types are supported.
+6. Notification unread badge updates correctly.
+7. Notification click navigates to the correct action target if available.
+
+Study Reminders:
+8. Student can receive a study reminder based on real inactivity/recommendation/weak-area conditions.
+9. Study reminders are not duplicated on refresh.
+10. Study reminders are not sent to lecturer/admin.
+
+Weak Area Alerts:
+11. Student can receive weak-area alerts based on real performance_summary or high-priority recommendations.
+12. Weak-area alerts are not duplicated for the same active weak area.
+13. Weak-area alert navigates to Weak Areas or Recommendations.
+
+Streaks:
+14. Learning streak is created after first completed practice session or submitted exam.
+15. Streak increments only once per calendar day.
+16. Streak increments on consecutive days.
+17. Streak resets after a missed day.
+18. Longest streak updates correctly.
+19. Student Dashboard shows current and longest streak.
+
+Milestones:
+20. Milestones are created from real activity.
+21. Milestones are not duplicated.
+22. Milestone notification is created when a milestone is achieved.
+23. Student can view achieved milestones.
+24. Dashboard shows milestones count.
+
+Security:
+25. Student cannot view another student’s notifications.
+26. Student cannot view another student’s streak.
+27. Student cannot view another student’s milestones.
+28. Lecturer/admin existing notifications still work.
+
+Regression:
+29. Existing login still works.
+30. Existing role-based permissions still work.
+31. Existing Mock Exam flow still works.
+32. Existing Practice Mode still works.
+33. Existing Weak Areas / Recommendations still work.
+34. Existing Dashboards & Analytics still work.
+35. Existing Question Bank still works.
+36. Existing Courses pages still work.
+37. Strategy A is preserved.
+38. questions.course_id was not changed.
+39. topics.course_id was not changed.
+40. No unrelated UI, route, API, or DB changes were made.
+
+==================================================
+VALIDATION AFTER IMPLEMENTATION
+==================================================
+
+After implementing, run the project and validate manually:
+
+Student notification flow:
+1. Log in as a student.
+2. Open notification dropdown.
+3. Confirm existing notifications load.
+4. Mark one notification as read.
+5. Refresh page.
+6. Confirm read state persists.
+7. Mark all as read.
+8. Confirm unread badge updates.
+
+Student engagement flow:
+1. Complete a practice session.
+2. Confirm learning streak starts or updates.
+3. Confirm first_practice_completed milestone is created.
+4. Confirm milestone notification appears.
+5. Open Student Dashboard.
+6. Confirm Learning Streak card appears.
+7. Confirm Milestones card appears.
+8. Open milestones view/page.
+9. Confirm achieved milestones appear.
+
+Exam engagement flow:
+1. Submit a mock exam.
+2. Confirm streak updates.
+3. Confirm first_mock_exam_completed milestone is created if applicable.
+4. If score is above 80%, confirm first_exam_above_80 milestone.
+
+Weak-area alert flow:
+1. Ensure student has a weak area or high-priority recommendation.
+2. Trigger analytics update.
+3. Confirm weak-area alert notification appears.
+4. Click notification.
+5. Confirm navigation to /weak-areas or /recommendations.
+
+Anti-duplication:
+1. Refresh dashboard multiple times.
+2. Confirm reminders do not duplicate.
+3. Re-run analytics recalculation.
+4. Confirm weak-area alerts do not duplicate.
+5. Complete same milestone condition again.
+6. Confirm milestone does not duplicate.
+
+Security:
+1. Try to access another user’s notifications/streak/milestones.
+2. Confirm access is blocked.
+
+Regression:
+1. Generate a mock exam.
+2. Submit a mock exam.
+3. Review exam results.
+4. Start Practice by Topic.
+5. Submit Practice answers.
+6. Open Weak Areas.
+7. Open Recommendations.
+8. Open Student Dashboard analytics.
+9. Open Question Bank as lecturer/admin.
+10. Open Courses as student/lecturer/admin.
+11. Confirm no existing behavior broke.
+
+At the end, summarize:
+- Which files were changed
+- Which tables/migrations were added
+- Which routes/endpoints were added or updated
+- Which frontend pages/components were added or updated
+- How notifications were extended
+- How streaks are calculated
+- How milestones are created
+- How duplicate notifications are prevented
+- How Strategy A was preserved
+- How existing Sprint 2 and Sprint 3 functionality were protected

@@ -148,6 +148,10 @@ export const ListMyNotificationsResponseItem = zod.object({
   message: zod.string(),
   relatedEntityType: zod.string().nullish(),
   relatedEntityId: zod.number().nullish(),
+  actionUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional in-app navigation target. Null for legacy rows."),
   status: zod.enum(["unread", "read"]),
   createdAt: zod.coerce.date(),
   readAt: zod.coerce.date().nullish(),
@@ -170,6 +174,10 @@ export const MarkNotificationReadResponse = zod.object({
   message: zod.string(),
   relatedEntityType: zod.string().nullish(),
   relatedEntityId: zod.number().nullish(),
+  actionUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional in-app navigation target. Null for legacy rows."),
   status: zod.enum(["unread", "read"]),
   createdAt: zod.coerce.date(),
   readAt: zod.coerce.date().nullish(),
@@ -1964,3 +1972,30 @@ export const GetAdminOverviewResponse = zod.object({
     submittedExams: zod.number(),
   }),
 });
+
+/**
+ * The authenticated student's engagement summary (streak, milestone count, unread notifications). Also runs idempotent opportunistic study-reminder and weak-area alert checks on load.
+ */
+export const GetEngagementSummaryResponse = zod.object({
+  currentStreak: zod.number(),
+  longestStreak: zod.number(),
+  milestonesCount: zod.number(),
+  unreadNotificationsCount: zod.number(),
+  lastActivityDate: zod
+    .string()
+    .nullish()
+    .describe("YYYY-MM-DD of the last qualifying activity, or null."),
+});
+
+/**
+ * The authenticated student's achieved milestones, most recent first.
+ */
+export const GetEngagementMilestonesResponseItem = zod.object({
+  milestoneType: zod.string(),
+  milestoneKey: zod.string(),
+  title: zod.string(),
+  achievedAt: zod.coerce.date(),
+});
+export const GetEngagementMilestonesResponse = zod.array(
+  GetEngagementMilestonesResponseItem,
+);

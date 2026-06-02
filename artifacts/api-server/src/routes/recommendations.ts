@@ -18,6 +18,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { getAccessibleCourseIds } from "../lib/student-access";
 import type { Priority } from "../lib/analytics";
+import { handleRecommendationCompleted } from "../lib/engagement";
 
 const router: IRouter = Router();
 
@@ -191,6 +192,9 @@ router.patch(
       res.status(403).json({ error: "Forbidden" });
       return;
     }
+    // Best-effort: a recommendation completion may unlock the
+    // first_recommendation_completed milestone. Never throws.
+    await handleRecommendationCompleted(req.auth!.userId);
     const names = await nameLookup(result);
     res.json(
       CompleteRecommendationResponse.parse(

@@ -31,6 +31,7 @@ import type {
   CreateUserRequest,
   DeleteAccountRequest,
   DeletionRequest,
+  EngagementSummary,
   Exam,
   ExamResult,
   ExamReview,
@@ -47,6 +48,7 @@ import type {
   LoginRequest,
   MarkAllReadResponse,
   Message,
+  Milestone,
   NotFoundResponse,
   Notification,
   PracticeAnswerFeedback,
@@ -5210,6 +5212,149 @@ export function useGetAdminOverview<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminOverviewQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * The authenticated student's engagement summary (streak, milestone count, unread notifications). Also runs idempotent opportunistic study-reminder and weak-area alert checks on load.
+ */
+export const getGetEngagementSummaryUrl = () => {
+  return `/api/engagement/summary`;
+};
+
+export const getEngagementSummary = async (
+  options?: RequestInit,
+): Promise<EngagementSummary> => {
+  return customFetch<EngagementSummary>(getGetEngagementSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEngagementSummaryQueryKey = () => {
+  return [`/api/engagement/summary`] as const;
+};
+
+export const getGetEngagementSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEngagementSummary>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEngagementSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEngagementSummary>>
+  > = ({ signal }) => getEngagementSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEngagementSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEngagementSummary>>
+>;
+export type GetEngagementSummaryQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetEngagementSummary<
+  TData = Awaited<ReturnType<typeof getEngagementSummary>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEngagementSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * The authenticated student's achieved milestones, most recent first.
+ */
+export const getGetEngagementMilestonesUrl = () => {
+  return `/api/engagement/milestones`;
+};
+
+export const getEngagementMilestones = async (
+  options?: RequestInit,
+): Promise<Milestone[]> => {
+  return customFetch<Milestone[]>(getGetEngagementMilestonesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEngagementMilestonesQueryKey = () => {
+  return [`/api/engagement/milestones`] as const;
+};
+
+export const getGetEngagementMilestonesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEngagementMilestones>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementMilestones>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetEngagementMilestonesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEngagementMilestones>>
+  > = ({ signal }) => getEngagementMilestones({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementMilestones>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEngagementMilestonesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEngagementMilestones>>
+>;
+export type GetEngagementMilestonesQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetEngagementMilestones<
+  TData = Awaited<ReturnType<typeof getEngagementMilestones>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEngagementMilestones>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEngagementMilestonesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

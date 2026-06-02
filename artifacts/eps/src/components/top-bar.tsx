@@ -51,6 +51,21 @@ function pageTitle(path: string): string {
   return "EPS";
 }
 
+// Fallback in-app route for a notification type when it has no explicit
+// actionUrl (e.g. legacy rows created before actionUrl existed).
+const TYPE_ROUTES: Record<string, string> = {
+  weak_area_alert: "/weak-areas",
+  recommendation_alert: "/recommendations",
+  study_reminder: "/practice",
+  streak_update: "/engagement",
+  milestone: "/engagement",
+};
+
+function notifTarget(n: { type: string; actionUrl?: string | null }): string | null {
+  if (n.actionUrl) return n.actionUrl;
+  return TYPE_ROUTES[n.type] ?? null;
+}
+
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const s = Math.floor(diffMs / 1000);
@@ -105,6 +120,16 @@ export function TopBar() {
     setOpenMessage(m);
     if (m.status === "unread") {
       markMsg.mutate({ id: m.id });
+    }
+  };
+
+  const handleOpenNotif = (n: (typeof notifications)[number]) => {
+    if (n.status === "unread") {
+      markNotif.mutate({ id: n.id });
+    }
+    const target = notifTarget(n);
+    if (target) {
+      setLocation(target);
     }
   };
 
@@ -168,38 +193,48 @@ export function TopBar() {
                   No notifications.
                 </div>
               ) : (
-                notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={cn(
-                      "px-3 py-2 text-sm border-l-2",
-                      n.status === "read"
-                        ? "border-transparent"
-                        : "border-primary bg-accent/30",
-                    )}
-                    data-testid={`notification-${n.id}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{n.title}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {timeAgo(n.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {n.message}
-                    </p>
-                    {n.status === "unread" && (
-                      <button
-                        className="text-[11px] text-primary hover:underline mt-1"
-                        onClick={() => markNotif.mutate({ id: n.id })}
-                        disabled={markNotif.isPending}
-                        data-testid={`btn-mark-notif-${n.id}-read`}
-                      >
-                        Mark as read
-                      </button>
-                    )}
-                  </div>
-                ))
+                notifications.map((n) => {
+                  const target = notifTarget(n);
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => handleOpenNotif(n)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm border-l-2",
+                        target && "hover-elevate cursor-pointer",
+                        n.status === "read"
+                          ? "border-transparent"
+                          : "border-primary bg-accent/30",
+                      )}
+                      data-testid={`notification-${n.id}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">{n.title}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {timeAgo(n.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {n.message}
+                      </p>
+                      {n.status === "unread" && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="inline-block text-[11px] text-primary hover:underline mt-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markNotif.mutate({ id: n.id });
+                          }}
+                          data-testid={`btn-mark-notif-${n.id}-read`}
+                        >
+                          Mark as read
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </DropdownMenuContent>
           </DropdownMenu>

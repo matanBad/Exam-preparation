@@ -13,6 +13,7 @@ function serialize(n: typeof notificationsTable.$inferSelect) {
     message: n.message,
     relatedEntityType: n.relatedEntityType,
     relatedEntityId: n.relatedEntityId,
+    actionUrl: n.actionUrl,
     status: n.status,
     createdAt: n.createdAt.toISOString(),
     readAt: n.readAt ? n.readAt.toISOString() : null,
