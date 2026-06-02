@@ -255,9 +255,6 @@ export default function Recommendations() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 text-primary">
-          <Lightbulb className="w-6 h-6" />
-        </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recommendations</h1>
         </div>
