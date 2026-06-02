@@ -1,0 +1,867 @@
+You are a senior full-stack software engineer working on the EPS platform.
+
+Project:
+Exam Preparation System (EPS) – Team 4
+
+We are now implementing Sprint 3, Module 2:
+Weak Area Analysis & Recommendations
+
+This module must be integrated into the existing Sprint 2 system and the newly added Sprint 3 Practice Mode without breaking current functionality.
+
+==================================================
+IMPORTANT CONTEXT
+==================================================
+
+The project already includes:
+- Role-based login for student, lecturer, admin
+- Student dashboard
+- Courses pages
+- Course details pages
+- Question Bank
+- Mock exam generation
+- Mock exam submission
+- Scoring
+- Review of incorrect answers
+- Practice Mode / Targeted Learning
+- Top bar with notifications/messages
+- Profile page
+- Strategy A data model
+
+Current DB/data model includes tables similar to:
+- users
+- courses
+- course_offerings
+- enrollments
+- topics
+- questions
+- answer_options
+- mock_exams
+- mock_exam_questions
+- practice_sessions
+- practice_session_questions
+
+Important current relationships:
+- users.id
+- courses.id
+- enrollments.user_id
+- enrollments.course_id
+- course_offerings.course_id
+- course_offerings.program_id
+- course_offerings.lecturer_id
+- topics.course_id
+- topics.parent_topic_id
+- questions.course_id
+- questions.topic_id
+- questions.subtopic_id
+- answer_options.question_id
+- mock_exams.user_id
+- mock_exams.course_id
+- mock_exam_questions.exam_id
+- mock_exam_questions.question_id
+- practice_sessions.user_id
+- practice_sessions.course_id
+- practice_session_questions.practice_session_id
+- practice_session_questions.question_id
+
+Important:
+Use the actual existing schema and column names in the project.
+Do not invent alternative names if the project already uses different names.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+Do NOT change:
+1. Login logic
+2. Authentication logic
+3. Existing role-based permissions
+4. Existing mock exam generation flow
+5. Existing mock exam submission flow
+6. Existing Practice Mode answer submission flow, except calling analytics recalculation after completion if needed
+7. Existing Question Bank flow
+8. Existing Courses flow
+9. Existing DB seed data unless new analytics/recommendation seed or migration files are required
+10. questions.course_id
+11. topics.course_id
+12. Strategy A
+
+Keep Strategy A:
+- courses = shared course catalog
+- course_offerings = course taught by a specific lecturer in a specific program
+- topics.course_id remains connected to the parent course
+- questions.course_id remains connected to the parent course
+- Do NOT move topics or questions to course_offerings
+- Use course_offerings only for visibility/context: program, lecturer, study_year, semester
+
+Do NOT expose:
+- one student’s analytics to another student
+- lecturer/admin analytics unless explicitly implemented later
+- draft/pending/archived questions to student-facing recommendations
+
+Use only valid completed/answered data:
+- completed mock exams
+- answered mock exam questions
+- completed or active practice sessions with answered questions
+- practice_session_questions with status = answered or answered_at not null
+
+==================================================
+SPRINT 3 USER STORIES COVERED
+==================================================
+
+Implement Weak Area Analysis & Recommendations for:
+
+US-38:
+As a system, I can detect weak topics based on performance data, so that students know where to improve.
+
+US-39:
+As a system, I can track repeated mistakes, so that learning patterns can be identified.
+
+US-40:
+As a student, I can view my weak areas, so that I know what areas to focus on for improvement.
+
+US-41:
+As a system, I can recommend practice based on weak areas, so that learning is personalized.
+
+US-42:
+As a system, I can generate a revision plan based on weak areas, so that study is structured.
+
+US-43:
+As a system, I can prioritize weak topics in recommendations, so that students focus on critical areas.
+
+Important:
+Do NOT implement Lecturer Dashboard analytics yet.
+Do NOT implement Admin overview analytics yet.
+Do NOT implement Readiness Score yet.
+Do NOT implement Notifications/Streaks yet.
+
+However, save analytics and recommendations in a way that future modules can use them.
+
+==================================================
+DATABASE / DATA MODEL REQUIREMENTS
+==================================================
+
+First inspect the existing project database/schema.
+
+If analytics/recommendation tables already exist, reuse and extend them carefully.
+If they do not exist, add the following tables using the current project’s migration/seed style.
+
+Recommended table 1:
+performance_summary
+
+Purpose:
+Stores summarized student performance by course, topic, and optional subtopic.
+
+Fields:
+- id
+- user_id
+- course_id
+- topic_id
+- subtopic_id nullable
+- attempts_count
+- correct_count
+- incorrect_count
+- total_earned_score
+- total_possible_score
+- accuracy_rate
+- average_response_time
+- low_confidence_count
+- repeated_mistake_count
+- weakness_score
+- weakness_level
+- last_activity_at
+- created_at
+- updated_at
+
+weakness_level allowed values:
+- strong
+- needs_practice
+- weak
+
+Recommended table 2:
+recommendations
+
+Purpose:
+Stores personalized recommendations and revision plan items.
+
+Fields:
+- id
+- user_id
+- course_id
+- topic_id nullable
+- subtopic_id nullable
+- recommendation_type
+- recommendation_text
+- priority
+- status
+- source
+- created_at
+- updated_at
+
+recommendation_type allowed values:
+- practice_topic
+- retry_mistakes
+- review_subtopic
+- revision_plan_item
+
+priority allowed values:
+- high
+- medium
+- low
+
+status allowed values:
+- active
+- completed
+- dismissed
+
+source allowed values:
+- performance_summary
+- mock_exam
+- practice
+
+Important:
+If your project uses different enum conventions, adapt to the existing style.
+Do not create duplicate tables with nearly identical purpose.
+
+==================================================
+PERFORMANCE CALCULATION REQUIREMENTS
+==================================================
+
+Create a backend analytics service that can calculate performance summaries for a student.
+
+Use data from:
+1. mock_exams + mock_exam_questions
+2. practice_sessions + practice_session_questions
+3. questions table for course_id, topic_id, subtopic_id, difficulty_level
+
+Data to aggregate:
+- attempts_count
+- correct_count
+- incorrect_count
+- total_earned_score
+- total_possible_score
+- accuracy_rate
+- average_response_time
+- low_confidence_count
+- repeated_mistake_count
+- last_activity_at
+
+Counting rules:
+- Each answered question attempt counts as one attempt.
+- Correct if is_correct = true or earned_score = max_score.
+- Incorrect if is_correct = false or earned_score < max_score.
+- If max_score / earned_score is missing, fallback to is_correct.
+- If response_time_seconds is missing, ignore it from average_response_time.
+- If confidence_level = low, count it in low_confidence_count.
+- repeated_mistake_count should count repeat wrong attempts for the same topic/subtopic after the first wrong attempt.
+
+Minimum data rule:
+Do not classify a topic/subtopic as weak unless it has enough attempts.
+Suggested minimum:
+- attempts_count >= 3
+
+If attempts_count < 3:
+- weakness_level should be strong or needs_practice only if needed
+- Do not mark as weak based on too little data
+- Recommendations can say “Practice more to generate better insights” only if the UX needs it, but do not create fake weak areas
+
+==================================================
+WEAKNESS SCORE REQUIREMENTS
+==================================================
+
+Implement a simple transparent weakness score.
+
+Suggested formula:
+
+incorrect_rate = incorrect_count / attempts_count
+
+weakness_score =
+(incorrect_rate * 60)
++ (repeated_mistake_factor * 20)
++ (low_confidence_factor * 10)
++ (slow_response_factor * 10)
+
+Where:
+- incorrect_rate is between 0 and 1
+- repeated_mistake_factor is normalized between 0 and 1
+- low_confidence_factor is low_confidence_count / attempts_count
+- slow_response_factor can be 0 if there is no reliable benchmark
+- final weakness_score must be clamped between 0 and 100
+
+Suggested weakness levels:
+- 0 to 39 = strong
+- 40 to 69 = needs_practice
+- 70 to 100 = weak
+
+Important:
+The student UI should not display the formula.
+The student UI should show:
+- Strong
+- Needs Practice
+- Weak
+- Accuracy
+- Attempts
+- Repeated mistakes
+- Practice Now button
+
+==================================================
+RECOMMENDATION GENERATION REQUIREMENTS
+==================================================
+
+Generate recommendations based on performance_summary.
+
+Rules:
+1. For weakness_level = weak:
+   - Create or update high priority recommendation.
+   - Type: practice_topic or review_subtopic.
+   - Text should clearly explain what to practice.
+2. For weakness_level = needs_practice:
+   - Create or update medium priority recommendation.
+3. For repeated_mistake_count > 0:
+   - Create or update retry_mistakes recommendation.
+4. Do not create duplicate active recommendations for the same user/course/topic/subtopic/type.
+5. If a recommendation already exists and is active:
+   - update its text/priority/updated_at instead of duplicating.
+6. If performance improves, either:
+   - mark the old recommendation as completed, or
+   - lower its priority.
+7. Recommendations must only refer to approved/non-archived questions where relevant.
+
+Example recommendation texts:
+- “Practice Nested Loops because your accuracy is 42%.”
+- “Retry previous mistakes in Pointers to reduce repeated errors.”
+- “Review SQL Joins because this topic needs more practice.”
+
+==================================================
+REVISION PLAN REQUIREMENTS
+==================================================
+
+Create a revision plan based on active recommendations and performance_summary.
+
+The revision plan can be generated dynamically from recommendations.
+It does not need a separate DB table unless the current project structure requires it.
+
+Revision plan ordering:
+1. High priority weak subtopics
+2. Repeated mistakes
+3. Medium priority topics
+4. Lower priority review items
+
+Each item should include:
+- order
+- title
+- reason
+- priority
+- course_id
+- topic_id
+- subtopic_id if available
+- suggested_question_count
+
+Suggested question count:
+- high priority = 10
+- medium priority = 7
+- low priority = 5
+
+Do not generate fake revision plan items when there is not enough performance data.
+If insufficient data exists, show a clear empty state.
+
+==================================================
+BACKEND API REQUIREMENTS
+==================================================
+
+Add backend routes/services using the current project route style and authentication middleware.
+
+Required endpoints:
+
+1. Recalculate current student performance
+
+POST /api/analytics/recalculate
+
+Behavior:
+- Only authenticated students can recalculate their own performance.
+- Optionally allow backend internal calls after practice/exam completion.
+- Recalculate performance_summary for the current student.
+- Update recommendations.
+- Return summary counts.
+
+Alternative:
+If your architecture prefers automatic recalculation only, implement it as a service and call it after:
+- mock exam submission
+- practice session finish
+
+2. Get weak areas
+
+GET /api/analytics/weak-areas
+
+Behavior:
+- Student only.
+- Return only current student data.
+- Return performance_summary rows where:
+  weakness_level = weak or needs_practice
+- Sort by:
+  weakness_score descending
+  repeated_mistake_count descending
+  accuracy_rate ascending
+- Include names:
+  course_name
+  topic_name
+  subtopic_name if available
+- Do not expose other students’ data.
+
+Response example:
+[
+  {
+    "course_id": 1,
+    "course_name": "Introduction to Computer Science",
+    "topic_id": 10,
+    "topic_name": "Loops",
+    "subtopic_id": 15,
+    "subtopic_name": "Nested Loops",
+    "accuracy_rate": 42,
+    "attempts_count": 8,
+    "repeated_mistake_count": 4,
+    "weakness_score": 78,
+    "weakness_level": "weak",
+    "priority": "high"
+  }
+]
+
+3. Get recommendations
+
+GET /api/recommendations
+
+Behavior:
+- Student only.
+- Return only active recommendations for current student.
+- Include course/topic/subtopic names.
+- Sort high priority first, then medium, then low.
+- Do not return recommendations for other users.
+
+4. Mark recommendation completed
+
+PATCH /api/recommendations/:id/complete
+
+Behavior:
+- Student only.
+- Student can only complete their own recommendation.
+- Set status = completed.
+- Update updated_at.
+
+5. Dismiss recommendation
+
+PATCH /api/recommendations/:id/dismiss
+
+Behavior:
+- Student only.
+- Student can only dismiss their own recommendation.
+- Set status = dismissed.
+- Update updated_at.
+
+6. Get revision plan
+
+GET /api/revision-plan
+
+Behavior:
+- Student only.
+- Generate from active recommendations and performance_summary.
+- Return ordered plan items.
+- If insufficient data, return empty state with helpful message.
+
+7. Practice from weak area or recommendation
+
+Do not create a new duplicate practice endpoint.
+Use the existing Practice endpoint:
+
+POST /api/practice/generate
+
+When student clicks Practice Now, call existing Practice Mode with:
+{
+  "session_type": "weak_area",
+  "course_id": ...,
+  "topic_id": ...,
+  "subtopic_id": ...,
+  "question_count": 10
+}
+
+Make sure Practice Mode supports session_type = weak_area using approved questions from the selected course/topic/subtopic.
+
+==================================================
+FRONTEND REQUIREMENTS
+==================================================
+
+Add student-facing UI only.
+
+Use the existing visual style:
+- Sidebar
+- Top bar
+- White cards
+- Compact dashboard cards
+- Clean filters
+- Existing buttons/badges
+- Same design language as Courses, Practice, and Question Bank pages
+
+Do not redesign the whole app.
+
+1. Student Dashboard
+
+Add compact cards/sections:
+
+A. Weak Areas card
+Title:
+Weak Areas
+
+Content examples:
+- “3 topics need practice”
+- or “No weak areas detected yet”
+
+Button:
+View Weak Areas
+
+Navigate to:
+/weak-areas
+
+B. Recommendations card
+Title:
+Recommendations
+
+Content examples:
+- “5 active recommendations”
+- or “No recommendations yet”
+
+Button:
+View Recommendations
+
+Navigate to:
+/recommendations
+
+C. Revision Plan card
+Title:
+Revision Plan
+
+Content:
+“Your next study steps are ready”
+or
+“Complete more practice to generate a plan”
+
+Button:
+Open Plan
+
+Navigate to:
+/recommendations?tab=revision-plan
+or
+/revision-plan if you create a separate route
+
+Keep dashboard compact.
+Do not remove existing cards.
+Do not create large long lists on the dashboard.
+
+2. Weak Areas Page
+
+Route:
+/weak-areas
+
+Title:
+Weak Areas
+
+Subtitle:
+Topics and subtopics that need more practice.
+
+Content:
+Show cards grouped by course or sorted by priority.
+
+Each weak area card should show:
+- course name
+- topic name
+- subtopic name if available
+- weakness label: Weak / Needs Practice
+- accuracy percentage
+- attempts count
+- repeated mistakes count
+- Practice Now button
+
+Practice Now behavior:
+- Start a Practice Mode session using existing POST /api/practice/generate
+- session_type = weak_area
+- pass course_id, topic_id, subtopic_id
+- navigate to the created practice session
+
+Empty state:
+If there are no weak areas:
+- “No weak areas detected yet.”
+- “Complete more exams or practice sessions to generate insights.”
+- Button: Go to Practice
+
+3. Recommendations Page
+
+Route:
+/recommendations
+
+Title:
+Recommendations
+
+Subtitle:
+Personalized practice suggestions based on your performance.
+
+Show recommendation cards:
+- priority badge: High / Medium / Low
+- recommendation text
+- course/topic/subtopic context
+- Start Practice button
+- Mark as done button
+- Dismiss button
+
+Start Practice behavior:
+- If recommendation has course/topic/subtopic, call Practice generate.
+- Use question_count based on priority:
+  high = 10
+  medium = 7
+  low = 5
+
+Mark as done:
+- Calls PATCH /api/recommendations/:id/complete
+- Updates UI without full refresh if possible.
+
+Dismiss:
+- Calls PATCH /api/recommendations/:id/dismiss
+- Removes from active list.
+
+4. Revision Plan UI
+
+Option A, preferred:
+Inside /recommendations, add tabs:
+- Recommendations
+- Revision Plan
+
+Option B:
+Create separate route:
+/revision-plan
+
+Revision Plan section should show an ordered list:
+1. Practice Nested Loops — High priority
+2. Retry mistakes in Pointers — High priority
+3. Review Sorting Algorithms — Medium priority
+
+Each item should show:
+- order
+- title
+- reason
+- priority
+- Start Practice button if applicable
+
+Empty state:
+“Not enough activity data yet to generate a revision plan.”
+Button:
+Go to Practice
+
+5. Sidebar
+
+Add student-only navigation items if appropriate:
+- Weak Areas
+- Recommendations
+
+If the sidebar is already becoming crowded, keep them accessible from Dashboard and Practice page instead.
+Do not show these pages to lecturers/admins unless a future analytics module requires it.
+
+Recommended:
+Add only one sidebar item if needed:
+Learning Insights
+
+Route:
+/weak-areas or /recommendations
+
+But the safest approach:
+Use Dashboard cards first and avoid cluttering the sidebar.
+
+==================================================
+VISIBILITY AND PERMISSIONS
+==================================================
+
+Student:
+- Can view only their own weak areas.
+- Can view only their own recommendations.
+- Can view only their own revision plan.
+- Can start practice only for courses they are allowed to access.
+
+Course visibility:
+Use the same student course visibility helper/query used in Practice Mode and Courses:
+student program + enrollment + existing course_offering + active course.
+
+Lecturer:
+- No new lecturer UI required in this module.
+- Do not expose student-specific analytics to lecturers yet.
+
+Admin:
+- No new admin UI required in this module.
+
+Security:
+- Never trust user_id from request body.
+- Always use authenticated current user id.
+- For recommendation complete/dismiss, verify recommendation.user_id = current user id.
+- For weak areas, filter by current user id.
+
+==================================================
+EDGE CASES TO HANDLE
+==================================================
+
+1. No practice/exam history
+Show empty state, no crash.
+
+2. Not enough attempts
+Do not mark topics as weak too early.
+Show “Complete more practice to generate insights.”
+
+3. Balanced performance across topics
+Do not falsely mark a weak topic.
+Show neutral or empty state.
+
+4. Existing old mock exam rows with missing score fields
+Fallback to is_correct.
+
+5. Existing rows with missing response_time_seconds
+Ignore missing values in average response time.
+
+6. Multiple-choice partial scores
+Use earned_score < max_score as incorrect/needs improvement if available.
+
+7. Recommendation duplication
+Do not create duplicate active recommendations for same user/course/topic/subtopic/type.
+
+8. Improved performance after more practice
+Update recommendation priority or complete old recommendations.
+
+9. Student opens another student’s recommendation URL
+Return forbidden.
+
+10. Weak area points to a question/topic that was archived/deleted
+Handle gracefully.
+Do not generate Practice sessions from unavailable questions.
+
+11. Course no longer visible to student
+Do not show weak areas/recommendations for inaccessible courses.
+
+12. Practice Now finds no approved questions
+Show clear message.
+
+13. Recalculate called multiple times
+Should be idempotent:
+- no duplicate summaries
+- no duplicate recommendations
+
+==================================================
+QUALITY / CODE REQUIREMENTS
+==================================================
+
+Keep code clean and modular.
+
+Recommended structure:
+- analytics routes
+- analytics service
+- analytics repository/data-access
+- recommendations routes
+- recommendations service
+- revision plan helper
+- frontend weak areas page
+- frontend recommendations page
+- frontend revision plan component
+- dashboard cards/components
+
+Reuse existing utilities:
+- auth middleware
+- role guard
+- student course visibility logic
+- Practice Mode generate endpoint
+- existing UI components
+- existing API client
+
+Do not hardcode demo users.
+Do not hardcode course ids.
+Do not hardcode topic ids.
+Do not hardcode program ids.
+Do not fake weak areas.
+Do not create recommendations without real performance data.
+Do not silently ignore errors.
+
+Use clear user-facing error messages.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete when:
+
+1. Student dashboard shows a Weak Areas card.
+2. Student dashboard shows a Recommendations card.
+3. Student dashboard shows a Revision Plan entry/card.
+4. Student can open /weak-areas.
+5. Weak areas are calculated from real mock exam and practice data.
+6. Weak areas are grouped or displayed clearly with course/topic/subtopic.
+7. Topics are not marked weak with too little data.
+8. Student can click Practice Now from a weak area.
+9. Practice Now creates a Practice Mode session using approved questions.
+10. Student can open /recommendations.
+11. Recommendations are generated from performance_summary.
+12. Recommendations have priority high/medium/low.
+13. Duplicate active recommendations are not created.
+14. Student can mark a recommendation as done.
+15. Student can dismiss a recommendation.
+16. Student can view a revision plan.
+17. Revision plan is ordered by priority.
+18. Empty states appear when there is insufficient data.
+19. Student cannot access another student’s analytics or recommendations.
+20. Existing Practice Mode still works.
+21. Existing Mock Exam flow still works.
+22. Existing Question Bank still works.
+23. Existing Courses pages still work.
+24. Existing login and permissions still work.
+25. Strategy A is preserved.
+26. questions.course_id was not changed.
+27. topics.course_id was not changed.
+28. No unrelated UI or DB changes were made.
+
+==================================================
+VALIDATION AFTER IMPLEMENTATION
+==================================================
+
+After implementing, run the project and validate manually:
+
+Student analytics flow:
+1. Log in as a student.
+2. Complete at least one mock exam or practice session with known wrong answers.
+3. Trigger recalculation automatically or through the backend service.
+4. Open Dashboard.
+5. Confirm Weak Areas, Recommendations, and Revision Plan cards appear.
+6. Open Weak Areas page.
+7. Confirm weak areas match actual low-performing topics/subtopics.
+8. Click Practice Now.
+9. Confirm a Practice Mode session is created.
+10. Answer questions and finish practice.
+11. Confirm analytics can update after new practice data.
+12. Open Recommendations page.
+13. Confirm active recommendations are shown.
+14. Mark one recommendation as done.
+15. Dismiss one recommendation.
+16. Open Revision Plan tab/section.
+17. Confirm items are ordered by priority.
+
+Security:
+1. Try to access another student’s recommendation or analytics route.
+2. Confirm access is blocked.
+
+Regression:
+1. Generate a mock exam.
+2. Submit a mock exam.
+3. Review exam results.
+4. Start Practice by Topic.
+5. Submit Practice answers.
+6. Open Courses as student.
+7. Open Question Bank as lecturer/admin.
+8. Confirm no existing behavior broke.
+
+At the end, summarize:
+- Which files were changed
+- Which tables/migrations were added
+- Which routes were added
+- Which frontend pages/components were added
+- How analytics are calculated
+- How recommendations are generated
+- How Strategy A was preserved
+- How existing Sprint 2 and Practice Mode functionality were protected

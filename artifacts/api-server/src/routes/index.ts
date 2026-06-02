@@ -10,6 +10,8 @@ import notificationsRouter from "./notifications";
 import messagesRouter from "./messages";
 import programsRouter from "./programs";
 import practiceRouter from "./practice";
+import analyticsRouter from "./analytics";
+import recommendationsRouter from "./recommendations";
 
 const router: IRouter = Router();
 
@@ -20,6 +22,8 @@ router.use(coursesRouter);
 router.use(questionsRouter);
 router.use(examsRouter);
 router.use(practiceRouter);
+router.use(analyticsRouter);
+router.use(recommendationsRouter);
 router.use(usersRouter);
 router.use(adminRouter);
 router.use(notificationsRouter);

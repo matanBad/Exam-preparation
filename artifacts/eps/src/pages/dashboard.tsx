@@ -5,9 +5,13 @@ import {
   useListQuestions,
   useGetAdminOverview,
   useGetPracticeHistory,
+  useGetWeakAreas,
+  useGetRecommendations,
+  useGetRevisionPlan,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
+import { TrendingDown, Lightbulb, ListChecks } from "lucide-react";
 
 // Student dashboard uses a tighter vertical rhythm than the others so the
 // welcome title sits closer to the action row and the cards below it.
@@ -183,20 +187,74 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-weak-areas" className="opacity-70">
-          <CardHeader>
-            <CardTitle>Weak areas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">
-              {completedPractice.length
-                ? "Personalized recommendations will appear here as more practice data is collected."
-                : "Available after more practice data is collected."}
-            </p>
-          </CardContent>
-        </Card>
+        <AnalyticsSummary />
       </div>
     </div>
+  );
+}
+
+function AnalyticsSummary() {
+  const { data: weakAreas } = useGetWeakAreas();
+  const { data: recommendations } = useGetRecommendations();
+  const { data: revisionPlan } = useGetRevisionPlan();
+
+  const weakCount = weakAreas?.length ?? 0;
+  const recCount = recommendations?.length ?? 0;
+  const planCount = revisionPlan?.hasEnoughData ? revisionPlan.items.length : 0;
+  const topWeak = weakAreas?.[0];
+
+  return (
+    <Link href="/weak-areas" className="block">
+      <Card
+        data-testid="card-weak-areas"
+        className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40"
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingDown className="w-4 h-4 text-primary" />
+            Weak areas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {weakCount > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm">
+                <span className="font-semibold">{weakCount}</span> area
+                {weakCount === 1 ? "" : "s"} to improve
+                {topWeak && (
+                  <>
+                    {" "}
+                    — focus on{" "}
+                    <span className="font-medium">
+                      {topWeak.subtopicName ?? topWeak.topicName}
+                    </span>{" "}
+                    ({Math.round(topWeak.accuracyRate)}% accuracy)
+                  </>
+                )}
+                .
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+                  <Lightbulb className="w-3 h-3" />
+                  {recCount} recommendation{recCount === 1 ? "" : "s"}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+                  <ListChecks className="w-3 h-3" />
+                  {planCount} revision step{planCount === 1 ? "" : "s"}
+                </span>
+              </div>
+              <p className="text-xs font-medium text-primary">
+                View weak areas →
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Available after more exam and practice data is collected.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 

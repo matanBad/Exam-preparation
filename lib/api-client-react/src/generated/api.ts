@@ -52,8 +52,11 @@ import type {
   PracticeSummary,
   Program,
   Question,
+  RecalculateResult,
+  Recommendation,
   RegisterRequest,
   RegisterResponse,
+  RevisionPlan,
   SearchQuestionsParams,
   SubmitExamRequest,
   SubmitPracticeAnswerRequest,
@@ -65,6 +68,7 @@ import type {
   UpdateTopicRequest,
   UpdateUserRequest,
   User,
+  WeakArea,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3460,6 +3464,457 @@ export const useFinishPracticeSession = <
 > => {
   return useMutation(getFinishPracticeSessionMutationOptions(options));
 };
+
+/**
+ * Recompute the current student's performance summaries and refresh recommendations.
+ */
+export const getRecalculateAnalyticsUrl = () => {
+  return `/api/analytics/recalculate`;
+};
+
+export const recalculateAnalytics = async (
+  options?: RequestInit,
+): Promise<RecalculateResult> => {
+  return customFetch<RecalculateResult>(getRecalculateAnalyticsUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRecalculateAnalyticsMutationOptions = <
+  TError = ErrorType<ForbiddenResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recalculateAnalytics>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recalculateAnalytics>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["recalculateAnalytics"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recalculateAnalytics>>,
+    void
+  > = () => {
+    return recalculateAnalytics(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecalculateAnalyticsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recalculateAnalytics>>
+>;
+
+export type RecalculateAnalyticsMutationError = ErrorType<ForbiddenResponse>;
+
+export const useRecalculateAnalytics = <
+  TError = ErrorType<ForbiddenResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recalculateAnalytics>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recalculateAnalytics>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getRecalculateAnalyticsMutationOptions(options));
+};
+
+/**
+ * The current student's weak / needs-practice topics and subtopics.
+ */
+export const getGetWeakAreasUrl = () => {
+  return `/api/analytics/weak-areas`;
+};
+
+export const getWeakAreas = async (
+  options?: RequestInit,
+): Promise<WeakArea[]> => {
+  return customFetch<WeakArea[]>(getGetWeakAreasUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWeakAreasQueryKey = () => {
+  return [`/api/analytics/weak-areas`] as const;
+};
+
+export const getGetWeakAreasQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWeakAreas>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWeakAreas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWeakAreasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWeakAreas>>> = ({
+    signal,
+  }) => getWeakAreas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWeakAreas>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWeakAreasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWeakAreas>>
+>;
+export type GetWeakAreasQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetWeakAreas<
+  TData = Awaited<ReturnType<typeof getWeakAreas>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWeakAreas>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWeakAreasQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * The current student's active recommendations, highest priority first.
+ */
+export const getGetRecommendationsUrl = () => {
+  return `/api/recommendations`;
+};
+
+export const getRecommendations = async (
+  options?: RequestInit,
+): Promise<Recommendation[]> => {
+  return customFetch<Recommendation[]>(getGetRecommendationsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRecommendationsQueryKey = () => {
+  return [`/api/recommendations`] as const;
+};
+
+export const getGetRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecommendations>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRecommendations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRecommendationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRecommendations>>
+  > = ({ signal }) => getRecommendations({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecommendations>>
+>;
+export type GetRecommendationsQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetRecommendations<
+  TData = Awaited<ReturnType<typeof getRecommendations>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRecommendations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRecommendationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCompleteRecommendationUrl = (id: number) => {
+  return `/api/recommendations/${id}/complete`;
+};
+
+export const completeRecommendation = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Recommendation> => {
+  return customFetch<Recommendation>(getCompleteRecommendationUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getCompleteRecommendationMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeRecommendation>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeRecommendation>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["completeRecommendation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeRecommendation>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return completeRecommendation(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteRecommendationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeRecommendation>>
+>;
+
+export type CompleteRecommendationMutationError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export const useCompleteRecommendation = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeRecommendation>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeRecommendation>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getCompleteRecommendationMutationOptions(options));
+};
+
+export const getDismissRecommendationUrl = (id: number) => {
+  return `/api/recommendations/${id}/dismiss`;
+};
+
+export const dismissRecommendation = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Recommendation> => {
+  return customFetch<Recommendation>(getDismissRecommendationUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getDismissRecommendationMutationOptions = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissRecommendation>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissRecommendation>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["dismissRecommendation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissRecommendation>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return dismissRecommendation(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissRecommendationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissRecommendation>>
+>;
+
+export type DismissRecommendationMutationError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export const useDismissRecommendation = <
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissRecommendation>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissRecommendation>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDismissRecommendationMutationOptions(options));
+};
+
+/**
+ * An ordered study plan generated from the current student's active recommendations.
+ */
+export const getGetRevisionPlanUrl = () => {
+  return `/api/revision-plan`;
+};
+
+export const getRevisionPlan = async (
+  options?: RequestInit,
+): Promise<RevisionPlan> => {
+  return customFetch<RevisionPlan>(getGetRevisionPlanUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRevisionPlanQueryKey = () => {
+  return [`/api/revision-plan`] as const;
+};
+
+export const getGetRevisionPlanQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRevisionPlan>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRevisionPlan>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRevisionPlanQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRevisionPlan>>> = ({
+    signal,
+  }) => getRevisionPlan({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRevisionPlan>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRevisionPlanQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRevisionPlan>>
+>;
+export type GetRevisionPlanQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetRevisionPlan<
+  TData = Awaited<ReturnType<typeof getRevisionPlan>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRevisionPlan>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRevisionPlanQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export const getListUsersUrl = (params?: ListUsersParams) => {
   const normalizedParams = new URLSearchParams();

@@ -26,6 +26,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
 import { createNotification, notifyUsersByRole } from "../lib/notifications";
+import { recalculateForUser } from "../lib/analytics";
 
 const router: IRouter = Router();
 
@@ -529,6 +530,14 @@ router.post(
       });
     } catch (err) {
       req.log?.warn({ err }, "Failed to create exam-submit notifications");
+    }
+
+    // Refresh weak-area analytics + recommendations from the new exam data.
+    // Best-effort: a failure here must not fail the submission.
+    try {
+      await recalculateForUser(exam.userId);
+    } catch (err) {
+      req.log?.warn({ err }, "Failed to recalculate analytics after exam submit");
     }
 
     res.json(

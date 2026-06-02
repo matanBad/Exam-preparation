@@ -586,6 +586,7 @@ export const PracticeSessionType = {
   subtopic: "subtopic",
   mixed: "mixed",
   mistakes: "mistakes",
+  weak_area: "weak_area",
 } as const;
 
 export type PracticeSessionStatus =
@@ -763,6 +764,138 @@ export type AdminOverviewTotals = {
 
 export interface AdminOverview {
   totals: AdminOverviewTotals;
+}
+
+export type WeaknessLevel = (typeof WeaknessLevel)[keyof typeof WeaknessLevel];
+
+export const WeaknessLevel = {
+  strong: "strong",
+  needs_practice: "needs_practice",
+  weak: "weak",
+} as const;
+
+export type RecommendationPriority =
+  (typeof RecommendationPriority)[keyof typeof RecommendationPriority];
+
+export const RecommendationPriority = {
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export type RecommendationType =
+  (typeof RecommendationType)[keyof typeof RecommendationType];
+
+export const RecommendationType = {
+  practice_topic: "practice_topic",
+  retry_mistakes: "retry_mistakes",
+  review_subtopic: "review_subtopic",
+  revision_plan_item: "revision_plan_item",
+} as const;
+
+export type RecommendationStatus =
+  (typeof RecommendationStatus)[keyof typeof RecommendationStatus];
+
+export const RecommendationStatus = {
+  active: "active",
+  completed: "completed",
+  dismissed: "dismissed",
+} as const;
+
+export type RecommendationSource =
+  (typeof RecommendationSource)[keyof typeof RecommendationSource];
+
+export const RecommendationSource = {
+  performance_summary: "performance_summary",
+  mock_exam: "mock_exam",
+  practice: "practice",
+} as const;
+
+export interface RecalculateResult {
+  /** Number of performance_summary rows rebuilt. */
+  summariesUpdated: number;
+  /** Topics/subtopics flagged weak or needs_practice. */
+  weakAreasCount: number;
+  /** Active recommendations after the refresh. */
+  recommendationsCount: number;
+}
+
+export interface WeakArea {
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  topicId: number;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  /** 0-100. */
+  accuracyRate: number;
+  attemptsCount: number;
+  correctCount: number;
+  incorrectCount: number;
+  repeatedMistakeCount: number;
+  /** 0-100, higher = weaker. */
+  weaknessScore: number;
+  weaknessLevel: WeaknessLevel;
+  priority: RecommendationPriority;
+}
+
+export interface Recommendation {
+  id: number;
+  userId: number;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  recommendationType: RecommendationType;
+  recommendationText: string;
+  priority: RecommendationPriority;
+  status: RecommendationStatus;
+  source: RecommendationSource;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RevisionPlanItem {
+  order: number;
+  title: string;
+  reason: string;
+  priority: RecommendationPriority;
+  /** @nullable */
+  recommendationId?: number | null;
+  recommendationType: RecommendationType;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  suggestedQuestionCount: number;
+}
+
+export interface RevisionPlan {
+  hasEnoughData: boolean;
+  /**
+   * Empty-state message when hasEnoughData is false.
+   * @nullable
+   */
+  message?: string | null;
+  items: RevisionPlanItem[];
 }
 
 /**

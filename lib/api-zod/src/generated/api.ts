@@ -1138,7 +1138,7 @@ export const GeneratePracticeBody = zod.object({
     .optional()
     .describe("Number of questions to practice. Defaults to 10 if omitted."),
   sessionType: zod
-    .enum(["topic", "subtopic", "mixed", "mistakes"])
+    .enum(["topic", "subtopic", "mixed", "mistakes", "weak_area"])
     .nullish()
     .describe(
       "How the pool is chosen. Defaults to topic\/subtopic\/mixed based on the filters provided.",
@@ -1156,7 +1156,13 @@ export const GetPracticeHistoryResponse = zod.object({
       topicName: zod.string().nullish(),
       subtopicId: zod.number().nullish(),
       subtopicName: zod.string().nullish(),
-      sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+      sessionType: zod.enum([
+        "topic",
+        "subtopic",
+        "mixed",
+        "mistakes",
+        "weak_area",
+      ]),
       status: zod.enum(["active", "completed", "abandoned"]),
       totalQuestions: zod.number(),
       answeredCount: zod.number(),
@@ -1178,7 +1184,13 @@ export const GetPracticeHistoryResponse = zod.object({
       topicName: zod.string().nullish(),
       subtopicId: zod.number().nullish(),
       subtopicName: zod.string().nullish(),
-      sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+      sessionType: zod.enum([
+        "topic",
+        "subtopic",
+        "mixed",
+        "mistakes",
+        "weak_area",
+      ]),
       status: zod.enum(["active", "completed", "abandoned"]),
       totalQuestions: zod.number(),
       answeredCount: zod.number(),
@@ -1206,7 +1218,13 @@ export const GetPracticeSessionResponse = zod
     topicName: zod.string().nullish(),
     subtopicId: zod.number().nullish(),
     subtopicName: zod.string().nullish(),
-    sessionType: zod.enum(["topic", "subtopic", "mixed", "mistakes"]),
+    sessionType: zod.enum([
+      "topic",
+      "subtopic",
+      "mixed",
+      "mistakes",
+      "weak_area",
+    ]),
     status: zod.enum(["active", "completed", "abandoned"]),
     totalQuestions: zod.number(),
     answeredCount: zod.number(),
@@ -1319,6 +1337,158 @@ export const FinishPracticeSessionResponse = zod.object({
   lowConfidenceCount: zod
     .number()
     .describe("Answered questions the student marked low confidence."),
+});
+
+/**
+ * Recompute the current student's performance summaries and refresh recommendations.
+ */
+export const RecalculateAnalyticsResponse = zod.object({
+  summariesUpdated: zod
+    .number()
+    .describe("Number of performance_summary rows rebuilt."),
+  weakAreasCount: zod
+    .number()
+    .describe("Topics\/subtopics flagged weak or needs_practice."),
+  recommendationsCount: zod
+    .number()
+    .describe("Active recommendations after the refresh."),
+});
+
+/**
+ * The current student's weak / needs-practice topics and subtopics.
+ */
+export const GetWeakAreasResponseItem = zod.object({
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  accuracyRate: zod.number().describe("0-100."),
+  attemptsCount: zod.number(),
+  correctCount: zod.number(),
+  incorrectCount: zod.number(),
+  repeatedMistakeCount: zod.number(),
+  weaknessScore: zod.number().describe("0-100, higher = weaker."),
+  weaknessLevel: zod.enum(["strong", "needs_practice", "weak"]),
+  priority: zod.enum(["high", "medium", "low"]),
+});
+export const GetWeakAreasResponse = zod.array(GetWeakAreasResponseItem);
+
+/**
+ * The current student's active recommendations, highest priority first.
+ */
+export const GetRecommendationsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number().nullish(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  recommendationType: zod.enum([
+    "practice_topic",
+    "retry_mistakes",
+    "review_subtopic",
+    "revision_plan_item",
+  ]),
+  recommendationText: zod.string(),
+  priority: zod.enum(["high", "medium", "low"]),
+  status: zod.enum(["active", "completed", "dismissed"]),
+  source: zod.enum(["performance_summary", "mock_exam", "practice"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const GetRecommendationsResponse = zod.array(
+  GetRecommendationsResponseItem,
+);
+
+export const CompleteRecommendationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CompleteRecommendationResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number().nullish(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  recommendationType: zod.enum([
+    "practice_topic",
+    "retry_mistakes",
+    "review_subtopic",
+    "revision_plan_item",
+  ]),
+  recommendationText: zod.string(),
+  priority: zod.enum(["high", "medium", "low"]),
+  status: zod.enum(["active", "completed", "dismissed"]),
+  source: zod.enum(["performance_summary", "mock_exam", "practice"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const DismissRecommendationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DismissRecommendationResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number().nullish(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  recommendationType: zod.enum([
+    "practice_topic",
+    "retry_mistakes",
+    "review_subtopic",
+    "revision_plan_item",
+  ]),
+  recommendationText: zod.string(),
+  priority: zod.enum(["high", "medium", "low"]),
+  status: zod.enum(["active", "completed", "dismissed"]),
+  source: zod.enum(["performance_summary", "mock_exam", "practice"]),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * An ordered study plan generated from the current student's active recommendations.
+ */
+export const GetRevisionPlanResponse = zod.object({
+  hasEnoughData: zod.boolean(),
+  message: zod
+    .string()
+    .nullish()
+    .describe("Empty-state message when hasEnoughData is false."),
+  items: zod.array(
+    zod.object({
+      order: zod.number(),
+      title: zod.string(),
+      reason: zod.string(),
+      priority: zod.enum(["high", "medium", "low"]),
+      recommendationId: zod.number().nullish(),
+      recommendationType: zod.enum([
+        "practice_topic",
+        "retry_mistakes",
+        "review_subtopic",
+        "revision_plan_item",
+      ]),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      suggestedQuestionCount: zod.number(),
+    }),
+  ),
 });
 
 export const ListUsersQueryParams = zod.object({

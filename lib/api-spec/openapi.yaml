@@ -18,6 +18,8 @@ tags:
   - name: admin
   - name: programs
   - name: practice
+  - name: analytics
+  - name: recommendations
 paths:
   /healthz:
     get:
@@ -821,6 +823,106 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /analytics/recalculate:
+    post:
+      operationId: recalculateAnalytics
+      tags: [analytics]
+      description: Recompute the current student's performance summaries and refresh recommendations.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecalculateResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /analytics/weak-areas:
+    get:
+      operationId: getWeakAreas
+      tags: [analytics]
+      description: The current student's weak / needs-practice topics and subtopics.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeakArea"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [recommendations]
+      description: The current student's active recommendations, highest priority first.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /recommendations/{id}/complete:
+    patch:
+      operationId: completeRecommendation
+      tags: [recommendations]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /recommendations/{id}/dismiss:
+    patch:
+      operationId: dismissRecommendation
+      tags: [recommendations]
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /revision-plan:
+    get:
+      operationId: getRevisionPlan
+      tags: [recommendations]
+      description: An ordered study plan generated from the current student's active recommendations.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevisionPlan"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/users:
     get:
       operationId: listUsers
@@ -1595,7 +1697,7 @@ components:
 
     PracticeSessionType:
       type: string
-      enum: [topic, subtopic, mixed, mistakes]
+      enum: [topic, subtopic, mixed, mistakes, weak_area]
 
     PracticeSessionStatus:
       type: string
@@ -1784,3 +1886,101 @@ components:
           required:
             [users, students, lecturers, admins, courses, topics, questions, approvedQuestions, archivedQuestions, exams, submittedExams]
       required: [totals]
+
+    WeaknessLevel:
+      type: string
+      enum: [strong, needs_practice, weak]
+
+    RecommendationPriority:
+      type: string
+      enum: [high, medium, low]
+
+    RecommendationType:
+      type: string
+      enum: [practice_topic, retry_mistakes, review_subtopic, revision_plan_item]
+
+    RecommendationStatus:
+      type: string
+      enum: [active, completed, dismissed]
+
+    RecommendationSource:
+      type: string
+      enum: [performance_summary, mock_exam, practice]
+
+    RecalculateResult:
+      type: object
+      properties:
+        summariesUpdated: { type: integer, description: "Number of performance_summary rows rebuilt." }
+        weakAreasCount: { type: integer, description: "Topics/subtopics flagged weak or needs_practice." }
+        recommendationsCount: { type: integer, description: "Active recommendations after the refresh." }
+      required: [summariesUpdated, weakAreasCount, recommendationsCount]
+
+    WeakArea:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: integer }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        accuracyRate: { type: number, description: "0-100." }
+        attemptsCount: { type: integer }
+        correctCount: { type: integer }
+        incorrectCount: { type: integer }
+        repeatedMistakeCount: { type: integer }
+        weaknessScore: { type: number, description: "0-100, higher = weaker." }
+        weaknessLevel: { $ref: "#/components/schemas/WeaknessLevel" }
+        priority: { $ref: "#/components/schemas/RecommendationPriority" }
+      required:
+        [courseId, topicId, accuracyRate, attemptsCount, correctCount, incorrectCount, repeatedMistakeCount, weaknessScore, weaknessLevel, priority]
+
+    Recommendation:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        recommendationType: { $ref: "#/components/schemas/RecommendationType" }
+        recommendationText: { type: string }
+        priority: { $ref: "#/components/schemas/RecommendationPriority" }
+        status: { $ref: "#/components/schemas/RecommendationStatus" }
+        source: { $ref: "#/components/schemas/RecommendationSource" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        [id, userId, courseId, recommendationType, recommendationText, priority, status, source, createdAt, updatedAt]
+
+    RevisionPlanItem:
+      type: object
+      properties:
+        order: { type: integer }
+        title: { type: string }
+        reason: { type: string }
+        priority: { $ref: "#/components/schemas/RecommendationPriority" }
+        recommendationId: { type: ["integer", "null"] }
+        recommendationType: { $ref: "#/components/schemas/RecommendationType" }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        suggestedQuestionCount: { type: integer }
+      required:
+        [order, title, reason, priority, recommendationType, courseId, suggestedQuestionCount]
+
+    RevisionPlan:
+      type: object
+      properties:
+        hasEnoughData: { type: boolean }
+        message: { type: ["string", "null"], description: "Empty-state message when hasEnoughData is false." }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/RevisionPlanItem" }
+      required: [hasEnoughData, items]

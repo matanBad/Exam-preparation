@@ -6,9 +6,6 @@ import {
   answerOptionsTable,
   coursesTable,
   topicsTable,
-  enrollmentsTable,
-  usersTable,
-  courseOfferingsTable,
   practiceSessionsTable,
   practiceSessionQuestionsTable,
 } from "@workspace/db";
@@ -30,54 +27,14 @@ import {
   pointsForDifficulty,
   shuffle,
 } from "../lib/grading";
+import { checkStudentCourseAccess } from "../lib/student-access";
+import { recalculateForUser } from "../lib/analytics";
 
 const router: IRouter = Router();
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-type SessionType = "topic" | "subtopic" | "mixed" | "mistakes";
-
-// Strategy A access check: a student may practice a course only if it is offered
-// in their program AND they hold an active enrollment in it. Returns an error
-// string to send (with the given status) or null when access is allowed.
-async function checkStudentCourseAccess(
-  userId: number,
-  courseId: number,
-): Promise<{ status: number; error: string } | null> {
-  const [me] = await db
-    .select({ programId: usersTable.programId })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (!me?.programId) {
-    return { status: 403, error: "Student is not assigned to a program" };
-  }
-  const [off] = await db
-    .select({ id: courseOfferingsTable.id })
-    .from(courseOfferingsTable)
-    .where(
-      and(
-        eq(courseOfferingsTable.courseId, courseId),
-        eq(courseOfferingsTable.programId, me.programId),
-      ),
-    );
-  if (!off) {
-    return { status: 403, error: "This course is not offered in your program" };
-  }
-  const [enr] = await db
-    .select({ id: enrollmentsTable.id })
-    .from(enrollmentsTable)
-    .where(
-      and(
-        eq(enrollmentsTable.userId, userId),
-        eq(enrollmentsTable.courseId, courseId),
-        eq(enrollmentsTable.enrollmentStatus, "active"),
-      ),
-    );
-  if (!enr) {
-    return { status: 403, error: "You are not enrolled in this course" };
-  }
-  return null;
-}
+type SessionType = "topic" | "subtopic" | "mixed" | "mistakes" | "weak_area";
 
 // Build the API shape for a session plus its questions. Correct answers and
 // explanations are only revealed for questions the student has already answered
@@ -601,6 +558,17 @@ router.post(
       totals.answeredCount > 0
         ? round2((totals.correctCount / totals.answeredCount) * 100)
         : 0;
+
+    // Refresh weak-area analytics + recommendations from the new practice data.
+    // Best-effort: a failure here must not fail finishing the session.
+    try {
+      await recalculateForUser(session.userId);
+    } catch (err) {
+      req.log?.warn(
+        { err },
+        "Failed to recalculate analytics after practice finish",
+      );
+    }
 
     res.json(
       FinishPracticeSessionResponse.parse({

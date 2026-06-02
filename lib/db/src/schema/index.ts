@@ -431,6 +431,108 @@ export const practiceSessionQuestionsTable = pgTable(
   }),
 );
 
+// --- Sprint 3 Module 2: Weak Area Analysis & Recommendations ---
+// Summarized, per-student performance aggregated from answered mock-exam and
+// practice questions, grouped by course + topic (+ optional subtopic). This is
+// a derived/cache table: the recalc service deletes and rebuilds a student's
+// rows on each run, so it is always safe to recompute. Drives weak-area
+// detection and recommendation generation.
+export const performanceSummaryTable = pgTable(
+  "performance_summary",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => coursesTable.id, { onDelete: "cascade" }),
+    topicId: integer("topic_id")
+      .notNull()
+      .references(() => topicsTable.id, { onDelete: "cascade" }),
+    // Null when the underlying questions are tagged at the top-level topic only.
+    subtopicId: integer("subtopic_id").references(() => topicsTable.id, {
+      onDelete: "cascade",
+    }),
+    attemptsCount: integer("attempts_count").notNull().default(0),
+    correctCount: integer("correct_count").notNull().default(0),
+    incorrectCount: integer("incorrect_count").notNull().default(0),
+    totalEarnedScore: doublePrecision("total_earned_score").notNull().default(0),
+    totalPossibleScore: doublePrecision("total_possible_score")
+      .notNull()
+      .default(0),
+    // 0-100.
+    accuracyRate: doublePrecision("accuracy_rate").notNull().default(0),
+    // Average answered-question response time in seconds; null when no row had a
+    // recorded time.
+    averageResponseTime: doublePrecision("average_response_time"),
+    lowConfidenceCount: integer("low_confidence_count").notNull().default(0),
+    repeatedMistakeCount: integer("repeated_mistake_count").notNull().default(0),
+    // 0-100 transparent weakness score; higher = weaker.
+    weaknessScore: doublePrecision("weakness_score").notNull().default(0),
+    // strong | needs_practice | weak
+    weaknessLevel: text("weakness_level").notNull().default("strong"),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("performance_summary_user_idx").on(t.userId),
+    userCourseIdx: index("performance_summary_user_course_idx").on(
+      t.userId,
+      t.courseId,
+    ),
+  }),
+);
+
+// Personalized recommendations and revision-plan items derived from
+// performance_summary. Unlike the summary table this carries user state
+// (active/completed/dismissed) so it is upserted, never wholesale rebuilt.
+export const recommendationsTable = pgTable(
+  "recommendations",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => coursesTable.id, { onDelete: "cascade" }),
+    topicId: integer("topic_id").references(() => topicsTable.id, {
+      onDelete: "cascade",
+    }),
+    subtopicId: integer("subtopic_id").references(() => topicsTable.id, {
+      onDelete: "cascade",
+    }),
+    // practice_topic | retry_mistakes | review_subtopic | revision_plan_item
+    recommendationType: text("recommendation_type").notNull(),
+    recommendationText: text("recommendation_text").notNull(),
+    // high | medium | low
+    priority: text("priority").notNull().default("medium"),
+    // active | completed | dismissed
+    status: text("status").notNull().default("active"),
+    // performance_summary | mock_exam | practice
+    source: text("source").notNull().default("performance_summary"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("recommendations_user_idx").on(t.userId),
+    userStatusIdx: index("recommendations_user_status_idx").on(
+      t.userId,
+      t.status,
+    ),
+  }),
+);
+
 export type User = typeof usersTable.$inferSelect;
 export type Course = typeof coursesTable.$inferSelect;
 export type Topic = typeof topicsTable.$inferSelect;
@@ -442,3 +544,5 @@ export type MockExamQuestion = typeof mockExamQuestionsTable.$inferSelect;
 export type PracticeSession = typeof practiceSessionsTable.$inferSelect;
 export type PracticeSessionQuestion =
   typeof practiceSessionQuestionsTable.$inferSelect;
+export type PerformanceSummary = typeof performanceSummaryTable.$inferSelect;
+export type Recommendation = typeof recommendationsTable.$inferSelect;

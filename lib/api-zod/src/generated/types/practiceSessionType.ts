@@ -14,4 +14,5 @@ export const PracticeSessionType = {
   subtopic: "subtopic",
   mixed: "mixed",
   mistakes: "mistakes",
+  weak_area: "weak_area",
 } as const;
