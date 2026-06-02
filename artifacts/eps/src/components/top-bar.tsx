@@ -41,6 +41,7 @@ const TITLES: Array<[RegExp, string]> = [
   [/^\/exams\/new$/, "New Exam"],
   [/^\/exams(\/|$)/, "My Exams"],
   [/^\/practice(\/|$)/, "Practice Mode"],
+  [/^\/recommendations(\/|$)/, "Recommendations"],
   [/^\/lecturer\/questions(\/|$)/, "Question Bank"],
   [/^\/admin\/users$/, "Users"],
   [/^\/admin\/user-approvals$/, "Users"],
