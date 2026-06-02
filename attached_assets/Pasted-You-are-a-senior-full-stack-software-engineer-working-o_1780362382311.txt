@@ -1,0 +1,904 @@
+You are a senior full-stack software engineer working on the EPS platform.
+
+Project:
+Exam Preparation System (EPS) – Team 4
+
+We are now implementing Sprint 3, Module 3:
+Dashboards & Analytics
+
+This module must be integrated into the existing Sprint 2 system and the Sprint 3 Practice Mode + Weak Area Analysis modules without breaking current functionality.
+
+==================================================
+IMPORTANT CONTEXT
+==================================================
+
+The project already includes:
+- Role-based login for student, lecturer, admin
+- Student dashboard
+- Lecturer dashboard
+- Admin dashboard
+- Courses pages
+- Course details pages
+- Question Bank
+- Mock exam generation
+- Mock exam submission
+- Scoring
+- Review of incorrect answers
+- Practice Mode / Targeted Learning
+- Weak Area Analysis
+- Recommendations
+- Revision Plan
+- Top bar with notifications/messages
+- Profile page
+- Strategy A data model
+
+Current DB/data model includes tables similar to:
+- users
+- courses
+- course_offerings
+- enrollments
+- topics
+- questions
+- answer_options
+- mock_exams
+- mock_exam_questions
+- practice_sessions
+- practice_session_questions
+- performance_summary
+- recommendations
+
+Important current relationships:
+- users.id
+- courses.id
+- enrollments.user_id
+- enrollments.course_id
+- course_offerings.course_id
+- course_offerings.program_id
+- course_offerings.lecturer_id
+- topics.course_id
+- topics.parent_topic_id
+- questions.course_id
+- questions.topic_id
+- questions.subtopic_id
+- answer_options.question_id
+- mock_exams.user_id
+- mock_exams.course_id
+- mock_exam_questions.exam_id
+- mock_exam_questions.question_id
+- practice_sessions.user_id
+- practice_sessions.course_id
+- practice_session_questions.practice_session_id
+- practice_session_questions.question_id
+- performance_summary.user_id
+- performance_summary.course_id
+- performance_summary.topic_id
+- performance_summary.subtopic_id
+- recommendations.user_id
+- recommendations.course_id
+- recommendations.topic_id
+- recommendations.subtopic_id
+
+Important:
+Use the actual existing schema and column names in the project.
+Do not invent alternative names if the project already uses different names.
+Before changing code, inspect the current project structure and reuse existing services/components wherever possible.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+Do NOT change:
+1. Login logic
+2. Authentication logic
+3. Existing role-based permissions
+4. Existing mock exam generation flow
+5. Existing mock exam submission flow
+6. Existing Practice Mode flow
+7. Existing Weak Areas / Recommendations flow
+8. Existing Question Bank flow
+9. Existing Courses flow
+10. Existing DB seed data unless a minimal migration is required
+11. questions.course_id
+12. topics.course_id
+13. Strategy A
+
+Keep Strategy A:
+- courses = shared course catalog
+- course_offerings = course taught by a specific lecturer in a specific program
+- topics.course_id remains connected to the parent course
+- questions.course_id remains connected to the parent course
+- Do NOT move topics or questions to course_offerings
+- Use course_offerings only for visibility/context: program, lecturer, study_year, semester
+
+Do NOT expose:
+- one student’s analytics to another student
+- individual student-level analytics to lecturers in this module
+- analytics for courses the lecturer does not teach
+- draft/pending/archived questions in student-facing analytics
+
+Use real data only.
+Do not create fake dashboard numbers.
+If there is not enough data, show a clear empty state.
+
+==================================================
+SPRINT 3 USER STORIES COVERED
+==================================================
+
+Implement Dashboards & Analytics for:
+
+US-44:
+As a student, I can view my scores, so that I can track my performance.
+
+US-45:
+As a student, I can view topic performance analytics, so that I understand my strengths and weaknesses.
+
+US-46:
+As a student, I can view my readiness score, so that I know how prepared I am.
+
+US-47:
+As a student, I can view progress over time, so that I can track improvement.
+
+US-48:
+As a lecturer, I can view class performance, so that I can evaluate student progress.
+
+US-49:
+As a lecturer, I can identify problematic questions, so that I can improve content quality.
+
+Important:
+Do NOT implement Notifications, Streaks, or Milestones in this module.
+Do NOT implement advanced Admin analytics unless the current Admin Dashboard already has a place for simple existing metrics.
+Focus on Student and Lecturer analytics.
+
+==================================================
+DATABASE REQUIREMENTS
+==================================================
+
+Prefer not to add new DB tables unless absolutely required.
+
+Use existing data:
+- mock_exams
+- mock_exam_questions
+- practice_sessions
+- practice_session_questions
+- performance_summary
+- recommendations
+- questions
+- topics
+- courses
+- course_offerings
+- enrollments
+- users
+
+If performance_summary or recommendations do not exist yet:
+- Do not duplicate their purpose.
+- Either reuse the current analytics tables created in Module 2, or add only the minimal missing fields required by that module.
+- Do not create dashboard-specific duplicate summary tables.
+
+Do NOT add dashboard_snapshots for now.
+Calculate dashboard analytics dynamically through backend services, or reuse performance_summary.
+
+==================================================
+BACKEND API REQUIREMENTS
+==================================================
+
+Add or update dashboard/analytics endpoints using the current project route style and authentication middleware.
+
+Use current authenticated user id from the session/JWT.
+Never trust user_id from the request body for student analytics.
+
+--------------------------------------------------
+1. Student Dashboard Analytics
+--------------------------------------------------
+
+Endpoint:
+GET /api/dashboard/student/analytics
+
+Student only.
+
+Return a compact analytics summary for the authenticated student.
+
+Response shape suggestion:
+{
+  "average_score": 78,
+  "recent_scores": [
+    {
+      "type": "mock_exam",
+      "course_id": 1,
+      "course_name": "Introduction to Computer Science",
+      "score": 82,
+      "date": "2026-05-01"
+    }
+  ],
+  "topic_performance": [
+    {
+      "course_id": 1,
+      "course_name": "Introduction to Computer Science",
+      "topic_id": 10,
+      "topic_name": "Loops",
+      "subtopic_id": 15,
+      "subtopic_name": "Nested Loops",
+      "accuracy_rate": 42,
+      "weakness_level": "weak",
+      "attempts_count": 8
+    }
+  ],
+  "weak_areas_count": 3,
+  "strong_areas_count": 5,
+  "active_recommendations_count": 4,
+  "readiness_score": 72,
+  "readiness_label": "Good progress",
+  "practice_sessions_count": 12,
+  "progress_trend": [
+    {
+      "date": "2026-05-01",
+      "label": "Mock Exam",
+      "score": 65
+    },
+    {
+      "date": "2026-05-05",
+      "label": "Practice",
+      "score": 72
+    }
+  ]
+}
+
+Data rules:
+- average_score should include submitted mock exams and completed practice sessions if practice has score data.
+- recent_scores should show recent submitted mock exams and completed practice sessions.
+- topic_performance should come from performance_summary.
+- weak_areas_count = count of weak/needs_practice rows for the current student.
+- strong_areas_count = count of strong rows for the current student.
+- active_recommendations_count = active recommendations for the current student.
+- progress_trend should use chronological activity from mock exams and practice sessions.
+- If no data exists, return empty arrays and null/0 values gracefully.
+
+--------------------------------------------------
+2. Student Topic Performance
+--------------------------------------------------
+
+Endpoint:
+GET /api/analytics/student/topic-performance
+
+Student only.
+
+Return detailed topic/subtopic analytics for the authenticated student.
+
+Use performance_summary and join:
+- courses
+- topics as topic
+- topics as subtopic if applicable
+
+Sort:
+- weak first
+- then needs_practice
+- then strong
+- or by weakness_score descending
+
+Do not include courses the student cannot access anymore.
+Use the same student visibility rule:
+student program + enrollment + existing course_offering + active course.
+
+--------------------------------------------------
+3. Student Progress Over Time
+--------------------------------------------------
+
+Endpoint:
+GET /api/analytics/student/progress-over-time
+
+Student only.
+
+Build a chronological progress list from:
+- submitted mock exams
+- completed practice sessions
+
+Each item should include:
+- date
+- type: mock_exam / practice
+- course_name
+- score or accuracy
+- earned_score / max_score if available
+
+If mock_exams.score exists, use it.
+If practice summary needs to be calculated, compute from practice_session_questions:
+earned_score / max_score or correct_count / answered_count.
+
+--------------------------------------------------
+4. Student Readiness Score
+--------------------------------------------------
+
+Endpoint:
+GET /api/analytics/student/readiness-score
+
+Student only.
+
+Implement a simple, demo-ready readiness calculation.
+
+Suggested formula:
+readiness_score =
+average_accuracy * 0.45
++ recent_progress_score * 0.20
++ weak_area_adjustment * 0.20
++ practice_consistency_score * 0.15
+
+Where:
+- average_accuracy is based on submitted exams + completed practice sessions.
+- recent_progress_score is based on the trend of recent scores.
+- weak_area_adjustment decreases score when there are many weak areas.
+- practice_consistency_score increases score when the student has recent practice activity.
+
+Clamp readiness_score between 0 and 100.
+
+Labels:
+- 0–39: Needs significant practice
+- 40–69: Getting there
+- 70–84: Good progress
+- 85–100: Exam ready
+
+Do not show the formula in the UI.
+Only show:
+- percentage
+- label
+- short explanation
+
+If insufficient data:
+Return:
+{
+  "readiness_score": null,
+  "readiness_label": "Not enough data",
+  "message": "Complete more exams or practice sessions to calculate readiness."
+}
+
+--------------------------------------------------
+5. Lecturer Dashboard Analytics
+--------------------------------------------------
+
+Endpoint:
+GET /api/dashboard/lecturer/analytics
+
+Lecturer only.
+
+Return aggregated analytics only for courses taught by the authenticated lecturer.
+
+Lecturer course ownership rule:
+course_offerings.lecturer_id = current logged-in lecturer id
+
+Do not return individual student names or personal student analytics in this module.
+
+Response shape suggestion:
+{
+  "courses_count": 4,
+  "students_count": 120,
+  "average_class_score": 76,
+  "active_courses": [
+    {
+      "course_id": 1,
+      "course_code": "CS101",
+      "course_name": "Introduction to Computer Science",
+      "program_name": "Software Engineering",
+      "students_count": 45,
+      "average_score": 74,
+      "weak_topics_count": 3,
+      "problematic_questions_count": 2
+    }
+  ],
+  "most_failed_topics": [],
+  "most_failed_questions": [],
+  "problematic_questions_count": 6
+}
+
+Data rules:
+- Include only courses where course_offerings.lecturer_id = current lecturer id.
+- Students count should be based on enrollments for those courses, filtered appropriately by course/program if the project supports program_id in users/course_offerings.
+- Average class score should aggregate mock exams and practice data for enrolled students in lecturer courses.
+- Do not expose unrelated courses.
+- If no data exists, show empty states.
+
+--------------------------------------------------
+6. Lecturer Course Analytics
+--------------------------------------------------
+
+Endpoint:
+GET /api/dashboard/lecturer/course/:courseId/analytics
+
+Lecturer only.
+
+Before returning data:
+- Verify that current lecturer teaches the requested course using course_offerings.
+- If not, return forbidden.
+
+Return:
+{
+  "course_id": 1,
+  "course_name": "Introduction to Computer Science",
+  "average_score": 74,
+  "students_count": 45,
+  "topic_performance": [
+    {
+      "topic_id": 10,
+      "topic_name": "Loops",
+      "average_accuracy": 58,
+      "attempts_count": 120,
+      "weak_students_count": 12
+    }
+  ],
+  "most_failed_questions": [],
+  "problematic_questions": [],
+  "content_gaps": []
+}
+
+--------------------------------------------------
+7. Problematic Questions
+--------------------------------------------------
+
+Endpoint:
+GET /api/analytics/lecturer/problematic-questions
+
+Lecturer only.
+
+Return questions from courses taught by the lecturer that appear problematic.
+
+Definition:
+A question is problematic if:
+- attempts_count >= 5
+AND
+- incorrect_rate >= 70%
+
+Use both:
+- mock_exam_questions
+- practice_session_questions
+
+Join with:
+- questions
+- courses
+- topics
+
+Return:
+[
+  {
+    "question_id": 123,
+    "question_preview": "What is the output of...",
+    "course_id": 1,
+    "course_name": "Introduction to Computer Science",
+    "topic_name": "Loops",
+    "subtopic_name": "Nested Loops",
+    "difficulty_level": "Hard",
+    "attempts_count": 18,
+    "incorrect_rate": 78,
+    "status": "approved"
+  }
+]
+
+Do not include:
+- archived questions unless explicitly supported by lecturer review UI
+- draft/pending questions if they were not used by students
+- questions from courses the lecturer does not teach
+
+==================================================
+FRONTEND REQUIREMENTS
+==================================================
+
+Use the existing visual style:
+- Sidebar
+- Top bar
+- Compact cards
+- White dashboard panels
+- Clean typography
+- Existing button styles
+- Existing badges
+- Existing course cards style
+
+Do not redesign the whole app.
+Do not make dashboard cards long and stretched.
+Keep dashboards compact and ready for more cards later.
+
+--------------------------------------------------
+1. Student Dashboard UI
+--------------------------------------------------
+
+Update the existing Student Dashboard.
+
+Add or refine compact analytics cards:
+
+A. Average Score
+Shows:
+- average score percentage
+- small label such as “Based on recent exams and practice”
+
+B. Readiness Score
+Shows:
+- readiness percentage if available
+- readiness label
+- short message
+If insufficient data:
+- show “Not enough data”
+- button: Go to Practice
+
+C. Weak Areas
+Shows:
+- number of weak/needs practice topics
+- button: View Weak Areas
+
+D. Recommendations
+Shows:
+- active recommendation count
+- button: View Recommendations
+
+E. Practice Progress
+Shows:
+- number of completed practice sessions
+- recent practice accuracy if available
+
+Keep existing dashboard cards if they already exist.
+Do not remove important existing student dashboard sections.
+
+Add sections below cards:
+
+1. Progress Over Time
+Show either:
+- a simple chart if the project already has a charting library
+OR
+- a clean chronological list/cards if no charting library exists.
+
+Do not add a new heavy charting dependency unless the project already uses one.
+
+2. Topic Performance
+Show compact rows/cards:
+Example:
+Loops — 82% — Strong
+Pointers — 54% — Needs Practice
+Trees — 38% — Weak
+
+Each row can include:
+- topic/subtopic name
+- accuracy
+- weakness label
+- Practice Now button for weak/needs_practice items if easy to reuse Practice Mode
+
+--------------------------------------------------
+2. Weak Areas / Recommendations Integration
+--------------------------------------------------
+
+Keep the existing Weak Areas and Recommendations pages from Module 2.
+
+From dashboard cards:
+- View Weak Areas → /weak-areas
+- View Recommendations → /recommendations
+- Open Revision Plan → /recommendations?tab=revision-plan or existing revision route
+
+Do not duplicate those full pages inside the dashboard.
+
+--------------------------------------------------
+3. Lecturer Dashboard UI
+--------------------------------------------------
+
+Update the existing Lecturer Dashboard.
+
+Keep it compact.
+
+Add analytics cards:
+A. Class Average
+B. Active Courses
+C. Students Practicing / Enrolled Students
+D. Problematic Questions
+E. Most Failed Topics
+
+In the “Your Courses” or Course Performance section:
+Show compact rows/cards for the lecturer’s courses:
+- course code
+- course name
+- program name if available
+- average score
+- weak topics count
+- problematic questions count
+
+Clicking a course row/card should navigate to:
+- existing course details page with analytics section/tab
+OR
+- /lecturer/courses/:courseId/analytics if that route is easier
+
+Do not show a long list directly on the dashboard.
+Show only the most relevant 3–5 courses and provide “View all courses” if needed.
+
+--------------------------------------------------
+4. Lecturer Course Analytics UI
+--------------------------------------------------
+
+Add one of the following:
+
+Option A, preferred if course details already supports sections:
+Add an Analytics section/tab to the existing Lecturer Course Details page.
+
+Option B:
+Create a new route:
+ /lecturer/courses/:courseId/analytics
+
+Show:
+- Course average score
+- Students count
+- Topic performance
+- Most failed questions
+- Problematic questions
+- Content gaps if available
+
+Problematic question card/row:
+- question preview
+- topic/subtopic
+- difficulty
+- attempts
+- incorrect rate
+- View Question button
+
+View Question:
+- Navigate to existing question details/edit page if available.
+- Do not create a duplicate question management UI.
+
+--------------------------------------------------
+5. Problematic Questions UI
+--------------------------------------------------
+
+Either include it in Lecturer Dashboard as a compact card and in Course Analytics as detailed list,
+or create a route if existing navigation supports it.
+
+Display:
+- Question preview
+- Course
+- Topic/subtopic
+- Attempts
+- Incorrect rate
+- Difficulty
+- Status
+- View Question action
+
+Do not allow lecturer to see questions they did not create unless the existing project already allows lecturers to view all questions in courses they teach.
+Respect current Question Bank visibility rules.
+
+==================================================
+READINESS SCORE UX REQUIREMENTS
+==================================================
+
+Student-facing display:
+- Do not show formula.
+- Do not show technical terms like “weak_area_adjustment”.
+- Show a friendly explanation.
+
+Examples:
+72%
+Good progress
+“You are improving, but 3 topics still need practice.”
+
+If insufficient data:
+Not enough data
+“Complete more exams or practice sessions to calculate readiness.”
+
+==================================================
+CLASS ANALYTICS UX REQUIREMENTS
+==================================================
+
+Lecturer-facing display:
+- Use aggregated data.
+- Avoid showing personal student performance in this module.
+- Focus on:
+  - topic difficulty
+  - course performance
+  - problematic questions
+  - content improvement
+
+Examples:
+“Nested Loops has an average accuracy of 48%.”
+“6 questions may need review.”
+“CS101 class average is 74%.”
+
+==================================================
+VISIBILITY AND PERMISSIONS
+==================================================
+
+Student:
+- Can see only their own dashboard analytics.
+- Can see only their own readiness score.
+- Can see only their own progress trend.
+- Can see only their own topic performance.
+
+Lecturer:
+- Can see only aggregated analytics for courses they teach.
+- Course ownership must be verified through course_offerings.
+- Cannot see analytics for courses they do not teach.
+- Should not see individual student data in this module.
+
+Admin:
+- No new Admin analytics required.
+- Existing Admin Dashboard must continue working.
+
+Security:
+- Never trust user_id from request body.
+- Always use authenticated current user id.
+- Verify lecturer ownership for course analytics.
+- Return forbidden for unauthorized analytics access.
+
+==================================================
+EDGE CASES TO HANDLE
+==================================================
+
+1. Student has no exams or practice history
+Show empty dashboard analytics state, no crash.
+
+2. Student has practice but no exams
+Readiness and progress should still use practice data if enough exists.
+
+3. Student has exams but no practice
+Analytics should still work from mock exams.
+
+4. Student has fewer than 3 topic attempts
+Do not overstate weak/strong conclusions.
+
+5. Balanced topic performance
+Do not falsely mark weak topics.
+
+6. Missing score fields in old exam rows
+Fallback to is_correct.
+
+7. Missing response_time_seconds
+Ignore from averages.
+
+8. Multiple-choice partial credit
+Use earned_score / max_score when available.
+
+9. Lecturer has no course activity
+Show empty state:
+“No class activity data yet.”
+
+10. Lecturer tries to open analytics for a course they do not teach
+Return forbidden.
+
+11. Problematic question has low attempts
+Do not flag it until attempts_count >= 5.
+
+12. Archived questions appear in historical answers
+Handle gracefully.
+Do not crash.
+Do not recommend editing archived questions unless current UI supports it.
+
+13. Dashboard API returns partial data
+UI should not crash if one section is empty.
+
+14. Recalculation is delayed
+Dashboard should still render from current available data.
+
+==================================================
+QUALITY / CODE REQUIREMENTS
+==================================================
+
+Keep code clean and modular.
+
+Recommended backend structure:
+- dashboard routes
+- dashboard service
+- analytics service
+- readiness score helper
+- lecturer analytics helper
+- problematic questions helper
+
+Recommended frontend structure:
+- StudentDashboard analytics cards/components
+- LecturerDashboard analytics cards/components
+- ReadinessScoreCard
+- ProgressOverTime component
+- TopicPerformance component
+- LecturerCourseAnalytics component
+- ProblematicQuestionsList component
+
+Reuse existing:
+- auth middleware
+- role guard
+- student course visibility logic
+- lecturer course ownership logic
+- API client
+- dashboard card components
+- badges
+- buttons
+- loaders
+- empty states
+
+Do not hardcode demo users.
+Do not hardcode course ids.
+Do not hardcode topic ids.
+Do not hardcode program ids.
+Do not fake analytics.
+Do not silently ignore errors.
+Show clear user-facing empty states and error messages.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete when:
+
+Student:
+1. Student dashboard shows Average Score.
+2. Student dashboard shows Readiness Score.
+3. Readiness Score uses real exam/practice/performance data.
+4. If insufficient data exists, Readiness Score shows a clear empty state.
+5. Student dashboard shows Weak Areas count.
+6. Student dashboard shows Recommendations count.
+7. Student dashboard shows Practice Progress.
+8. Student can view Progress Over Time.
+9. Student can view Topic Performance analytics.
+10. Topic Performance uses performance_summary or real calculated data.
+11. Dashboard links to Weak Areas and Recommendations pages.
+12. Student cannot view another student’s analytics.
+
+Lecturer:
+13. Lecturer dashboard shows Class Average.
+14. Lecturer dashboard shows Active Courses analytics.
+15. Lecturer dashboard shows Problematic Questions count.
+16. Lecturer can view class performance for courses they teach.
+17. Lecturer cannot view analytics for courses they do not teach.
+18. Lecturer can see most failed topics.
+19. Lecturer can see problematic questions.
+20. Problematic questions are based on attempts_count and incorrect_rate.
+21. Lecturer analytics are aggregated and do not expose personal student details.
+
+Regression:
+22. Existing login still works.
+23. Existing role-based permissions still work.
+24. Existing Student Courses still work.
+25. Existing Lecturer Courses still work.
+26. Existing Question Bank still works.
+27. Existing Mock Exam flow still works.
+28. Existing Practice Mode still works.
+29. Existing Weak Areas / Recommendations still work.
+30. Strategy A is preserved.
+31. questions.course_id was not changed.
+32. topics.course_id was not changed.
+33. No unrelated UI, route, API, or DB changes were made.
+
+==================================================
+VALIDATION AFTER IMPLEMENTATION
+==================================================
+
+After implementing, run the project and validate manually:
+
+Student flow:
+1. Log in as a student.
+2. Open Student Dashboard.
+3. Confirm Average Score appears.
+4. Confirm Readiness Score appears or shows insufficient data state.
+5. Confirm Weak Areas and Recommendations counts appear.
+6. Confirm Practice Progress appears.
+7. Confirm Progress Over Time appears.
+8. Confirm Topic Performance appears.
+9. Click View Weak Areas and confirm route works.
+10. Click View Recommendations and confirm route works.
+11. Complete a practice session or mock exam.
+12. Refresh dashboard and confirm analytics update.
+
+Lecturer flow:
+1. Log in as a lecturer.
+2. Open Lecturer Dashboard.
+3. Confirm Class Average / Active Courses / Problematic Questions cards appear.
+4. Open course analytics for a course the lecturer teaches.
+5. Confirm topic performance and problematic questions appear if data exists.
+6. Try opening analytics for a course the lecturer does not teach.
+7. Confirm access is blocked.
+
+Regression:
+1. Generate a mock exam.
+2. Submit a mock exam.
+3. Review exam results.
+4. Start Practice by Topic.
+5. Submit Practice answers.
+6. Open Weak Areas.
+7. Open Recommendations.
+8. Open Question Bank as lecturer/admin.
+9. Open Courses as student/lecturer/admin.
+10. Confirm no existing behavior broke.
+
+At the end, summarize:
+- Which files were changed
+- Which routes/endpoints were added or updated
+- Which frontend pages/components were added or updated
+- Whether any DB migration was required
+- How Readiness Score is calculated
+- How Lecturer analytics are calculated
+- How Problematic Questions are detected
+- How Strategy A was preserved
+- How existing Sprint 2 and Sprint 3 functionality were protected

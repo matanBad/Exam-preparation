@@ -5,13 +5,51 @@ import {
   useListQuestions,
   useGetAdminOverview,
   useGetPracticeHistory,
-  useGetWeakAreas,
-  useGetRecommendations,
-  useGetRevisionPlan,
+  useGetStudentDashboardAnalytics,
+  useGetLecturerDashboardAnalytics,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
-import { TrendingDown, Lightbulb, ListChecks } from "lucide-react";
+import {
+  TrendingDown,
+  Lightbulb,
+  Gauge,
+  Target,
+  Dumbbell,
+  AlertTriangle,
+  Users,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+const WEAKNESS_STYLES: Record<string, string> = {
+  weak: "bg-destructive/10 text-destructive border-destructive/20",
+  needs_practice: "bg-amber-100 text-amber-700 border-amber-200",
+  strong: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+const WEAKNESS_LABEL: Record<string, string> = {
+  weak: "Weak",
+  needs_practice: "Needs practice",
+  strong: "Strong",
+};
+
+function fmtScore(n: number | null | undefined): string {
+  return n == null ? "—" : `${Math.round(n)}%`;
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 // Student dashboard uses a tighter vertical rhythm than the others so the
 // welcome title sits closer to the action row and the cards below it.
@@ -50,6 +88,9 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           Start Mock Exam
         </Link>
       </div>
+
+      <StudentAnalytics />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -146,121 +187,267 @@ function StudentDashboard({ user }: { user: EpsUser }) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card data-testid="card-unfinished-practice">
-          <CardHeader>
-            <CardTitle>Unfinished practice</CardTitle>
+      <Card data-testid="card-unfinished-practice">
+        <CardHeader>
+          <CardTitle>Unfinished practice</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activePractice.length ? (
+            <ul className="space-y-2">
+              {activePractice.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex justify-between items-center border-b pb-2 last:border-0"
+                >
+                  <span className="text-sm">
+                    {s.courseName ?? `Course ${s.courseId}`}
+                    <span className="ml-2 text-xs uppercase text-muted-foreground">
+                      {s.answeredCount}/{s.totalQuestions} answered
+                    </span>
+                  </span>
+                  <Link
+                    href={`/practice/${s.id}`}
+                    className="text-primary hover:underline text-sm"
+                    data-testid={`link-resume-practice-${s.id}`}
+                  >
+                    Resume
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">
+              No practice sessions in progress.{" "}
+              <Link href="/practice" className="text-primary hover:underline">
+                Start one
+              </Link>
+              .
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Compact stat tile used across the student analytics row. When `href` is set
+// the whole tile becomes a link.
+function MetricTile({
+  icon,
+  label,
+  value,
+  sub,
+  href,
+  testid,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub?: string;
+  href?: string;
+  testid?: string;
+}) {
+  const body = (
+    <Card
+      className={
+        href
+          ? "h-full cursor-pointer transition hover:shadow-md hover:border-primary/40"
+          : "h-full"
+      }
+      data-testid={testid}
+    >
+      <CardHeader className="pb-1">
+        <CardTitle className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+          {icon}
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold leading-tight">{value}</p>
+        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+      </CardContent>
+    </Card>
+  );
+  return href ? (
+    <Link href={href} className="block">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
+}
+
+// Student-only analytics overview: headline metrics, a progress-over-time
+// chart and a weakest-topics list. Everything is the requesting student's own
+// data; empty states show until enough activity exists.
+function StudentAnalytics() {
+  const { data, isLoading } = useGetStudentDashboardAnalytics();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          Loading your analytics…
+        </CardContent>
+      </Card>
+    );
+  }
+  if (!data) return null;
+
+  const readinessValue =
+    data.readinessScore == null ? "—" : `${Math.round(data.readinessScore)}/100`;
+  const trend = (data.progressTrend ?? []).map((p, i) => ({
+    i,
+    name: fmtDate(p.date),
+    score: Math.round(p.score),
+    label: p.label,
+  }));
+  const topTopics = (data.topicPerformance ?? []).slice(0, 5);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <MetricTile
+          icon={<Target className="w-3.5 h-3.5" />}
+          label="Average Score"
+          value={fmtScore(data.averageScore)}
+          sub="Exams & practice"
+          testid="metric-average-score"
+        />
+        <MetricTile
+          icon={<Gauge className="w-3.5 h-3.5" />}
+          label="Readiness"
+          value={readinessValue}
+          sub={data.readinessLabel}
+          testid="metric-readiness"
+        />
+        <MetricTile
+          icon={<TrendingDown className="w-3.5 h-3.5" />}
+          label="Weak Areas"
+          value={String(data.weakAreasCount)}
+          sub="View details →"
+          href="/weak-areas"
+          testid="metric-weak-areas"
+        />
+        <MetricTile
+          icon={<Lightbulb className="w-3.5 h-3.5" />}
+          label="Recommendations"
+          value={String(data.activeRecommendationsCount)}
+          sub="View details →"
+          href="/recommendations"
+          testid="metric-recommendations"
+        />
+        <MetricTile
+          icon={<Dumbbell className="w-3.5 h-3.5" />}
+          label="Practice"
+          value={String(data.practiceSessionsCount)}
+          sub={
+            data.recentPracticeAccuracy == null
+              ? "No sessions yet"
+              : `Last: ${Math.round(data.recentPracticeAccuracy)}%`
+          }
+          href="/practice"
+          testid="metric-practice"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card data-testid="card-progress-over-time">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Progress over time</CardTitle>
           </CardHeader>
           <CardContent>
-            {activePractice.length ? (
-              <ul className="space-y-2">
-                {activePractice.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex justify-between items-center border-b pb-2 last:border-0"
+            {trend.length >= 2 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={trend}
+                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                   >
-                    <span className="text-sm">
-                      {s.courseName ?? `Course ${s.courseId}`}
-                      <span className="ml-2 text-xs uppercase text-muted-foreground">
-                        {s.answeredCount}/{s.totalQuestions} answered
-                      </span>
-                    </span>
-                    <Link
-                      href={`/practice/${s.id}`}
-                      className="text-primary hover:underline text-sm"
-                      data-testid={`link-resume-practice-${s.id}`}
-                    >
-                      Resume
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" fontSize={11} tickLine={false} />
+                    <YAxis domain={[0, 100]} fontSize={11} tickLine={false} />
+                    <Tooltip
+                      formatter={(v: number) => [`${v}%`, "Score"]}
+                      labelFormatter={(_, p) =>
+                        p?.[0]?.payload?.label ?? ""
+                      }
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <p className="text-muted-foreground">
-                No practice sessions in progress.{" "}
-                <Link href="/practice" className="text-primary hover:underline">
-                  Start one
-                </Link>
-                .
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Complete at least two exams or practice sessions to see your
+                progress trend.
               </p>
             )}
           </CardContent>
         </Card>
 
-        <AnalyticsSummary />
+        <Card data-testid="card-topic-performance">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Topic performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topTopics.length ? (
+              <ul className="space-y-2">
+                {topTopics.map((t) => {
+                  const key = `${t.courseId}-${t.topicId}-${t.subtopicId}`;
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                      data-testid={`topic-perf-${key}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {t.subtopicName ?? t.topicName ?? "Topic"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.courseName ?? `Course ${t.courseId}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-medium">
+                          {Math.round(t.accuracyRate)}%
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full border ${
+                            WEAKNESS_STYLES[t.weaknessLevel] ??
+                            WEAKNESS_STYLES.strong
+                          }`}
+                        >
+                          {WEAKNESS_LABEL[t.weaknessLevel] ?? t.weaknessLevel}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Topic performance appears once you have enough graded answers.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-}
-
-function AnalyticsSummary() {
-  const { data: weakAreas } = useGetWeakAreas();
-  const { data: recommendations } = useGetRecommendations();
-  const { data: revisionPlan } = useGetRevisionPlan();
-
-  const weakCount = weakAreas?.length ?? 0;
-  const recCount = recommendations?.length ?? 0;
-  const planCount = revisionPlan?.hasEnoughData ? revisionPlan.items.length : 0;
-  const topWeak = weakAreas?.[0];
-
-  return (
-    <Link href="/weak-areas" className="block">
-      <Card
-        data-testid="card-weak-areas"
-        className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40"
-      >
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingDown className="w-4 h-4 text-primary" />
-            Weak areas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {weakCount > 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm">
-                <span className="font-semibold">{weakCount}</span> area
-                {weakCount === 1 ? "" : "s"} to improve
-                {topWeak && (
-                  <>
-                    {" "}
-                    — focus on{" "}
-                    <span className="font-medium">
-                      {topWeak.subtopicName ?? topWeak.topicName}
-                    </span>{" "}
-                    ({Math.round(topWeak.accuracyRate)}% accuracy)
-                  </>
-                )}
-                .
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                  <Lightbulb className="w-3 h-3" />
-                  {recCount} recommendation{recCount === 1 ? "" : "s"}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                  <ListChecks className="w-3 h-3" />
-                  {planCount} revision step{planCount === 1 ? "" : "s"}
-                </span>
-              </div>
-              <p className="text-xs font-medium text-primary">
-                View weak areas →
-              </p>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              Available after more exam and practice data is collected.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
   );
 }
 
 function LecturerDashboard({ user }: { user: EpsUser }) {
   const { data: courses } = useListCourses();
   const { data: questions } = useListQuestions();
+  const { data: analytics, isLoading } = useGetLecturerDashboardAnalytics();
 
   // Visible courses are already restricted server-side to this lecturer's
   // course_offerings, so intersecting question.courseId with this set
@@ -273,80 +460,165 @@ function LecturerDashboard({ user }: { user: EpsUser }) {
       q.status === "draft",
   ).length;
 
-  const visibleCourses = (courses ?? []).slice(0, 3);
-  const hasMoreCourses = (courses ?? []).length > visibleCourses.length;
+  const activeCourses = analytics?.activeCourses ?? [];
+  const visibleCourses = activeCourses.slice(0, 5);
+  const hasMoreCourses = activeCourses.length > visibleCourses.length;
+  const topFailedTopics = (analytics?.mostFailedTopics ?? []).slice(0, 5);
 
   return (
     <div className="space-y-4 mt-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MetricTile
+          icon={<Target className="w-3.5 h-3.5" />}
+          label="Class Average"
+          value={fmtScore(analytics?.averageClassScore)}
+          sub="Across your courses"
+          testid="metric-class-average"
+        />
+        <MetricTile
+          icon={<Users className="w-3.5 h-3.5" />}
+          label="Active Courses"
+          value={String(analytics?.coursesCount ?? 0)}
+          sub={`${analytics?.studentsCount ?? 0} students`}
           href="/courses"
-          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-          data-testid="card-lecturer-your-courses"
-        >
-          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Your Courses</CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {(courses ?? []).length} total
-              </span>
-            </CardHeader>
-            <CardContent>
-              {visibleCourses.length ? (
-                <ul className="space-y-1 text-sm">
-                  {visibleCourses.map((c) => (
-                    <li key={c.id} className="truncate">
-                      {c.courseCode} - {c.courseName}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No courses found.
-                </p>
-              )}
-              {hasMoreCourses && (
-                <p className="mt-3 text-xs font-medium text-primary">
-                  View all courses →
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link
-          href="/lecturer/questions"
-          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-          data-testid="card-lecturer-question-bank"
-        >
-          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Question Bank</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Total Questions:{" "}
-                <span className="font-semibold">{questions?.length ?? 0}</span>
-              </p>
-              <p
-                className="mt-2 text-sm"
-                data-testid="text-waiting-approval"
-              >
-                Waiting for approval:{" "}
-                <span
-                  className={
-                    waitingApproval > 0
-                      ? "font-semibold text-destructive"
-                      : "font-semibold"
-                  }
-                >
-                  {waitingApproval}
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+          testid="metric-active-courses"
+        />
+        <MetricTile
+          icon={<AlertTriangle className="w-3.5 h-3.5" />}
+          label="Problematic Questions"
+          value={String(analytics?.problematicQuestionsCount ?? 0)}
+          sub="High failure rate"
+          testid="metric-problematic-questions"
+        />
+        <MetricTile
+          icon={<TrendingDown className="w-3.5 h-3.5" />}
+          label="Most Failed Topics"
+          value={String((analytics?.mostFailedTopics ?? []).length)}
+          sub="Across your classes"
+          testid="metric-failed-topics"
+        />
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card data-testid="card-lecturer-courses">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Your courses</CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {activeCourses.length} total
+            </span>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : visibleCourses.length ? (
+              <ul className="space-y-2">
+                {visibleCourses.map((c) => (
+                  <li key={c.courseId} className="border-b pb-2 last:border-0">
+                    <Link
+                      href={`/lecturer/courses/${c.courseId}/analytics`}
+                      className="flex items-center justify-between gap-3 group"
+                      data-testid={`link-course-analytics-${c.courseId}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">
+                          {c.courseCode ? `${c.courseCode} - ` : ""}
+                          {c.courseName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.studentsCount} students · {c.weakTopicsCount} weak
+                          topic{c.weakTopicsCount === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <span className="text-sm font-medium shrink-0">
+                        {fmtScore(c.averageScore)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No courses found.
+              </p>
+            )}
+            {hasMoreCourses && (
+              <Link
+                href="/courses"
+                className="mt-3 inline-block text-xs font-medium text-primary"
+              >
+                View all courses →
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-lecturer-failed-topics">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Most failed topics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topFailedTopics.length ? (
+              <ul className="space-y-2">
+                {topFailedTopics.map((t) => (
+                  <li
+                    key={`${t.courseId}-${t.topicId}`}
+                    className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                    data-testid={`failed-topic-${t.courseId}-${t.topicId}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {t.topicName ?? `Topic ${t.topicId}`}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {t.courseName ?? `Course ${t.courseId}`} ·{" "}
+                        {t.attemptsCount} attempts
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium shrink-0">
+                      {Math.round(t.averageAccuracy)}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No problem topics yet — appears once classes have enough graded
+                answers.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Link
+        href="/lecturer/questions"
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        data-testid="card-lecturer-question-bank"
+      >
+        <Card className="cursor-pointer transition hover:shadow-md hover:border-primary/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Question Bank</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Total Questions:{" "}
+              <span className="font-semibold">{questions?.length ?? 0}</span>
+            </p>
+            <p className="mt-2 text-sm" data-testid="text-waiting-approval">
+              Waiting for approval:{" "}
+              <span
+                className={
+                  waitingApproval > 0
+                    ? "font-semibold text-destructive"
+                    : "font-semibold"
+                }
+              >
+                {waitingApproval}
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }

@@ -898,6 +898,189 @@ export interface RevisionPlan {
   items: RevisionPlanItem[];
 }
 
+export type ActivityType = (typeof ActivityType)[keyof typeof ActivityType];
+
+export const ActivityType = {
+  mock_exam: "mock_exam",
+  practice: "practice",
+} as const;
+
+export interface TopicPerformance {
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  topicId: number;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  /** 0-100. */
+  accuracyRate: number;
+  weaknessLevel: WeaknessLevel;
+  /** 0-100, higher = weaker. */
+  weaknessScore: number;
+  attemptsCount: number;
+  priority: RecommendationPriority;
+}
+
+export interface RecentScore {
+  type: ActivityType;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** 0-100. */
+  score: number;
+  /** @nullable */
+  date?: string | null;
+}
+
+export interface ProgressPoint {
+  /** @nullable */
+  date?: string | null;
+  type: ActivityType;
+  label: string;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** 0-100. */
+  score: number;
+  /** @nullable */
+  earnedScore?: number | null;
+  /** @nullable */
+  maxScore?: number | null;
+}
+
+export interface ReadinessScore {
+  /**
+   * 0-100, or null when there is not enough data.
+   * @nullable
+   */
+  readinessScore?: number | null;
+  readinessLabel: string;
+  /**
+   * Short, student-friendly explanation.
+   * @nullable
+   */
+  message?: string | null;
+}
+
+export interface StudentDashboardAnalytics {
+  /**
+   * 0-100 across submitted exams and completed practice; null when none.
+   * @nullable
+   */
+  averageScore?: number | null;
+  recentScores: RecentScore[];
+  topicPerformance: TopicPerformance[];
+  weakAreasCount: number;
+  strongAreasCount: number;
+  activeRecommendationsCount: number;
+  /** @nullable */
+  readinessScore?: number | null;
+  readinessLabel: string;
+  /** @nullable */
+  readinessMessage?: string | null;
+  /** Completed practice sessions. */
+  practiceSessionsCount: number;
+  /**
+   * Accuracy of the most recent completed practice session, 0-100.
+   * @nullable
+   */
+  recentPracticeAccuracy?: number | null;
+  progressTrend: ProgressPoint[];
+}
+
+export interface ProblematicQuestion {
+  questionId: number;
+  questionPreview: string;
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  /** @nullable */
+  subtopicId?: number | null;
+  /** @nullable */
+  subtopicName?: string | null;
+  difficultyLevel?: Difficulty;
+  attemptsCount: number;
+  /** 0-100. */
+  incorrectRate: number;
+  status: QuestionStatus;
+}
+
+export interface FailedTopic {
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  topicId: number;
+  /** @nullable */
+  topicName?: string | null;
+  /** 0-100 across enrolled students. */
+  averageAccuracy: number;
+  attemptsCount: number;
+}
+
+export interface LecturerCourseSummary {
+  courseId: number;
+  /** @nullable */
+  courseCode?: string | null;
+  courseName: string;
+  /** @nullable */
+  programName?: string | null;
+  studentsCount: number;
+  /** @nullable */
+  averageScore?: number | null;
+  weakTopicsCount: number;
+  problematicQuestionsCount: number;
+}
+
+export interface LecturerDashboardAnalytics {
+  coursesCount: number;
+  studentsCount: number;
+  /** @nullable */
+  averageClassScore?: number | null;
+  problematicQuestionsCount: number;
+  activeCourses: LecturerCourseSummary[];
+  mostFailedTopics: FailedTopic[];
+  mostFailedQuestions: ProblematicQuestion[];
+}
+
+export interface ClassTopicPerformance {
+  topicId: number;
+  /** @nullable */
+  topicName?: string | null;
+  /** 0-100 across enrolled students. */
+  averageAccuracy: number;
+  attemptsCount: number;
+  /** Aggregate count of enrolled students below the accuracy threshold on this topic. */
+  weakStudentsCount: number;
+}
+
+export interface ContentGap {
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  description: string;
+}
+
+export interface LecturerCourseAnalytics {
+  courseId: number;
+  courseName: string;
+  /** @nullable */
+  averageScore?: number | null;
+  studentsCount: number;
+  topicPerformance: ClassTopicPerformance[];
+  mostFailedQuestions: ProblematicQuestion[];
+  problematicQuestions: ProblematicQuestion[];
+  contentGaps: ContentGap[];
+}
+
 /**
  * Bad request
  */
@@ -932,6 +1115,13 @@ export type SearchQuestionsParams = {
   topicId?: number;
   difficulty?: Difficulty;
   status?: QuestionStatus;
+};
+
+export type GetLecturerProblematicQuestionsParams = {
+  /**
+   * Optional filter to a single course the lecturer teaches.
+   */
+  courseId?: number;
 };
 
 export type ListUsersParams = {

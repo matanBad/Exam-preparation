@@ -1491,6 +1491,259 @@ export const GetRevisionPlanResponse = zod.object({
   ),
 });
 
+/**
+ * Compact analytics summary for the authenticated student's dashboard.
+ */
+export const GetStudentDashboardAnalyticsResponse = zod.object({
+  averageScore: zod
+    .number()
+    .nullish()
+    .describe(
+      "0-100 across submitted exams and completed practice; null when none.",
+    ),
+  recentScores: zod.array(
+    zod.object({
+      type: zod.enum(["mock_exam", "practice"]),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      score: zod.number().describe("0-100."),
+      date: zod.coerce.date().nullish(),
+    }),
+  ),
+  topicPerformance: zod.array(
+    zod.object({
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      accuracyRate: zod.number().describe("0-100."),
+      weaknessLevel: zod.enum(["strong", "needs_practice", "weak"]),
+      weaknessScore: zod.number().describe("0-100, higher = weaker."),
+      attemptsCount: zod.number(),
+      priority: zod.enum(["high", "medium", "low"]),
+    }),
+  ),
+  weakAreasCount: zod.number(),
+  strongAreasCount: zod.number(),
+  activeRecommendationsCount: zod.number(),
+  readinessScore: zod.number().nullish(),
+  readinessLabel: zod.string(),
+  readinessMessage: zod.string().nullish(),
+  practiceSessionsCount: zod.number().describe("Completed practice sessions."),
+  recentPracticeAccuracy: zod
+    .number()
+    .nullish()
+    .describe("Accuracy of the most recent completed practice session, 0-100."),
+  progressTrend: zod.array(
+    zod.object({
+      date: zod.coerce.date().nullish(),
+      type: zod.enum(["mock_exam", "practice"]),
+      label: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      score: zod.number().describe("0-100."),
+      earnedScore: zod.number().nullish(),
+      maxScore: zod.number().nullish(),
+    }),
+  ),
+});
+
+/**
+ * The authenticated student's per-topic/subtopic performance, weakest first.
+ */
+export const GetStudentTopicPerformanceResponseItem = zod.object({
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  accuracyRate: zod.number().describe("0-100."),
+  weaknessLevel: zod.enum(["strong", "needs_practice", "weak"]),
+  weaknessScore: zod.number().describe("0-100, higher = weaker."),
+  attemptsCount: zod.number(),
+  priority: zod.enum(["high", "medium", "low"]),
+});
+export const GetStudentTopicPerformanceResponse = zod.array(
+  GetStudentTopicPerformanceResponseItem,
+);
+
+/**
+ * Chronological list of the authenticated student's submitted exams and completed practice sessions.
+ */
+export const GetStudentProgressOverTimeResponseItem = zod.object({
+  date: zod.coerce.date().nullish(),
+  type: zod.enum(["mock_exam", "practice"]),
+  label: zod.string(),
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  score: zod.number().describe("0-100."),
+  earnedScore: zod.number().nullish(),
+  maxScore: zod.number().nullish(),
+});
+export const GetStudentProgressOverTimeResponse = zod.array(
+  GetStudentProgressOverTimeResponseItem,
+);
+
+/**
+ * The authenticated student's exam-readiness score, label and short explanation.
+ */
+export const GetStudentReadinessScoreResponse = zod.object({
+  readinessScore: zod
+    .number()
+    .nullish()
+    .describe("0-100, or null when there is not enough data."),
+  readinessLabel: zod.string(),
+  message: zod
+    .string()
+    .nullish()
+    .describe("Short, student-friendly explanation."),
+});
+
+/**
+ * Aggregated analytics for the courses the authenticated lecturer teaches. No individual student data.
+ */
+export const GetLecturerDashboardAnalyticsResponse = zod.object({
+  coursesCount: zod.number(),
+  studentsCount: zod.number(),
+  averageClassScore: zod.number().nullish(),
+  problematicQuestionsCount: zod.number(),
+  activeCourses: zod.array(
+    zod.object({
+      courseId: zod.number(),
+      courseCode: zod.string().nullish(),
+      courseName: zod.string(),
+      programName: zod.string().nullish(),
+      studentsCount: zod.number(),
+      averageScore: zod.number().nullish(),
+      weakTopicsCount: zod.number(),
+      problematicQuestionsCount: zod.number(),
+    }),
+  ),
+  mostFailedTopics: zod.array(
+    zod.object({
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number(),
+      topicName: zod.string().nullish(),
+      averageAccuracy: zod.number().describe("0-100 across enrolled students."),
+      attemptsCount: zod.number(),
+    }),
+  ),
+  mostFailedQuestions: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      questionPreview: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
+      attemptsCount: zod.number(),
+      incorrectRate: zod.number().describe("0-100."),
+      status: zod.enum(["draft", "pending", "approved", "archived"]),
+    }),
+  ),
+});
+
+/**
+ * Aggregated analytics for a single course the lecturer teaches. 403 if the lecturer does not teach it.
+ */
+export const GetLecturerCourseAnalyticsParams = zod.object({
+  courseId: zod.coerce.number(),
+});
+
+export const GetLecturerCourseAnalyticsResponse = zod.object({
+  courseId: zod.number(),
+  courseName: zod.string(),
+  averageScore: zod.number().nullish(),
+  studentsCount: zod.number(),
+  topicPerformance: zod.array(
+    zod.object({
+      topicId: zod.number(),
+      topicName: zod.string().nullish(),
+      averageAccuracy: zod.number().describe("0-100 across enrolled students."),
+      attemptsCount: zod.number(),
+      weakStudentsCount: zod
+        .number()
+        .describe(
+          "Aggregate count of enrolled students below the accuracy threshold on this topic.",
+        ),
+    }),
+  ),
+  mostFailedQuestions: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      questionPreview: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
+      attemptsCount: zod.number(),
+      incorrectRate: zod.number().describe("0-100."),
+      status: zod.enum(["draft", "pending", "approved", "archived"]),
+    }),
+  ),
+  problematicQuestions: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      questionPreview: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
+      attemptsCount: zod.number(),
+      incorrectRate: zod.number().describe("0-100."),
+      status: zod.enum(["draft", "pending", "approved", "archived"]),
+    }),
+  ),
+  contentGaps: zod.array(
+    zod.object({
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      description: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * Questions in the lecturer's courses with high failure rates (attempts >= 5 and incorrect rate >= 70%).
+ */
+export const GetLecturerProblematicQuestionsQueryParams = zod.object({
+  courseId: zod.coerce
+    .number()
+    .optional()
+    .describe("Optional filter to a single course the lecturer teaches."),
+});
+
+export const GetLecturerProblematicQuestionsResponseItem = zod.object({
+  questionId: zod.number(),
+  questionPreview: zod.string(),
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  topicId: zod.number().nullish(),
+  topicName: zod.string().nullish(),
+  subtopicId: zod.number().nullish(),
+  subtopicName: zod.string().nullish(),
+  difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
+  attemptsCount: zod.number(),
+  incorrectRate: zod.number().describe("0-100."),
+  status: zod.enum(["draft", "pending", "approved", "archived"]),
+});
+export const GetLecturerProblematicQuestionsResponse = zod.array(
+  GetLecturerProblematicQuestionsResponseItem,
+);
+
 export const ListUsersQueryParams = zod.object({
   role: zod.enum(["student", "lecturer", "admin"]).optional(),
 });

@@ -38,7 +38,10 @@ import type {
   ForbiddenResponse,
   GenerateExamRequest,
   GeneratePracticeRequest,
+  GetLecturerProblematicQuestionsParams,
   HealthStatus,
+  LecturerCourseAnalytics,
+  LecturerDashboardAnalytics,
   ListQuestionsParams,
   ListUsersParams,
   LoginRequest,
@@ -50,17 +53,22 @@ import type {
   PracticeHistory,
   PracticeSessionWithQuestions,
   PracticeSummary,
+  ProblematicQuestion,
   Program,
+  ProgressPoint,
   Question,
+  ReadinessScore,
   RecalculateResult,
   Recommendation,
   RegisterRequest,
   RegisterResponse,
   RevisionPlan,
   SearchQuestionsParams,
+  StudentDashboardAnalytics,
   SubmitExamRequest,
   SubmitPracticeAnswerRequest,
   Topic,
+  TopicPerformance,
   UnauthorizedResponse,
   UpdateCourseRequest,
   UpdateProfileImageRequest,
@@ -3908,6 +3916,576 @@ export function useGetRevisionPlan<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetRevisionPlanQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Compact analytics summary for the authenticated student's dashboard.
+ */
+export const getGetStudentDashboardAnalyticsUrl = () => {
+  return `/api/dashboard/student/analytics`;
+};
+
+export const getStudentDashboardAnalytics = async (
+  options?: RequestInit,
+): Promise<StudentDashboardAnalytics> => {
+  return customFetch<StudentDashboardAnalytics>(
+    getGetStudentDashboardAnalyticsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStudentDashboardAnalyticsQueryKey = () => {
+  return [`/api/dashboard/student/analytics`] as const;
+};
+
+export const getGetStudentDashboardAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudentDashboardAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentDashboardAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudentDashboardAnalyticsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudentDashboardAnalytics>>
+  > = ({ signal }) =>
+    getStudentDashboardAnalytics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentDashboardAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudentDashboardAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudentDashboardAnalytics>>
+>;
+export type GetStudentDashboardAnalyticsQueryError =
+  ErrorType<ForbiddenResponse>;
+
+export function useGetStudentDashboardAnalytics<
+  TData = Awaited<ReturnType<typeof getStudentDashboardAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentDashboardAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudentDashboardAnalyticsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * The authenticated student's per-topic/subtopic performance, weakest first.
+ */
+export const getGetStudentTopicPerformanceUrl = () => {
+  return `/api/analytics/student/topic-performance`;
+};
+
+export const getStudentTopicPerformance = async (
+  options?: RequestInit,
+): Promise<TopicPerformance[]> => {
+  return customFetch<TopicPerformance[]>(getGetStudentTopicPerformanceUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudentTopicPerformanceQueryKey = () => {
+  return [`/api/analytics/student/topic-performance`] as const;
+};
+
+export const getGetStudentTopicPerformanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudentTopicPerformance>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentTopicPerformance>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudentTopicPerformanceQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudentTopicPerformance>>
+  > = ({ signal }) => getStudentTopicPerformance({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentTopicPerformance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudentTopicPerformanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudentTopicPerformance>>
+>;
+export type GetStudentTopicPerformanceQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetStudentTopicPerformance<
+  TData = Awaited<ReturnType<typeof getStudentTopicPerformance>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentTopicPerformance>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudentTopicPerformanceQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Chronological list of the authenticated student's submitted exams and completed practice sessions.
+ */
+export const getGetStudentProgressOverTimeUrl = () => {
+  return `/api/analytics/student/progress-over-time`;
+};
+
+export const getStudentProgressOverTime = async (
+  options?: RequestInit,
+): Promise<ProgressPoint[]> => {
+  return customFetch<ProgressPoint[]>(getGetStudentProgressOverTimeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudentProgressOverTimeQueryKey = () => {
+  return [`/api/analytics/student/progress-over-time`] as const;
+};
+
+export const getGetStudentProgressOverTimeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudentProgressOverTime>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentProgressOverTime>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudentProgressOverTimeQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudentProgressOverTime>>
+  > = ({ signal }) => getStudentProgressOverTime({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentProgressOverTime>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudentProgressOverTimeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudentProgressOverTime>>
+>;
+export type GetStudentProgressOverTimeQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetStudentProgressOverTime<
+  TData = Awaited<ReturnType<typeof getStudentProgressOverTime>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentProgressOverTime>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudentProgressOverTimeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * The authenticated student's exam-readiness score, label and short explanation.
+ */
+export const getGetStudentReadinessScoreUrl = () => {
+  return `/api/analytics/student/readiness-score`;
+};
+
+export const getStudentReadinessScore = async (
+  options?: RequestInit,
+): Promise<ReadinessScore> => {
+  return customFetch<ReadinessScore>(getGetStudentReadinessScoreUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudentReadinessScoreQueryKey = () => {
+  return [`/api/analytics/student/readiness-score`] as const;
+};
+
+export const getGetStudentReadinessScoreQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudentReadinessScore>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentReadinessScore>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudentReadinessScoreQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudentReadinessScore>>
+  > = ({ signal }) => getStudentReadinessScore({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentReadinessScore>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudentReadinessScoreQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudentReadinessScore>>
+>;
+export type GetStudentReadinessScoreQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetStudentReadinessScore<
+  TData = Awaited<ReturnType<typeof getStudentReadinessScore>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentReadinessScore>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudentReadinessScoreQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Aggregated analytics for the courses the authenticated lecturer teaches. No individual student data.
+ */
+export const getGetLecturerDashboardAnalyticsUrl = () => {
+  return `/api/dashboard/lecturer/analytics`;
+};
+
+export const getLecturerDashboardAnalytics = async (
+  options?: RequestInit,
+): Promise<LecturerDashboardAnalytics> => {
+  return customFetch<LecturerDashboardAnalytics>(
+    getGetLecturerDashboardAnalyticsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLecturerDashboardAnalyticsQueryKey = () => {
+  return [`/api/dashboard/lecturer/analytics`] as const;
+};
+
+export const getGetLecturerDashboardAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLecturerDashboardAnalyticsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>
+  > = ({ signal }) =>
+    getLecturerDashboardAnalytics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLecturerDashboardAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>
+>;
+export type GetLecturerDashboardAnalyticsQueryError =
+  ErrorType<ForbiddenResponse>;
+
+export function useGetLecturerDashboardAnalytics<
+  TData = Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerDashboardAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLecturerDashboardAnalyticsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Aggregated analytics for a single course the lecturer teaches. 403 if the lecturer does not teach it.
+ */
+export const getGetLecturerCourseAnalyticsUrl = (courseId: number) => {
+  return `/api/dashboard/lecturer/course/${courseId}/analytics`;
+};
+
+export const getLecturerCourseAnalytics = async (
+  courseId: number,
+  options?: RequestInit,
+): Promise<LecturerCourseAnalytics> => {
+  return customFetch<LecturerCourseAnalytics>(
+    getGetLecturerCourseAnalyticsUrl(courseId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLecturerCourseAnalyticsQueryKey = (courseId: number) => {
+  return [`/api/dashboard/lecturer/course/${courseId}/analytics`] as const;
+};
+
+export const getGetLecturerCourseAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLecturerCourseAnalytics>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  courseId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerCourseAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLecturerCourseAnalyticsQueryKey(courseId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLecturerCourseAnalytics>>
+  > = ({ signal }) =>
+    getLecturerCourseAnalytics(courseId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!courseId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerCourseAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLecturerCourseAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLecturerCourseAnalytics>>
+>;
+export type GetLecturerCourseAnalyticsQueryError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export function useGetLecturerCourseAnalytics<
+  TData = Awaited<ReturnType<typeof getLecturerCourseAnalytics>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  courseId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerCourseAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLecturerCourseAnalyticsQueryOptions(
+    courseId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Questions in the lecturer's courses with high failure rates (attempts >= 5 and incorrect rate >= 70%).
+ */
+export const getGetLecturerProblematicQuestionsUrl = (
+  params?: GetLecturerProblematicQuestionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/analytics/lecturer/problematic-questions?${stringifiedParams}`
+    : `/api/analytics/lecturer/problematic-questions`;
+};
+
+export const getLecturerProblematicQuestions = async (
+  params?: GetLecturerProblematicQuestionsParams,
+  options?: RequestInit,
+): Promise<ProblematicQuestion[]> => {
+  return customFetch<ProblematicQuestion[]>(
+    getGetLecturerProblematicQuestionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLecturerProblematicQuestionsQueryKey = (
+  params?: GetLecturerProblematicQuestionsParams,
+) => {
+  return [
+    `/api/analytics/lecturer/problematic-questions`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLecturerProblematicQuestionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLecturerProblematicQuestions>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  params?: GetLecturerProblematicQuestionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerProblematicQuestions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetLecturerProblematicQuestionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLecturerProblematicQuestions>>
+  > = ({ signal }) =>
+    getLecturerProblematicQuestions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerProblematicQuestions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLecturerProblematicQuestionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLecturerProblematicQuestions>>
+>;
+export type GetLecturerProblematicQuestionsQueryError =
+  ErrorType<ForbiddenResponse>;
+
+export function useGetLecturerProblematicQuestions<
+  TData = Awaited<ReturnType<typeof getLecturerProblematicQuestions>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  params?: GetLecturerProblematicQuestionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerProblematicQuestions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLecturerProblematicQuestionsQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

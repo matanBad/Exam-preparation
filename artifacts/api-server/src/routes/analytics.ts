@@ -9,6 +9,11 @@ import {
 import {
   RecalculateAnalyticsResponse,
   GetWeakAreasResponse,
+  GetStudentTopicPerformanceResponse,
+  GetStudentProgressOverTimeResponse,
+  GetStudentReadinessScoreResponse,
+  GetLecturerProblematicQuestionsResponse,
+  GetLecturerProblematicQuestionsQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import {
@@ -18,6 +23,16 @@ import {
   type WeaknessLevel,
 } from "../lib/analytics";
 import { getAccessibleCourseIds } from "../lib/student-access";
+import {
+  getStudentTopicPerformance,
+  getStudentActivities,
+  getNameMaps,
+} from "../lib/student-analytics";
+import { computeReadiness } from "../lib/readiness";
+import {
+  getLecturerCourseIds,
+  getLecturerProblematicQuestions,
+} from "../lib/lecturer-analytics";
 
 const router: IRouter = Router();
 
@@ -110,6 +125,71 @@ router.get(
         })),
       ),
     );
+  },
+);
+
+router.get(
+  "/analytics/student/topic-performance",
+  requireAuth,
+  requireRole("student"),
+  async (req, res): Promise<void> => {
+    const items = await getStudentTopicPerformance(req.auth!.userId);
+    res.json(GetStudentTopicPerformanceResponse.parse(items));
+  },
+);
+
+router.get(
+  "/analytics/student/progress-over-time",
+  requireAuth,
+  requireRole("student"),
+  async (req, res): Promise<void> => {
+    const activities = await getStudentActivities(req.auth!.userId);
+    const courseIds = [...new Set(activities.map((a) => a.courseId))];
+    const { courseNames } = await getNameMaps(courseIds, []);
+    const points = activities.map((a) => ({
+      date: a.date ? a.date.toISOString() : null,
+      type: a.type,
+      label: a.type === "mock_exam" ? "Mock Exam" : "Practice",
+      courseId: a.courseId,
+      courseName: courseNames.get(a.courseId) ?? null,
+      score: a.score,
+      earnedScore: a.earnedScore,
+      maxScore: a.maxScore,
+    }));
+    res.json(GetStudentProgressOverTimeResponse.parse(points));
+  },
+);
+
+router.get(
+  "/analytics/student/readiness-score",
+  requireAuth,
+  requireRole("student"),
+  async (req, res): Promise<void> => {
+    const result = await computeReadiness(req.auth!.userId);
+    res.json(GetStudentReadinessScoreResponse.parse(result));
+  },
+);
+
+router.get(
+  "/analytics/lecturer/problematic-questions",
+  requireAuth,
+  requireRole("lecturer"),
+  async (req, res): Promise<void> => {
+    const lecturerId = req.auth!.userId;
+    const { courseId } = GetLecturerProblematicQuestionsQueryParams.parse(
+      req.query,
+    );
+    if (courseId != null) {
+      const taught = await getLecturerCourseIds(lecturerId);
+      if (!taught.has(courseId)) {
+        res
+          .status(403)
+          .json({ error: "You do not teach this course." });
+        return;
+      }
+    }
+    const items = await getLecturerProblematicQuestions(lecturerId, courseId);
+    res.json(GetLecturerProblematicQuestionsResponse.parse(items));
   },
 );
 

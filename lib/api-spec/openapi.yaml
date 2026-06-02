@@ -923,6 +923,128 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /dashboard/student/analytics:
+    get:
+      operationId: getStudentDashboardAnalytics
+      tags: [analytics]
+      description: Compact analytics summary for the authenticated student's dashboard.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDashboardAnalytics"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /analytics/student/topic-performance:
+    get:
+      operationId: getStudentTopicPerformance
+      tags: [analytics]
+      description: The authenticated student's per-topic/subtopic performance, weakest first.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopicPerformance"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /analytics/student/progress-over-time:
+    get:
+      operationId: getStudentProgressOverTime
+      tags: [analytics]
+      description: Chronological list of the authenticated student's submitted exams and completed practice sessions.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressPoint"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /analytics/student/readiness-score:
+    get:
+      operationId: getStudentReadinessScore
+      tags: [analytics]
+      description: The authenticated student's exam-readiness score, label and short explanation.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessScore"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /dashboard/lecturer/analytics:
+    get:
+      operationId: getLecturerDashboardAnalytics
+      tags: [analytics]
+      description: Aggregated analytics for the courses the authenticated lecturer teaches. No individual student data.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LecturerDashboardAnalytics"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /dashboard/lecturer/course/{courseId}/analytics:
+    get:
+      operationId: getLecturerCourseAnalytics
+      tags: [analytics]
+      description: Aggregated analytics for a single course the lecturer teaches. 403 if the lecturer does not teach it.
+      parameters:
+        - $ref: "#/components/parameters/CourseIdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LecturerCourseAnalytics"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /analytics/lecturer/problematic-questions:
+    get:
+      operationId: getLecturerProblematicQuestions
+      tags: [analytics]
+      description: Questions in the lecturer's courses with high failure rates (attempts >= 5 and incorrect rate >= 70%).
+      parameters:
+        - in: query
+          name: courseId
+          required: false
+          schema:
+            type: integer
+          description: Optional filter to a single course the lecturer teaches.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProblematicQuestion"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/users:
     get:
       operationId: listUsers
@@ -1108,6 +1230,12 @@ components:
     SessionIdPath:
       in: path
       name: sessionId
+      required: true
+      schema:
+        type: integer
+    CourseIdPath:
+      in: path
+      name: courseId
       required: true
       schema:
         type: integer
@@ -1984,3 +2112,178 @@ components:
           type: array
           items: { $ref: "#/components/schemas/RevisionPlanItem" }
       required: [hasEnoughData, items]
+
+    # --- Sprint 3 Module 3: Dashboards & Analytics ---
+    ActivityType:
+      type: string
+      enum: [mock_exam, practice]
+
+    TopicPerformance:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: integer }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        accuracyRate: { type: number, description: "0-100." }
+        weaknessLevel: { $ref: "#/components/schemas/WeaknessLevel" }
+        weaknessScore: { type: number, description: "0-100, higher = weaker." }
+        attemptsCount: { type: integer }
+        priority: { $ref: "#/components/schemas/RecommendationPriority" }
+      required: [courseId, topicId, accuracyRate, weaknessLevel, weaknessScore, attemptsCount, priority]
+
+    RecentScore:
+      type: object
+      properties:
+        type: { $ref: "#/components/schemas/ActivityType" }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        score: { type: number, description: "0-100." }
+        date: { type: ["string", "null"], format: date-time }
+      required: [type, courseId, score]
+
+    ProgressPoint:
+      type: object
+      properties:
+        date: { type: ["string", "null"], format: date-time }
+        type: { $ref: "#/components/schemas/ActivityType" }
+        label: { type: string }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        score: { type: number, description: "0-100." }
+        earnedScore: { type: ["number", "null"] }
+        maxScore: { type: ["number", "null"] }
+      required: [type, label, courseId, score]
+
+    ReadinessScore:
+      type: object
+      properties:
+        readinessScore: { type: ["number", "null"], description: "0-100, or null when there is not enough data." }
+        readinessLabel: { type: string }
+        message: { type: ["string", "null"], description: "Short, student-friendly explanation." }
+      required: [readinessLabel]
+
+    StudentDashboardAnalytics:
+      type: object
+      properties:
+        averageScore: { type: ["number", "null"], description: "0-100 across submitted exams and completed practice; null when none." }
+        recentScores:
+          type: array
+          items: { $ref: "#/components/schemas/RecentScore" }
+        topicPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/TopicPerformance" }
+        weakAreasCount: { type: integer }
+        strongAreasCount: { type: integer }
+        activeRecommendationsCount: { type: integer }
+        readinessScore: { type: ["number", "null"] }
+        readinessLabel: { type: string }
+        readinessMessage: { type: ["string", "null"] }
+        practiceSessionsCount: { type: integer, description: "Completed practice sessions." }
+        recentPracticeAccuracy: { type: ["number", "null"], description: "Accuracy of the most recent completed practice session, 0-100." }
+        progressTrend:
+          type: array
+          items: { $ref: "#/components/schemas/ProgressPoint" }
+      required:
+        [recentScores, topicPerformance, weakAreasCount, strongAreasCount, activeRecommendationsCount, readinessLabel, practiceSessionsCount, progressTrend]
+
+    ProblematicQuestion:
+      type: object
+      properties:
+        questionId: { type: integer }
+        questionPreview: { type: string }
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        topicName: { type: ["string", "null"] }
+        subtopicId: { type: ["integer", "null"] }
+        subtopicName: { type: ["string", "null"] }
+        difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
+        attemptsCount: { type: integer }
+        incorrectRate: { type: number, description: "0-100." }
+        status: { $ref: "#/components/schemas/QuestionStatus" }
+      required: [questionId, questionPreview, courseId, attemptsCount, incorrectRate, status]
+
+    FailedTopic:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        topicId: { type: integer }
+        topicName: { type: ["string", "null"] }
+        averageAccuracy: { type: number, description: "0-100 across enrolled students." }
+        attemptsCount: { type: integer }
+      required: [courseId, topicId, averageAccuracy, attemptsCount]
+
+    LecturerCourseSummary:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseCode: { type: ["string", "null"] }
+        courseName: { type: string }
+        programName: { type: ["string", "null"] }
+        studentsCount: { type: integer }
+        averageScore: { type: ["number", "null"] }
+        weakTopicsCount: { type: integer }
+        problematicQuestionsCount: { type: integer }
+      required: [courseId, courseName, studentsCount, weakTopicsCount, problematicQuestionsCount]
+
+    LecturerDashboardAnalytics:
+      type: object
+      properties:
+        coursesCount: { type: integer }
+        studentsCount: { type: integer }
+        averageClassScore: { type: ["number", "null"] }
+        problematicQuestionsCount: { type: integer }
+        activeCourses:
+          type: array
+          items: { $ref: "#/components/schemas/LecturerCourseSummary" }
+        mostFailedTopics:
+          type: array
+          items: { $ref: "#/components/schemas/FailedTopic" }
+        mostFailedQuestions:
+          type: array
+          items: { $ref: "#/components/schemas/ProblematicQuestion" }
+      required:
+        [coursesCount, studentsCount, problematicQuestionsCount, activeCourses, mostFailedTopics, mostFailedQuestions]
+
+    ClassTopicPerformance:
+      type: object
+      properties:
+        topicId: { type: integer }
+        topicName: { type: ["string", "null"] }
+        averageAccuracy: { type: number, description: "0-100 across enrolled students." }
+        attemptsCount: { type: integer }
+        weakStudentsCount: { type: integer, description: "Aggregate count of enrolled students below the accuracy threshold on this topic." }
+      required: [topicId, averageAccuracy, attemptsCount, weakStudentsCount]
+
+    ContentGap:
+      type: object
+      properties:
+        topicId: { type: ["integer", "null"] }
+        topicName: { type: ["string", "null"] }
+        description: { type: string }
+      required: [description]
+
+    LecturerCourseAnalytics:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseName: { type: string }
+        averageScore: { type: ["number", "null"] }
+        studentsCount: { type: integer }
+        topicPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/ClassTopicPerformance" }
+        mostFailedQuestions:
+          type: array
+          items: { $ref: "#/components/schemas/ProblematicQuestion" }
+        problematicQuestions:
+          type: array
+          items: { $ref: "#/components/schemas/ProblematicQuestion" }
+        contentGaps:
+          type: array
+          items: { $ref: "#/components/schemas/ContentGap" }
+      required: [courseId, courseName, studentsCount, topicPerformance, mostFailedQuestions, problematicQuestions, contentGaps]

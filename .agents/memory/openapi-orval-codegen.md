@@ -23,3 +23,10 @@ Spec fields that are nullable-but-not-required generate as `topicId?: number | n
 (includes `undefined`). Frontend helper param types that consume generated response
 objects must use `topicId?: number | null`, not `topicId: number | null`, or typecheck
 fails with TS2345.
+
+## Passing query options to a generated hook requires queryKey (TS2741)
+The generated `useGet<Op>(arg, { query: {...} })` typed `query` as a full
+`UseQueryOptions`, so partial options like `{ retry: false }` fail with TS2741
+("Property 'queryKey' is missing"). When you pass any query options you MUST also
+pass `queryKey: getGet<Op>QueryKey(arg)` (imported from `@workspace/api-client-react`).
+Existing pages follow this same pattern.
