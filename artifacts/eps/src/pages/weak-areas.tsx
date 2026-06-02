@@ -5,7 +5,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, TrendingDown } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import { useState } from "react";
 
 const PRIORITY_STYLES: Record<string, string> = {
@@ -52,9 +52,6 @@ export default function WeakAreas() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 text-primary">
-          <TrendingDown className="w-6 h-6" />
-        </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Weak Areas</h1>
         </div>
