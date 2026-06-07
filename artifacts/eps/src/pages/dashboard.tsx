@@ -180,9 +180,6 @@ function StudentDashboard({ user }: { user: EpsUser }) {
 
       {/* Continue where you left off */}
       <section className="space-y-3">
-        <h2 className="text-base font-semibold tracking-tight">
-          Continue where you left off
-        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card data-testid="card-unfinished-practice">
             <CardHeader className="pb-2">
