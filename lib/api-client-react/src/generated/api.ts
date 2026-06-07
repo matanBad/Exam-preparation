@@ -24,6 +24,7 @@ import type {
   ChangeEmailRequest,
   ChangePasswordRequest,
   Course,
+  CourseStudent,
   CreateCourseRequest,
   CreateProgramRequest,
   CreateQuestionRequest,
@@ -4825,6 +4826,91 @@ export const useDeleteUser = <
 > => {
   return useMutation(getDeleteUserMutationOptions(options));
 };
+
+/**
+ * Students enrolled in the course. Lecturers may only access courses they teach.
+ */
+export const getListCourseStudentsUrl = (id: number) => {
+  return `/api/courses/${id}/students`;
+};
+
+export const listCourseStudents = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CourseStudent[]> => {
+  return customFetch<CourseStudent[]>(getListCourseStudentsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCourseStudentsQueryKey = (id: number) => {
+  return [`/api/courses/${id}/students`] as const;
+};
+
+export const getListCourseStudentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCourseStudents>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourseStudents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCourseStudentsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCourseStudents>>
+  > = ({ signal }) => listCourseStudents(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCourseStudents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCourseStudentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCourseStudents>>
+>;
+export type ListCourseStudentsQueryError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export function useListCourseStudents<
+  TData = Awaited<ReturnType<typeof listCourseStudents>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourseStudents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCourseStudentsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export const getListCourseMembersUrl = (id: number) => {
   return `/api/courses/${id}/members`;

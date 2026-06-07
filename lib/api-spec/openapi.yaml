@@ -1126,6 +1126,27 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /courses/{id}/students:
+    get:
+      operationId: listCourseStudents
+      tags: [courses]
+      description: Students enrolled in the course. Lecturers may only access courses they teach.
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseStudent"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /courses/{id}/members:
     get:
       operationId: listCourseMembers
@@ -1416,6 +1437,17 @@ components:
         fullName: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         accountStatus: { type: string }
+
+    CourseStudent:
+      type: object
+      properties:
+        id: { type: integer }
+        fullName: { type: string }
+        email: { type: string }
+        programName: { type: ["string", "null"] }
+        studyYear: { type: ["string", "null"] }
+        semester: { type: ["string", "null"] }
+      required: [id, fullName, email]
 
     AddCourseMemberRequest:
       type: object

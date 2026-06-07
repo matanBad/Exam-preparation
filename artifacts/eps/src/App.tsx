@@ -28,7 +28,6 @@ import Engagement from "@/pages/engagement";
 import QuestionsList from "@/pages/questions/list";
 import QuestionNew from "@/pages/questions/new";
 import QuestionEdit from "@/pages/questions/edit";
-import LecturerCourseAnalytics from "@/pages/lecturer/course-analytics";
 import AdminUsers from "@/pages/admin/users";
 import AdminDeletionRequests from "@/pages/admin/deletion-requests";
 import AdminUserApprovals from "@/pages/admin/user-approvals";
@@ -149,9 +148,6 @@ function Router() {
       </Route>
       <Route path="/lecturer/questions/:id/edit">
         {(params) => <ProtectedRoute component={QuestionEdit} params={params} allowedRoles={['lecturer', 'admin']} />}
-      </Route>
-      <Route path="/lecturer/courses/:courseId/analytics">
-        {(params) => <ProtectedRoute component={LecturerCourseAnalytics} params={params} allowedRoles={['lecturer']} />}
       </Route>
 
       <Route path="/account">

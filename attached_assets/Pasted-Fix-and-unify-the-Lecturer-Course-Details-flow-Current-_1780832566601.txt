@@ -1,0 +1,337 @@
+Fix and unify the Lecturer Course Details flow.
+
+Current problem:
+There are currently two different outcomes when a lecturer clicks a course:
+
+1. Lecturer Courses page → click course
+2. Lecturer Dashboard → Your courses → click course
+
+These two entry points may lead to different routes/views/components and show different content.
+
+Required outcome:
+There must be ONE unified Lecturer Course Details page.
+Both entry points must open the same shared page, and that page must include the useful content that currently appears in BOTH existing outcomes.
+
+Do not choose one page and delete the other if it causes useful content to be lost.
+Instead, inspect both current outputs and merge their useful sections into one shared Lecturer Course Details page.
+
+==================================================
+1. Inspect both existing course click outputs
+==================================================
+
+First inspect what currently happens when clicking a course from:
+
+A. Lecturer Courses page
+- route
+- component
+- course id parameter
+- content shown
+- sections shown
+- actions available
+
+B. Lecturer Dashboard → Your courses
+- route
+- component
+- course id parameter
+- content shown
+- sections shown
+- actions available
+
+Then identify all useful non-duplicate sections from both.
+
+==================================================
+2. Create one shared Lecturer Course Details page
+==================================================
+
+The final shared page should include the useful content from both current course views.
+
+The unified page should include:
+
+- Course title/code/name
+- Return button at the top-right
+- Topics / Subtopics section
+- Students in this course section
+- Course-specific Class Average, if available
+- Course-specific Question Bank information, if available
+- Course-specific Problematic Questions, if available
+- Course-specific Most Failed Topics / Analytics, if available
+- Existing course management actions if they already exist
+
+Remove only duplicate or redundant UI.
+Do not remove useful existing functionality.
+
+Important:
+This unified page is a course details page, not the lecturer dashboard.
+
+==================================================
+3. Navigation unification
+==================================================
+
+Both of these entry points must navigate to the same shared Lecturer Course Details page:
+
+1. Lecturer Dashboard → Your courses → click course
+2. Lecturer Courses page → click course
+
+Use the same route, same component, and same data-loading logic.
+
+Do not create:
+- dashboard-specific course details page
+- courses-page-specific course details page
+- duplicate course details components
+- duplicate route logic
+
+Use one source of truth.
+
+Example:
+If the correct existing route is:
+navigate(`/courses/${course.id}`)
+
+then both entry points must use it.
+
+If the correct existing route is:
+navigate(`/lecturer/courses/${course.id}`)
+
+then both entry points must use it.
+
+Use the actual existing route in the project.
+
+==================================================
+4. Lecturer Dashboard “Your courses” display
+==================================================
+
+In Lecturer Dashboard → “Your courses”, each course row must show ONLY the course code/name.
+
+Desired display:
+
+OS301 - Operating Systems
+DB201 - Database Systems
+ALG1 - Algorithms I
+SE101 - Software Engineering Fundamentals
+SE-ADVOOP - Advanced Object-Oriented Programming
+
+Remove from each dashboard course row:
+- students count
+- weak topics count
+- class average
+- percentage on the right
+- dash/minus on the right
+- subtitles
+- analytics metadata
+- any extra secondary text
+
+Keep:
+- “7 total” in the card header if already exists
+- “View all courses →” at the bottom if already exists
+
+Each row should be clickable:
+- cursor pointer
+- subtle hover state
+- optional right chevron if consistent with existing style
+
+==================================================
+5. Course Details page requirements
+==================================================
+
+The shared Lecturer Course Details page must include:
+
+A. Return button
+- Place it at the top-right of the course page header area.
+- Button text: Return
+- Prefer browser back behavior if safe.
+- If no safe previous page exists, fallback to Lecturer Courses page.
+
+B. No subtitle under the main title
+Do not show explanatory subtitle text under the main course title.
+
+Remove text like:
+“Course details, students, topics, and course-specific analytics.”
+
+This is a global UI rule:
+Do not display subtitle/explanation text under main page titles.
+
+C. Students in this course
+Add or preserve a “Students in this course” section.
+
+Show only students enrolled in the selected course.
+
+Suggested columns:
+- Student Name
+- Email
+- Program
+- Study Year
+- Semester, if available
+
+Important:
+Do not show students from other courses.
+
+Use the existing enrollment logic:
+enrollments.course_id = selected course id
+
+If the project also filters by program/course_offerings, preserve the existing Strategy A visibility context.
+
+D. Topics / Subtopics
+Preserve the existing course topics/subtopics structure.
+
+Do not break existing expand/collapse behavior.
+
+E. Course-specific Class Average
+Class Average must appear only inside a specific course page, not on the lecturer dashboard.
+
+If shown, it must be calculated only for the selected course.
+
+Do not calculate it globally across all lecturer courses.
+
+F. Course-specific Question Bank info
+If a course-specific Question Bank section exists, keep it inside the course details page.
+
+It should refer only to the selected course.
+
+G. Course-specific analytics
+If Problematic Questions / Most Failed Topics / Analytics exist, keep them course-specific.
+
+Do not show global dashboard analytics inside the course page.
+
+==================================================
+6. Lecturer Dashboard top cards
+==================================================
+
+Lecturer Dashboard should have only these top summary cards, in this order:
+
+Active Courses | Question Bank | Problematic Questions | Most Failed Topics
+
+Do NOT show Class Average on the lecturer dashboard.
+
+Class Average belongs only inside a selected course page.
+
+==================================================
+7. Remove duplicate Question Bank card from Lecturer Dashboard
+==================================================
+
+On the Lecturer Dashboard, the Question Bank is already represented in the top summary cards.
+
+Remove the lower duplicate “Question Bank” card/section that appears below or under “Your courses”.
+
+Do not remove the top Question Bank summary card.
+
+Do not leave an empty layout gap after removing the lower card.
+
+==================================================
+8. Sidebar rules
+==================================================
+
+Do not add new sidebar items.
+
+Keep the lecturer sidebar exactly as currently exists:
+
+Dashboard
+Courses
+Question Bank
+My Account
+
+Do not add:
+- Students
+- Reports
+- Settings
+- Learning Insights
+- any other new item
+
+==================================================
+9. No subtitle under main page titles
+==================================================
+
+This rule applies globally unless explicitly overridden later:
+
+Do not display explanatory subtitle/description text under main page titles.
+
+Remove subtitles like:
+- “Monitor your courses and track course quality.”
+- “Course details, students, topics, and course-specific analytics.”
+- “Track your preparation progress and continue studying.”
+
+Do not remove:
+- card helper text
+- form labels
+- empty state messages
+- section descriptions inside cards if needed
+
+Only remove subtitles directly under main page titles.
+
+==================================================
+10. Preserve existing permissions and data rules
+==================================================
+
+Lecturer should only see courses they teach:
+course_offerings.lecturer_id = current logged-in lecturer id
+
+Students in course should only include students enrolled in the selected course.
+
+Course-specific analytics should only use the selected course.
+
+Question Bank info should only use the selected course when shown inside course details.
+
+==================================================
+11. Do not change unrelated behavior
+==================================================
+
+Do NOT change:
+- login logic
+- authentication
+- role permissions
+- DB/schema
+- backend APIs unless absolutely required
+- course_offerings logic
+- student visibility logic
+- lecturer course ownership logic
+- Student Dashboard
+- Admin Dashboard
+- Question Bank behavior
+- Sidebar items
+- Strategy A
+- questions.course_id
+- topics.course_id
+
+This is primarily a frontend routing/component unification and UI cleanup task.
+
+==================================================
+Validation
+==================================================
+
+After implementation:
+
+1. Log in as a lecturer.
+2. Open Lecturer Dashboard.
+3. Confirm the top summary cards are exactly:
+   Active Courses | Question Bank | Problematic Questions | Most Failed Topics
+4. Confirm Class Average does not appear on the Lecturer Dashboard.
+5. Confirm the lower duplicate Question Bank card under/near Your courses was removed.
+6. Confirm no empty layout gap remains after removing it.
+7. Confirm “Your courses” shows only course code/name.
+8. Confirm there is no students count, weak topics count, percentage, dash/minus, or secondary text in Your courses rows.
+9. Click OS301 from Dashboard → Your courses.
+10. Confirm it opens the unified Lecturer Course Details page.
+11. Click Return.
+12. Open Lecturer Courses page.
+13. Click OS301 from Courses.
+14. Confirm it opens the exact same unified Lecturer Course Details page.
+15. Confirm both entry points use the same route/component/data-loading logic.
+16. Confirm the unified Course Details page includes useful content from both old outcomes.
+17. Confirm the Course Details page has a Return button at the top-right.
+18. Confirm no subtitle appears under the main course title.
+19. Confirm Students in this course appears and shows only students enrolled in this course.
+20. Confirm Topics/Subtopics still appear and work.
+21. Confirm Class Average, if shown, is for this selected course only.
+22. Confirm course-specific Question Bank info, if shown, is for this selected course only.
+23. Confirm course-specific analytics, if shown, are for this selected course only.
+24. Confirm sidebar still has only:
+   Dashboard, Courses, Question Bank, My Account
+25. Confirm no unrelated pages changed.
+
+At the end, summarize:
+- Which route is now the single Lecturer Course Details route
+- Which component is now reused by both Dashboard and Courses page
+- What content was merged from the two previous outcomes
+- What duplicate UI was removed
+- How the Dashboard “Your courses” display was simplified
+- How the Return button was implemented
+- Whether any backend files were changed
+- Confirm no DB/auth/permissions/Strategy A/questions.course_id/topics.course_id changes were made

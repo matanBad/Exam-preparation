@@ -1879,6 +1879,25 @@ export const DeleteUserParams = zod.object({
   id: zod.coerce.number(),
 });
 
+/**
+ * Students enrolled in the course. Lecturers may only access courses they teach.
+ */
+export const ListCourseStudentsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListCourseStudentsResponseItem = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  programName: zod.string().nullish(),
+  studyYear: zod.string().nullish(),
+  semester: zod.string().nullish(),
+});
+export const ListCourseStudentsResponse = zod.array(
+  ListCourseStudentsResponseItem,
+);
+
 export const ListCourseMembersParams = zod.object({
   id: zod.coerce.number(),
 });

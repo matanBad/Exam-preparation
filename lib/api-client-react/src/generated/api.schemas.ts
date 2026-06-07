@@ -164,6 +164,18 @@ export interface UpdateUserRequest {
   accountStatus?: string;
 }
 
+export interface CourseStudent {
+  id: number;
+  fullName: string;
+  email: string;
+  /** @nullable */
+  programName?: string | null;
+  /** @nullable */
+  studyYear?: string | null;
+  /** @nullable */
+  semester?: string | null;
+}
+
 export interface AddCourseMemberRequest {
   userId: number;
 }

@@ -584,6 +584,49 @@ router.delete(
 );
 
 router.get(
+  "/courses/:id/students",
+  requireAuth,
+  requireRole("lecturer", "admin"),
+  async (req, res): Promise<void> => {
+    const id = parseInt(req.params.id as string, 10);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const auth = req.auth!;
+    // Lecturers may only view students of courses they actually teach. Admins
+    // may view any course.
+    if (auth.role === "lecturer") {
+      const teaches = await lecturerTeachesCourse(auth.userId, id);
+      if (!teaches) {
+        res.status(403).json({ error: "You do not teach this course" });
+        return;
+      }
+    }
+    const rows = await db
+      .select({
+        id: usersTable.id,
+        fullName: usersTable.fullName,
+        email: usersTable.email,
+        programName: programsTable.name,
+        studyYear: usersTable.currentStudyYear,
+        semester: usersTable.currentSemester,
+      })
+      .from(enrollmentsTable)
+      .innerJoin(usersTable, eq(usersTable.id, enrollmentsTable.userId))
+      .leftJoin(programsTable, eq(programsTable.id, usersTable.programId))
+      .where(
+        and(
+          eq(enrollmentsTable.courseId, id),
+          eq(usersTable.role, "student"),
+          eq(enrollmentsTable.enrollmentStatus, "active"),
+        ),
+      );
+    res.json(rows);
+  },
+);
+
+router.get(
   "/courses/:id/members",
   requireAuth,
   requireRole("admin"),

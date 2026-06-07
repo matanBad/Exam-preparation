@@ -21,6 +21,7 @@ export * from "./confidenceLevel";
 export * from "./contentGap";
 export * from "./course";
 export * from "./courseOfferingSemester";
+export * from "./courseStudent";
 export * from "./courseStudyYear";
 export * from "./createCourseRequest";
 export * from "./createProgramRequest";

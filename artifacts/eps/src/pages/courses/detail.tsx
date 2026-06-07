@@ -5,20 +5,40 @@ import {
   useUpdateTopic,
   useDeleteTopic,
   useListCourseMembers,
+  useListCourseStudents,
   useAddCourseMember,
   useRemoveCourseMember,
   useListUsers,
+  useGetLecturerCourseAnalytics,
   getListCourseTopicsQueryKey,
   getGetCourseQueryKey,
   getListCourseMembersQueryKey,
+  getListCourseStudentsQueryKey,
+  getGetLecturerCourseAnalyticsQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAuthUser } from "@/lib/auth";
+import {
+  TrendingDown,
+  AlertTriangle,
+  FileWarning,
+  Users,
+} from "lucide-react";
+
+function fmtScore(n: number | null | undefined): string {
+  return n == null ? "—" : `${Math.round(n)}%`;
+}
+
+function accuracyClass(pct: number): string {
+  if (pct < 60) return "text-destructive";
+  if (pct < 75) return "text-amber-600";
+  return "text-emerald-600";
+}
 
 type Topic = {
   id: number;
@@ -37,6 +57,37 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const user = getAuthUser();
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
+  const isLecturer = user?.role === "lecturer";
+  const [, setLocation] = useLocation();
+
+  // Prefer the browser's previous page; fall back to the courses list when
+  // there is no safe history to go back to (e.g. opened via a direct link).
+  const handleReturn = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      setLocation("/courses");
+    }
+  };
+
+  // Course-specific analytics + enrolled students are lecturer-only views,
+  // merged into this unified course details page. `retry: false` keeps a 403
+  // (lecturer doesn't teach the course) from spamming requests.
+  const { data: analytics } = useGetLecturerCourseAnalytics(id, {
+    query: {
+      enabled: !!id && isLecturer,
+      queryKey: getGetLecturerCourseAnalyticsQueryKey(id),
+      retry: false,
+    },
+  });
+  const { data: courseStudents } = useListCourseStudents(id, {
+    query: {
+      enabled: !!id && isLecturer,
+      queryKey: getListCourseStudentsQueryKey(id),
+      retry: false,
+    },
+  });
+
   const createTopic = useCreateTopic();
   const updateTopic = useUpdateTopic();
   const deleteTopic = useDeleteTopic();
@@ -457,16 +508,113 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           )}
         </div>
         </div>
-        <Link href="/courses">
-          <Button
-            type="button"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            data-testid="btn-return"
-          >
-            Return
-          </Button>
-        </Link>
+        <Button
+          type="button"
+          onClick={handleReturn}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          data-testid="btn-return"
+        >
+          Return
+        </Button>
       </div>
+
+      {isLecturer && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Card data-testid="metric-course-average">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Class average
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {fmtScore(analytics?.averageScore)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card data-testid="metric-course-students">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Students
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {analytics?.studentsCount ?? courseStudents?.length ?? 0}
+                </p>
+              </CardContent>
+            </Card>
+            <Card data-testid="metric-course-problematic">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Problematic questions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {analytics?.problematicQuestions?.length ?? 0}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card data-testid="card-course-students">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="w-4 h-4 text-primary" />
+                Students in this course
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {courseStudents && courseStudents.length ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        <th className="py-2 pr-3 font-medium">Name</th>
+                        <th className="py-2 pr-3 font-medium">Email</th>
+                        <th className="py-2 pr-3 font-medium">Program</th>
+                        <th className="py-2 pr-3 font-medium">Year</th>
+                        <th className="py-2 font-medium">Semester</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {courseStudents.map((s) => (
+                        <tr
+                          key={s.id}
+                          className="border-b last:border-0"
+                          data-testid={`course-student-${s.id}`}
+                        >
+                          <td className="py-2 pr-3 font-medium">
+                            {s.fullName}
+                          </td>
+                          <td className="py-2 pr-3 text-muted-foreground">
+                            {s.email}
+                          </td>
+                          <td className="py-2 pr-3 text-muted-foreground">
+                            {s.programName ?? "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-muted-foreground">
+                            {s.studyYear ?? "—"}
+                          </td>
+                          <td className="py-2 text-muted-foreground">
+                            {s.semester ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No students enrolled in this course yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       <Card>
         <CardHeader>
@@ -509,6 +657,135 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           )}
         </CardContent>
       </Card>
+
+      {isLecturer && (
+        <>
+          <Card data-testid="card-topic-performance">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingDown className="w-4 h-4 text-primary" />
+                Topic performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics?.topicPerformance?.length ? (
+                <div className="space-y-2">
+                  {analytics.topicPerformance.map((t) => (
+                    <div
+                      key={t.topicId}
+                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                      data-testid={`course-topic-${t.topicId}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {t.topicName ?? `Topic ${t.topicId}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.attemptsCount} attempts · {t.weakStudentsCount}{" "}
+                          student{t.weakStudentsCount === 1 ? "" : "s"} below
+                          threshold
+                        </p>
+                      </div>
+                      <span
+                        className={`text-sm font-semibold shrink-0 ${accuracyClass(
+                          t.averageAccuracy,
+                        )}`}
+                      >
+                        {Math.round(t.averageAccuracy)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Topic performance appears once students have enough graded
+                  answers.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-problematic-questions">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                Most failed questions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics?.mostFailedQuestions?.length ? (
+                <div className="space-y-3">
+                  {analytics.mostFailedQuestions.map((q) => (
+                    <div
+                      key={q.questionId}
+                      className="flex items-start justify-between gap-4 border-b pb-3 last:border-0"
+                      data-testid={`problematic-question-${q.questionId}`}
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="text-sm font-medium line-clamp-2">
+                          {q.questionPreview}
+                        </p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          {q.topicName && <span>{q.topicName}</span>}
+                          {q.difficultyLevel && <span>{q.difficultyLevel}</span>}
+                          <span>{q.attemptsCount} attempts</span>
+                          <span className="text-destructive font-medium">
+                            {Math.round(q.incorrectRate)}% incorrect
+                          </span>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/lecturer/questions/${q.questionId}/edit`}
+                        className="text-sm font-medium text-primary hover:underline shrink-0"
+                        data-testid={`link-view-question-${q.questionId}`}
+                      >
+                        View Question
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No questions meet the failure threshold yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-content-gaps">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileWarning className="w-4 h-4 text-amber-600" />
+                Content gaps
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics?.contentGaps?.length ? (
+                <ul className="space-y-2">
+                  {analytics.contentGaps.map((g, i) => (
+                    <li
+                      key={`${g.topicId ?? "none"}-${i}`}
+                      className="text-sm border-b pb-2 last:border-0"
+                      data-testid={`content-gap-${i}`}
+                    >
+                      {g.topicName && (
+                        <span className="font-medium">{g.topicName}: </span>
+                      )}
+                      <span className="text-muted-foreground">
+                        {g.description}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No content gaps detected for this course.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {isAdmin && (
         <Card>

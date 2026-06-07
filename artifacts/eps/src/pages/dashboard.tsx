@@ -21,6 +21,7 @@ import {
   Flame,
   Trophy,
   BookOpen,
+  ChevronRight,
 } from "lucide-react";
 import {
   LineChart,
@@ -637,25 +638,17 @@ function LecturerDashboard({ user }: { user: EpsUser }) {
             ) : visibleCourses.length ? (
               <ul className="space-y-2">
                 {visibleCourses.map((c) => (
-                  <li key={c.courseId} className="border-b pb-2 last:border-0">
+                  <li key={c.courseId} className="border-b last:border-0">
                     <Link
-                      href={`/lecturer/courses/${c.courseId}/analytics`}
-                      className="flex items-center justify-between gap-3 group"
-                      data-testid={`link-course-analytics-${c.courseId}`}
+                      href={`/courses/${c.courseId}`}
+                      className="flex items-center justify-between gap-3 group -mx-2 rounded-md px-2 py-2 cursor-pointer transition-colors hover:bg-accent"
+                      data-testid={`link-course-${c.courseId}`}
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">
-                          {c.courseCode ? `${c.courseCode} - ` : ""}
-                          {c.courseName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.studentsCount} students · {c.weakTopicsCount} weak
-                          topic{c.weakTopicsCount === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      <span className="text-sm font-medium shrink-0">
-                        {fmtScore(c.averageScore)}
-                      </span>
+                      <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">
+                        {c.courseCode ? `${c.courseCode} - ` : ""}
+                        {c.courseName}
+                      </p>
+                      <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
                     </Link>
                   </li>
                 ))}
