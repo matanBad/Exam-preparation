@@ -16,7 +16,6 @@ import {
   Lightbulb,
   Gauge,
   Target,
-  Dumbbell,
   AlertTriangle,
   Users,
   Flame,
@@ -44,6 +43,11 @@ const WEAKNESS_LABEL: Record<string, string> = {
   strong: "Strong",
 };
 
+// A topic needs at least this many graded attempts before we trust its
+// weakness classification. Below this we show "Not enough data" instead of
+// labelling the topic "Weak", so students aren't misled by a tiny sample.
+const TOPIC_MIN_ATTEMPTS = 3;
+
 function fmtScore(n: number | null | undefined): string {
   return n == null ? "—" : `${Math.round(n)}%`;
 }
@@ -54,16 +58,23 @@ function fmtDate(iso: string | null | undefined): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-// Student dashboard uses a tighter vertical rhythm than the others so the
-// welcome title sits closer to the action row and the cards below it.
+// Student dashboard: one coherent overview — a header with quick actions, a
+// five-card summary row, a "continue where you left off" section, an analytics
+// row, and compact course / exam / milestone panels. Presentation only; every
+// value comes from the student's own dashboard, engagement, exam and practice
+// data.
 function StudentDashboard({ user }: { user: EpsUser }) {
   // Use the enriched courses list so we have offering studyYear/semester,
   // then filter to the student's current term only.
   const { data: allCourses } = useListCourses();
   const { data: exams } = useGetUserExams(user.id);
   const { data: practice } = useGetPracticeHistory();
+  const { data: analytics } = useGetStudentDashboardAnalytics();
+  const { data: engagement } = useGetEngagementSummary();
+
   const activePractice = practice?.active ?? [];
-  const completedPractice = practice?.completed ?? [];
+  const unfinishedExams = (exams ?? []).filter((e) => e.status !== "submitted");
+  const completedExams = (exams ?? []).filter((e) => e.status === "submitted");
   const courses = (allCourses ?? []).filter((c) => {
     if (!user.currentStudyYear || !user.currentSemester) return true;
     if (c.studyYear == null || c.offeringSemester == null) return false;
@@ -73,50 +84,355 @@ function StudentDashboard({ user }: { user: EpsUser }) {
     );
   });
 
+  const readinessValue =
+    analytics?.readinessScore == null
+      ? "—"
+      : `${Math.round(analytics.readinessScore)}/100`;
+
+  const streakDays = engagement?.currentStreak ?? 0;
+  const longestStreak = engagement?.longestStreak ?? 0;
+  const streakValue = engagement
+    ? `${streakDays} day${streakDays === 1 ? "" : "s"}`
+    : "—";
+  const streakSub = !engagement
+    ? undefined
+    : streakDays > 0
+      ? `Longest: ${longestStreak} day${longestStreak === 1 ? "" : "s"}`
+      : "Practice today to start";
+
+  const trend = (analytics?.progressTrend ?? []).map((p, i) => ({
+    i,
+    name: fmtDate(p.date),
+    score: Math.round(p.score),
+    label: p.label,
+  }));
+  const topTopics = (analytics?.topicPerformance ?? []).slice(0, 5);
+
   return (
-    <div className="space-y-3 -mt-2">
-      <div className="flex justify-end">
-        <Link
-          href="/practice"
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent h-10 px-4 py-2 mr-2"
-          data-testid="btn-start-practice"
-        >
-          Practice Mode
-        </Link>
-        <Link
-          href="/exams/new"
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-700 text-white hover:bg-green-800 h-10 px-4 py-2"
-          data-testid="btn-start-exam"
-        >
-          Start Mock Exam
-        </Link>
+    <div className="space-y-5">
+      {/* Header: welcome + quick actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome, {user.fullName}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track your preparation progress and continue studying.
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href="/practice"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent h-10 px-4 py-2"
+            data-testid="btn-start-practice"
+          >
+            Practice Mode
+          </Link>
+          <Link
+            href="/exams/new"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-700 text-white hover:bg-green-800 h-10 px-4 py-2"
+            data-testid="btn-start-exam"
+          >
+            Start Mock Exam
+          </Link>
+        </div>
       </div>
 
-      <StudentAnalytics />
+      {/* Summary row: five equal-height metric cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <MetricTile
+          icon={<Target className="w-3.5 h-3.5" />}
+          label="Average Score"
+          value={fmtScore(analytics?.averageScore)}
+          sub="Exams & practice"
+          testid="metric-average-score"
+        />
+        <MetricTile
+          icon={<Gauge className="w-3.5 h-3.5" />}
+          label="Readiness"
+          value={readinessValue}
+          sub={analytics?.readinessLabel}
+          testid="metric-readiness"
+        />
+        <MetricTile
+          icon={<TrendingDown className="w-3.5 h-3.5" />}
+          label="Weak Areas"
+          value={analytics ? String(analytics.weakAreasCount) : "—"}
+          sub="View details →"
+          href="/weak-areas"
+          testid="metric-weak-areas"
+        />
+        <MetricTile
+          icon={<Lightbulb className="w-3.5 h-3.5" />}
+          label="Recommendations"
+          value={analytics ? String(analytics.activeRecommendationsCount) : "—"}
+          sub="View details →"
+          href="/recommendations"
+          testid="metric-recommendations"
+        />
+        <MetricTile
+          icon={<Flame className="w-3.5 h-3.5" />}
+          label="Learning Streak"
+          value={streakValue}
+          sub={streakSub}
+          href="/engagement"
+          testid="metric-streak"
+        />
+      </div>
 
-      <StudentEngagement />
+      {/* Continue where you left off */}
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold tracking-tight">
+          Continue where you left off
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card data-testid="card-unfinished-practice">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Unfinished practice</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activePractice.length ? (
+                <ul className="space-y-3">
+                  {activePractice.slice(0, 4).map((s) => {
+                    const pct =
+                      s.totalQuestions > 0
+                        ? Math.round((s.answeredCount / s.totalQuestions) * 100)
+                        : 0;
+                    return (
+                      <li key={s.id} data-testid={`practice-row-${s.id}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="min-w-0 truncate text-sm font-medium">
+                            {s.courseName ?? `Course ${s.courseId}`}
+                          </span>
+                          <Link
+                            href={`/practice/${s.id}`}
+                            className="shrink-0 text-sm text-primary hover:underline"
+                            data-testid={`link-resume-practice-${s.id}`}
+                          >
+                            Continue
+                          </Link>
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <div
+                            className="h-1.5 flex-1 rounded-full bg-muted"
+                            role="progressbar"
+                            aria-valuenow={pct}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`${s.answeredCount} of ${s.totalQuestions} questions answered`}
+                          >
+                            <div
+                              className="h-full rounded-full bg-primary"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {s.answeredCount}/{s.totalQuestions}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No practice in progress.
+                  </p>
+                  <Link
+                    href="/practice"
+                    className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                  >
+                    Start Practice
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>
+          <Card data-testid="card-unfinished-exams">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Unfinished exams</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {unfinishedExams.length ? (
+                <ul className="space-y-2">
+                  {unfinishedExams.slice(0, 4).map((e) => (
+                    <li
+                      key={e.id}
+                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {e.courseName ?? `Exam ${e.id}`}
+                        </p>
+                        <p className="text-xs uppercase text-muted-foreground">
+                          {e.status === "in_progress"
+                            ? "in progress"
+                            : "not started"}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/exams/${e.id}/take`}
+                        className="shrink-0 text-sm text-primary hover:underline"
+                        data-testid={`link-resume-exam-${e.id}`}
+                      >
+                        Continue
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No exams in progress.
+                  </p>
+                  <Link
+                    href="/exams/new"
+                    className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                  >
+                    Start Mock Exam
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Analytics row: progress trend + topic performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card data-testid="card-progress-over-time">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Progress over time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {trend.length >= 2 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={trend}
+                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
+                    <XAxis dataKey="name" fontSize={11} tickLine={false} />
+                    <YAxis domain={[0, 100]} fontSize={11} tickLine={false} />
+                    <Tooltip
+                      formatter={(v: number) => [`${v}%`, "Score"]}
+                      labelFormatter={(_, p) => p?.[0]?.payload?.label ?? ""}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Complete at least two exams or practice sessions to see your
+                progress trend.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-topic-performance">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Topic performance</CardTitle>
+            <Link
+              href="/weak-areas"
+              className="shrink-0 text-xs font-medium text-primary hover:underline"
+            >
+              View all →
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {topTopics.length ? (
+              <ul className="space-y-2">
+                {topTopics.map((t) => {
+                  const key = `${t.courseId}-${t.topicId}-${t.subtopicId}`;
+                  const enoughData =
+                    (t.attemptsCount ?? 0) >= TOPIC_MIN_ATTEMPTS;
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                      data-testid={`topic-perf-${key}`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {t.subtopicName ?? t.topicName ?? "Topic"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.courseName ?? `Course ${t.courseId}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-medium">
+                          {enoughData ? `${Math.round(t.accuracyRate)}%` : "—"}
+                        </span>
+                        {enoughData ? (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full border ${
+                              WEAKNESS_STYLES[t.weaknessLevel] ??
+                              WEAKNESS_STYLES.strong
+                            }`}
+                          >
+                            {WEAKNESS_LABEL[t.weaknessLevel] ?? t.weaknessLevel}
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full border bg-muted text-muted-foreground border-border">
+                            Not enough data
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Topic performance appears once you have enough graded answers.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lower panels: courses, recent exams, milestones */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card data-testid="card-current-courses">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-base">
               Current courses
               {user.currentStudyYear && user.currentSemester && (
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  {user.currentStudyYear} year · Semester{" "}
-                  {user.currentSemester}
+                  {user.currentStudyYear} year · Semester {user.currentSemester}
                 </span>
               )}
             </CardTitle>
+            <Link
+              href="/courses"
+              className="shrink-0 text-xs font-medium text-primary hover:underline"
+            >
+              View all →
+            </Link>
           </CardHeader>
           <CardContent>
-            {courses?.length ? (
+            {courses.length ? (
               <ul className="space-y-2">
-                {courses.map((c) => (
+                {courses.slice(0, 5).map((c) => (
                   <li key={c.id} className="border-b pb-2 last:border-0">
                     <Link
                       href={`/courses/${c.id}`}
-                      className="hover:text-primary transition-colors"
+                      className="text-sm hover:text-primary transition-colors"
                     >
                       {c.courseCode} - {c.courseName}
                     </Link>
@@ -124,155 +440,89 @@ function StudentDashboard({ user }: { user: EpsUser }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No courses enrolled.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No courses enrolled.
+              </p>
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Exams</CardTitle>
+
+        <Card data-testid="card-recent-exams">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Recent exams</CardTitle>
+            <Link
+              href="/exams"
+              className="shrink-0 text-xs font-medium text-primary hover:underline"
+            >
+              View all →
+            </Link>
           </CardHeader>
           <CardContent>
-            {exams?.filter((e) => e.status === "submitted").length ? (
+            {completedExams.length ? (
               <ul className="space-y-2">
-                {exams
-                  .filter((e) => e.status === "submitted")
-                  .slice(0, 5)
-                  .map((e) => (
-                    <li key={e.id} className="border-b pb-2 last:border-0">
-                      <Link
-                        href={`/exams/${e.id}/review`}
-                        className="hover:text-primary transition-colors"
-                      >
-                        Exam {e.id} - Score: {e.score ?? "-"}
-                      </Link>
-                    </li>
-                  ))}
+                {completedExams.slice(0, 5).map((e) => (
+                  <li key={e.id} className="border-b pb-2 last:border-0">
+                    <Link
+                      href={`/exams/${e.id}/review`}
+                      className="text-sm hover:text-primary transition-colors"
+                    >
+                      {e.courseName ?? `Exam ${e.id}`} — Score: {e.score ?? "-"}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No completed exams.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No completed exams yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-milestones">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Milestones</CardTitle>
+            <Trophy className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {engagement && engagement.milestonesCount > 0 ? (
+              <>
+                <p className="text-2xl font-bold leading-tight">
+                  {engagement.milestonesCount}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  achievement{engagement.milestonesCount === 1 ? "" : "s"}{" "}
+                  unlocked
+                </p>
+                <Link
+                  href="/engagement"
+                  className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  View achievements →
+                </Link>
+              </>
+            ) : (
+              <div className="py-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No milestones yet.
+                </p>
+                <Link
+                  href="/engagement"
+                  className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  View achievements →
+                </Link>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      <Card data-testid="card-unfinished-exams">
-        <CardHeader>
-          <CardTitle>Unfinished exams</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {exams?.filter((e) => e.status !== "submitted").length ? (
-            <ul className="space-y-2">
-              {exams
-                .filter((e) => e.status !== "submitted")
-                .map((e) => (
-                  <li
-                    key={e.id}
-                    className="flex justify-between items-center border-b pb-2 last:border-0"
-                  >
-                    <span className="text-sm">
-                      Exam {e.id}
-                      <span className="ml-2 text-xs uppercase text-muted-foreground">
-                        {e.status === "in_progress" ? "in progress" : "not started"}
-                      </span>
-                    </span>
-                    <Link
-                      href={`/exams/${e.id}/take`}
-                      className="text-primary hover:underline text-sm"
-                      data-testid={`link-resume-exam-${e.id}`}
-                    >
-                      Resume
-                    </Link>
-                  </li>
-                ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">No exams in progress.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card data-testid="card-unfinished-practice">
-        <CardHeader>
-          <CardTitle>Unfinished practice</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activePractice.length ? (
-            <ul className="space-y-2">
-              {activePractice.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex justify-between items-center border-b pb-2 last:border-0"
-                >
-                  <span className="text-sm">
-                    {s.courseName ?? `Course ${s.courseId}`}
-                    <span className="ml-2 text-xs uppercase text-muted-foreground">
-                      {s.answeredCount}/{s.totalQuestions} answered
-                    </span>
-                  </span>
-                  <Link
-                    href={`/practice/${s.id}`}
-                    className="text-primary hover:underline text-sm"
-                    data-testid={`link-resume-practice-${s.id}`}
-                  >
-                    Resume
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">
-              No practice sessions in progress.{" "}
-              <Link href="/practice" className="text-primary hover:underline">
-                Start one
-              </Link>
-              .
-            </p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-// Student-only engagement row: learning streak + milestones earned. Both link
-// through to the dedicated /engagement page. Real data from the engagement
-// summary endpoint; the summary call also triggers opportunistic reminder /
-// weak-area checks server-side.
-function StudentEngagement() {
-  const { data, isLoading } = useGetEngagementSummary();
-
-  if (isLoading || !data) return null;
-
-  const streakSub =
-    data.currentStreak > 0
-      ? `Longest: ${data.longestStreak} day${data.longestStreak === 1 ? "" : "s"}`
-      : "Practice today to start one";
-
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <MetricTile
-        icon={<Flame className="w-3.5 h-3.5" />}
-        label="Learning Streak"
-        value={`${data.currentStreak} day${data.currentStreak === 1 ? "" : "s"}`}
-        sub={streakSub}
-        href="/engagement"
-        testid="metric-streak"
-      />
-      <MetricTile
-        icon={<Trophy className="w-3.5 h-3.5" />}
-        label="Milestones"
-        value={String(data.milestonesCount)}
-        sub="View achievements →"
-        href="/engagement"
-        testid="metric-milestones"
-      />
-    </div>
-  );
-}
-
-// Compact stat tile used across the student analytics row. When `href` is set
-// the whole tile becomes a link.
+// Compact stat tile used across the student and lecturer summary rows. When
+// `href` is set the whole tile becomes a link.
 function MetricTile({
   icon,
   label,
@@ -315,173 +565,6 @@ function MetricTile({
     </Link>
   ) : (
     body
-  );
-}
-
-// Student-only analytics overview: headline metrics, a progress-over-time
-// chart and a weakest-topics list. Everything is the requesting student's own
-// data; empty states show until enough activity exists.
-function StudentAnalytics() {
-  const { data, isLoading } = useGetStudentDashboardAnalytics();
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-sm text-muted-foreground">
-          Loading your analytics…
-        </CardContent>
-      </Card>
-    );
-  }
-  if (!data) return null;
-
-  const readinessValue =
-    data.readinessScore == null ? "—" : `${Math.round(data.readinessScore)}/100`;
-  const trend = (data.progressTrend ?? []).map((p, i) => ({
-    i,
-    name: fmtDate(p.date),
-    score: Math.round(p.score),
-    label: p.label,
-  }));
-  const topTopics = (data.topicPerformance ?? []).slice(0, 5);
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <MetricTile
-          icon={<Target className="w-3.5 h-3.5" />}
-          label="Average Score"
-          value={fmtScore(data.averageScore)}
-          sub="Exams & practice"
-          testid="metric-average-score"
-        />
-        <MetricTile
-          icon={<Gauge className="w-3.5 h-3.5" />}
-          label="Readiness"
-          value={readinessValue}
-          sub={data.readinessLabel}
-          testid="metric-readiness"
-        />
-        <MetricTile
-          icon={<TrendingDown className="w-3.5 h-3.5" />}
-          label="Weak Areas"
-          value={String(data.weakAreasCount)}
-          sub="View details →"
-          href="/weak-areas"
-          testid="metric-weak-areas"
-        />
-        <MetricTile
-          icon={<Lightbulb className="w-3.5 h-3.5" />}
-          label="Recommendations"
-          value={String(data.activeRecommendationsCount)}
-          sub="View details →"
-          href="/recommendations"
-          testid="metric-recommendations"
-        />
-        <MetricTile
-          icon={<Dumbbell className="w-3.5 h-3.5" />}
-          label="Practice"
-          value={String(data.practiceSessionsCount)}
-          sub={
-            data.recentPracticeAccuracy == null
-              ? "No sessions yet"
-              : `Last: ${Math.round(data.recentPracticeAccuracy)}%`
-          }
-          href="/practice"
-          testid="metric-practice"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card data-testid="card-progress-over-time">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Progress over time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {trend.length >= 2 ? (
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={trend}
-                    margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" fontSize={11} tickLine={false} />
-                    <YAxis domain={[0, 100]} fontSize={11} tickLine={false} />
-                    <Tooltip
-                      formatter={(v: number) => [`${v}%`, "Score"]}
-                      labelFormatter={(_, p) =>
-                        p?.[0]?.payload?.label ?? ""
-                      }
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Complete at least two exams or practice sessions to see your
-                progress trend.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-topic-performance">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Topic performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topTopics.length ? (
-              <ul className="space-y-2">
-                {topTopics.map((t) => {
-                  const key = `${t.courseId}-${t.topicId}-${t.subtopicId}`;
-                  return (
-                    <li
-                      key={key}
-                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
-                      data-testid={`topic-perf-${key}`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {t.subtopicName ?? t.topicName ?? "Topic"}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {t.courseName ?? `Course ${t.courseId}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm font-medium">
-                          {Math.round(t.accuracyRate)}%
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full border ${
-                            WEAKNESS_STYLES[t.weaknessLevel] ??
-                            WEAKNESS_STYLES.strong
-                          }`}
-                        >
-                          {WEAKNESS_LABEL[t.weaknessLevel] ?? t.weaknessLevel}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Topic performance appears once you have enough graded answers.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
   );
 }
 
@@ -768,11 +851,15 @@ export default function Dashboard() {
   const user = useAuthUser();
   if (!user) return null;
 
+  // The student view renders its own header (welcome + actions); lecturer and
+  // admin keep the shared title above their content.
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold tracking-tight">
-        Welcome, {user.fullName}
-      </h1>
+      {user.role !== "student" && (
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome, {user.fullName}
+        </h1>
+      )}
 
       {user.role === "student" && <StudentDashboard user={user} />}
       {user.role === "lecturer" && <LecturerDashboard user={user} />}
