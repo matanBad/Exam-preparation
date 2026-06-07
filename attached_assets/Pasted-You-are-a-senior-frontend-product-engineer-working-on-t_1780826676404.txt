@@ -1,0 +1,461 @@
+You are a senior frontend/product engineer working on the EPS platform.
+
+Project:
+Exam Preparation System (EPS) – Team 4
+
+Task:
+Refine and improve ONLY the Student Dashboard UI/UX.
+
+The current Student Dashboard already contains the required data and functionality, but the layout feels fragmented and visually overloaded. Your job is to reorganize the dashboard into a cleaner, more professional, more coherent structure while preserving all existing logic and data.
+
+==================================================
+CRITICAL RULES
+==================================================
+
+Do NOT change:
+1. Login logic
+2. Authentication logic
+3. Role-based permissions
+4. Backend API behavior
+5. Database schema
+6. Existing student data calculations
+7. Mock exam logic
+8. Practice Mode logic
+9. Weak Areas logic
+10. Recommendations logic
+11. Notifications logic
+12. Streak or milestones logic
+13. questions.course_id
+14. topics.course_id
+15. Strategy A
+
+This is a UI/UX refinement task only.
+
+Do not remove existing features.
+Do not fake data.
+Do not hardcode demo values.
+Use the real data already returned by the current dashboard APIs.
+
+==================================================
+MAIN UX GOAL
+==================================================
+
+Make the Student Dashboard feel like one organized, professional dashboard instead of separate disconnected sections.
+
+The student should understand within 5 seconds:
+1. What is my current learning status?
+2. What should I do next?
+3. Where am I weak?
+4. How am I progressing?
+5. How do I continue studying?
+
+==================================================
+RECOMMENDED NEW DASHBOARD STRUCTURE
+==================================================
+
+Reorganize the Student Dashboard in this exact order:
+
+--------------------------------------------------
+1. Header Area
+--------------------------------------------------
+
+At the top of the dashboard content, show:
+
+Left side:
+- Welcome, [Student Name]
+- Subtitle:
+  "Track your preparation progress and continue studying."
+
+Right side:
+- Practice Mode button
+- Start Mock Exam button
+
+Button rules:
+- Practice Mode should navigate to the existing Practice page.
+- Start Mock Exam should navigate to the existing mock exam flow.
+- Keep the primary green style for Start Mock Exam.
+- Keep Practice Mode as secondary/outlined button.
+
+Do not move these actions far away from the welcome area.
+
+--------------------------------------------------
+2. Main Summary Cards Row
+--------------------------------------------------
+
+Create one clean row of exactly 5 compact summary cards:
+
+1. Average Score
+2. Readiness
+3. Weak Areas
+4. Recommendations
+5. Learning Streak
+
+Each card should include:
+- small icon
+- uppercase/small title
+- main metric
+- short helper text
+
+Examples of helper text:
+- Average Score: "Exams & practice"
+- Readiness: "Keep practicing" or the current readiness label
+- Weak Areas: "View details →"
+- Recommendations: "View details →"
+- Learning Streak: "Keep it up"
+
+Important:
+Move Learning Streak into this first summary row.
+Do NOT keep Learning Streak as a separate large card above the rest of the dashboard.
+
+Remove or merge the old separate “Practice” summary card if it duplicates Practice Mode / Practice Progress.
+The dashboard already has a Practice Mode button and Unfinished Practice section, so a separate Practice metric card is less important.
+
+Keep all cards equal height and visually consistent.
+
+--------------------------------------------------
+3. Continue Where You Left Off Section
+--------------------------------------------------
+
+Directly under the summary cards, add a compact section titled:
+
+"Continue where you left off"
+
+Inside it, show two side-by-side compact cards:
+
+A. Unfinished Practice
+B. Unfinished Exams
+
+If unfinished practice exists:
+- show course/topic/session name if available
+- show progress, for example: "12 of 20 questions completed"
+- show progress bar if data exists
+- show Continue button
+
+If no unfinished practice exists:
+- show a clean empty state:
+  "No unfinished practice"
+- optional action:
+  "Start Practice"
+
+If unfinished exam exists:
+- show exam/course name if available
+- show progress, for example: "14 of 50 questions"
+- show Continue button
+
+If no unfinished exams exist:
+- show:
+  "No exams in progress"
+- optional action:
+  "Start Mock Exam"
+
+Important:
+Do not use full-width huge cards for empty unfinished sections.
+Keep this section compact and balanced.
+
+--------------------------------------------------
+4. Analytics Row
+--------------------------------------------------
+
+Create a two-column analytics row:
+
+Left panel:
+Progress over time
+
+Right panel:
+Topic Performance
+
+--------------------------------------------------
+4A. Progress Over Time
+--------------------------------------------------
+
+Keep the existing chart if it already works.
+
+Improve the layout:
+- title: "Progress over time"
+- optional filter/dropdown if already exists, such as "Last 7 days"
+- clean chart spacing
+- if there is no progress data, show a friendly empty state:
+  "No progress data yet. Complete exams or practice sessions to see your trend."
+
+Do not add a heavy new charting library.
+If a chart library already exists, reuse it.
+If no chart library exists, use the current implementation or a clean list-based trend.
+
+--------------------------------------------------
+4B. Topic Performance
+--------------------------------------------------
+
+Show a compact topic performance list.
+
+Each row should show:
+- topic or subtopic name
+- course name/subtitle
+- accuracy percentage if enough data exists
+- status badge
+
+Status badge examples:
+- Strong
+- Needs Practice
+- Weak
+- Not enough data
+
+Very important:
+Do NOT mark topics as “Weak” only because they have 0% and insufficient attempts.
+
+If attempts_count is less than the minimum threshold, show:
+- percentage: "—" or "Not enough data"
+- badge: "Not enough data"
+
+Only show "Weak" when the backend/analytics indicates enough attempts and weakness_level = weak.
+
+This avoids making the student feel like they failed everything when the real issue is lack of data.
+
+Add a small "View all" link to navigate to Weak Areas or detailed analytics if such route exists.
+
+--------------------------------------------------
+5. Courses and Recent Exams Row
+--------------------------------------------------
+
+Under the analytics row, show two or three compact panels:
+
+A. Current Courses
+B. Recent Exams
+C. Milestones, if there is enough horizontal space
+
+--------------------------------------------------
+5A. Current Courses
+--------------------------------------------------
+
+Show a compact list of current courses.
+
+Recommended:
+- course code + course name
+- optional progress/score if already available
+- "View all" link
+
+Keep this panel shorter and cleaner than the current version.
+Do not make it overly tall.
+
+--------------------------------------------------
+5B. Recent Exams
+--------------------------------------------------
+
+Show recent exams in a compact list.
+
+Each row:
+- Exam name
+- Score
+- Date if available
+
+If no exams:
+- "No completed exams yet."
+- optional "Start Mock Exam" action
+
+--------------------------------------------------
+5C. Milestones
+--------------------------------------------------
+
+Milestones should be a compact card, not a dominant top-level section.
+
+Show:
+- "Milestones"
+- "[X] achievements unlocked"
+- "View achievements →"
+
+If no milestones:
+- "No milestones yet"
+- "Complete practice sessions or mock exams to unlock achievements."
+
+Do not place Milestones above the main learning summary row.
+
+==================================================
+VISUAL STYLE REQUIREMENTS
+==================================================
+
+Keep the existing EPS visual language:
+- light background
+- white rounded cards
+- subtle shadows/borders
+- clean spacing
+- same sidebar
+- same top bar
+- same typography style
+- same button style
+- same icon style if possible
+
+Improve:
+- spacing consistency
+- card alignment
+- section hierarchy
+- equal card heights
+- responsive grid behavior
+- empty states
+- visual grouping
+
+Avoid:
+- huge empty cards
+- repeated cards with same meaning
+- long dashboard lists
+- too many disconnected sections
+- scary “0% Weak” rows when data is insufficient
+
+==================================================
+RESPONSIVE BEHAVIOR
+==================================================
+
+Desktop:
+- Summary row should show 5 cards in one row if screen width allows.
+- Continue section should show 2 cards side by side.
+- Analytics should show 2 columns.
+- Courses / Recent Exams / Milestones should align in a clean grid.
+
+Tablet:
+- Summary cards may wrap to 2 rows.
+- Analytics panels can stack if needed.
+
+Mobile:
+- All cards should stack vertically.
+- Buttons should remain visible and usable.
+- No horizontal overflow.
+
+==================================================
+EMPTY STATE REQUIREMENTS
+==================================================
+
+Add friendly empty states for:
+
+1. No progress data:
+"Complete exams or practice sessions to see your progress."
+
+2. No topic performance data:
+"Not enough activity yet to calculate topic performance."
+
+3. No unfinished practice:
+"No unfinished practice."
+
+4. No unfinished exams:
+"No exams in progress."
+
+5. No recent exams:
+"No completed exams yet."
+
+6. No milestones:
+"No milestones yet. Complete learning activities to unlock achievements."
+
+Do not show blank panels.
+
+==================================================
+DATA RULES
+==================================================
+
+Use existing real data from the current dashboard APIs.
+
+Do not change calculations.
+
+Do not hardcode values such as:
+- 78%
+- 72/100
+- 4 days
+- 5 recommendations
+
+Use current values from the backend.
+
+Only improve how they are displayed.
+
+For Topic Performance:
+If the backend already returns attempts_count or enough-data indication, use it.
+If not, infer carefully:
+- If attempts_count exists and attempts_count < 3, display "Not enough data"
+- If attempts_count does not exist, do not over-label 0% as Weak unless weakness_level explicitly says weak.
+
+==================================================
+NAVIGATION RULES
+==================================================
+
+Keep existing navigation targets:
+
+- Practice Mode button → existing Practice route
+- Start Mock Exam button → existing mock exam route
+- Weak Areas card/details → existing Weak Areas route
+- Recommendations card/details → existing Recommendations route
+- Current Courses View all → existing Courses route
+- Recent Exams View all → existing My Exams / exam history route
+- Milestones View achievements → existing Engagement page if exists, otherwise show existing milestones section/modal
+
+Do not create duplicate routes if existing routes already exist.
+
+==================================================
+FILES / SCOPE
+==================================================
+
+Before changing code, inspect the current Student Dashboard component and related dashboard card components.
+
+Expected frontend-only files may include:
+- StudentDashboard page/component
+- Dashboard card components
+- Progress chart component
+- Topic performance component
+- Student dashboard CSS/Tailwind classes
+- Existing reusable UI components
+
+Do not modify backend files unless absolutely required for a small missing field display.
+Do not modify database or seed files.
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The refinement is complete when:
+
+1. Student Dashboard has a clear header with welcome text and action buttons.
+2. Summary cards appear in one clean row:
+   Average Score, Readiness, Weak Areas, Recommendations, Learning Streak.
+3. Learning Streak is no longer isolated as a large separate top card.
+4. Practice metric duplication is removed or merged logically.
+5. Unfinished Practice and Unfinished Exams appear together under “Continue where you left off.”
+6. Empty unfinished sections are compact and not huge.
+7. Progress over time and Topic Performance appear side by side on desktop.
+8. Topic Performance does not show “Weak” for topics with insufficient data.
+9. Current Courses and Recent Exams appear below analytics in compact panels.
+10. Milestones are shown as a compact lower card/section.
+11. The dashboard feels like one coherent page.
+12. Existing data still loads correctly.
+13. Existing buttons still navigate correctly.
+14. Existing sidebar and top bar are not broken.
+15. Existing Practice Mode still works.
+16. Existing Mock Exam flow still works.
+17. Existing Weak Areas and Recommendations pages still work.
+18. No backend logic was changed.
+19. No DB/schema changes were made.
+20. No unrelated pages were modified.
+
+==================================================
+VALIDATION AFTER IMPLEMENTATION
+==================================================
+
+After implementing, validate manually:
+
+1. Log in as a student.
+2. Open Dashboard.
+3. Confirm the new section order:
+   Header → Summary Cards → Continue where you left off → Analytics → Courses/Recent Exams/Milestones.
+4. Confirm all dashboard data still loads.
+5. Confirm Practice Mode button works.
+6. Confirm Start Mock Exam button works.
+7. Confirm Weak Areas details link works.
+8. Confirm Recommendations details link works.
+9. Confirm Continue unfinished practice works if data exists.
+10. Confirm Continue unfinished exam works if data exists.
+11. Confirm empty states look clean when data is missing.
+12. Confirm Topic Performance handles insufficient data correctly.
+13. Confirm the page is visually balanced and not overly long.
+14. Confirm no other role dashboards were changed.
+15. Confirm no existing functionality broke.
+
+At the end, summarize:
+- Which frontend files were changed
+- Whether any backend files were changed
+- How the layout was reorganized
+- How empty states were improved
+- How duplicate dashboard sections were reduced
+- Confirm that no DB/schema/API changes were made
