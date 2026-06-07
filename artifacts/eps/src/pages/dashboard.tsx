@@ -116,9 +116,6 @@ function StudentDashboard({ user }: { user: EpsUser }) {
           <h1 className="text-3xl font-bold tracking-tight">
             Welcome, {user.fullName}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Track your preparation progress and continue studying.
-          </p>
         </div>
         <div className="flex shrink-0 gap-2">
           <Link
