@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   useGetLecturerCourseAnalytics,
   getGetLecturerCourseAnalyticsQueryKey,
@@ -21,7 +21,18 @@ export default function LecturerCourseAnalytics({
 }: {
   params: { courseId: string };
 }) {
+  const [, setLocation] = useLocation();
   const courseId = parseInt(params.courseId, 10);
+
+  // Prefer the browser's previous page; fall back to the lecturer courses list
+  // when there's no safe history to go back to (e.g. opened via direct link).
+  const handleReturn = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      setLocation("/courses");
+    }
+  };
   const { data, isLoading, error } = useGetLecturerCourseAnalytics(courseId, {
     query: {
       queryKey: getGetLecturerCourseAnalyticsQueryKey(courseId),
@@ -71,19 +82,25 @@ export default function LecturerCourseAnalytics({
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 text-primary">
-          <BarChart3 className="w-6 h-6" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <BarChart3 className="w-6 h-6" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight truncate">
+              {data.courseName}
+            </h1>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight truncate">
-            {data.courseName}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Aggregated class performance. Individual student results are not
-            shown.
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={handleReturn}
+          className="inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent h-10 px-4 py-2"
+          data-testid="btn-return"
+        >
+          Return
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

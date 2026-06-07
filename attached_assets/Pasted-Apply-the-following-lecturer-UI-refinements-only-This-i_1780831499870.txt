@@ -1,0 +1,140 @@
+Apply the following lecturer UI refinements only.
+
+This is a focused frontend/UI refinement. Do not change DB schema, auth, permissions, Strategy A, course ownership logic, questions.course_id, topics.course_id, or unrelated pages.
+
+==================================================
+1. Lecturer Course Page — Add Return button
+==================================================
+
+On the lecturer course details page, add a “Return” button at the top-right of the page header area.
+
+Placement:
+- Same horizontal row as the course title/header area.
+- Right side of the content area.
+- Use the existing app button style.
+- The button label should be: Return
+
+Behavior:
+- Prefer navigating back to the previous page if browser history exists.
+- If no safe previous page exists, navigate to the Lecturer Courses page.
+- Do not create a new route.
+- Do not change the existing course details route.
+
+Important:
+This button should appear on the lecturer course details page, not on the lecturer dashboard.
+
+==================================================
+2. Lecturer Dashboard — Remove duplicate Question Bank bottom card
+==================================================
+
+On the lecturer dashboard, the Question Bank is already represented in the top summary cards.
+
+Therefore, remove the lower “Question Bank” card/section that appears below or under the “Your courses” section.
+
+Do not remove the top summary card:
+Question Bank
+
+Keep the top summary cards as:
+Active Courses | Question Bank | Problematic Questions | Most Failed Topics
+
+Do not leave an empty gap where the lower Question Bank card was removed.
+Rebalance the layout so the remaining dashboard sections look clean.
+
+==================================================
+3. Remove subtitle/explanation under main page titles
+==================================================
+
+Remove the explanatory subtitle under the main page title/header in these lecturer pages:
+
+A. Lecturer Dashboard
+Remove text like:
+“Monitor your courses and track course quality.”
+
+B. Lecturer Course Details Page
+Remove text like:
+“Course details, students, topics, and course-specific analytics.”
+
+The page should show only the main title, for example:
+Dashboard
+Welcome, Dr. Liat Levi
+
+or:
+OS301 - Operating Systems
+
+Do not remove useful section titles inside cards.
+Only remove the extra explanatory subtitle directly under the main page title/header.
+
+==================================================
+4. Preserve existing approved layout rules
+==================================================
+
+Lecturer Dashboard should still have:
+- Sidebar exactly as currently exists:
+  Dashboard, Courses, Question Bank, My Account
+- No Students, Reports, or Settings sidebar items
+- Top summary cards only:
+  Active Courses | Question Bank | Problematic Questions | Most Failed Topics
+- “Your courses” list showing only course names
+- Course rows clickable and navigating to the same course details page as the Courses page
+- Most Failed Topics section
+
+Lecturer Course Details Page should still have:
+- Course title
+- Return button top-right
+- Course-specific Class Average only
+- Students in this course section
+- Topics/Subtopics section
+- Course-specific Question Bank section if it exists there
+- Course-specific analytics only
+
+==================================================
+5. Do not change anything else
+==================================================
+
+Do NOT change:
+- login logic
+- authentication
+- role permissions
+- DB/schema
+- backend APIs
+- course_offerings logic
+- student visibility logic
+- lecturer course ownership logic
+- questions.course_id
+- topics.course_id
+- Strategy A
+- Student Dashboard
+- Admin Dashboard
+- Question Bank behavior
+- Courses page behavior
+
+==================================================
+Validation
+==================================================
+
+After implementation:
+
+1. Log in as a lecturer.
+2. Open Lecturer Dashboard.
+3. Confirm there is no subtitle/explanation under the main dashboard title/welcome header.
+4. Confirm top cards are:
+   Active Courses | Question Bank | Problematic Questions | Most Failed Topics
+5. Confirm the lower duplicate Question Bank card under Your courses was removed.
+6. Confirm no empty layout gap remains after removing it.
+7. Confirm the Your courses list still shows only course names.
+8. Click a course from Your courses.
+9. Confirm it opens the same course details page as clicking from the Courses page.
+10. Confirm the Course Details page has a Return button at the top-right.
+11. Click Return and confirm it returns to the previous page or Lecturer Courses page.
+12. Confirm there is no subtitle/explanation under the course title.
+13. Confirm Students in this course still appears.
+14. Confirm Topics/Subtopics still appears.
+15. Confirm course-specific Class Average still appears only on the course page.
+16. Confirm no unrelated pages changed.
+
+At the end, summarize:
+- Which frontend files were changed
+- Whether any backend files were changed
+- How the Return button behavior was implemented
+- How the duplicate Question Bank dashboard card was removed
+- Confirm no DB/auth/permissions/API/Strategy A changes were made

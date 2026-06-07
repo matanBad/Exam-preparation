@@ -20,6 +20,7 @@ import {
   Users,
   Flame,
   Trophy,
+  BookOpen,
 } from "lucide-react";
 import {
   LineChart,
@@ -590,19 +591,24 @@ function LecturerDashboard({ user }: { user: EpsUser }) {
     <div className="space-y-4 mt-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricTile
-          icon={<Target className="w-3.5 h-3.5" />}
-          label="Class Average"
-          value={fmtScore(analytics?.averageClassScore)}
-          sub="Across your courses"
-          testid="metric-class-average"
-        />
-        <MetricTile
           icon={<Users className="w-3.5 h-3.5" />}
           label="Active Courses"
           value={String(analytics?.coursesCount ?? 0)}
           sub={`${analytics?.studentsCount ?? 0} students`}
           href="/courses"
           testid="metric-active-courses"
+        />
+        <MetricTile
+          icon={<BookOpen className="w-3.5 h-3.5" />}
+          label="Question Bank"
+          value={String(questions?.length ?? 0)}
+          sub={
+            waitingApproval > 0
+              ? `${waitingApproval} waiting for approval`
+              : "All caught up"
+          }
+          href="/lecturer/questions"
+          testid="metric-question-bank"
         />
         <MetricTile
           icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -710,36 +716,6 @@ function LecturerDashboard({ user }: { user: EpsUser }) {
           </CardContent>
         </Card>
       </div>
-
-      <Link
-        href="/lecturer/questions"
-        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-        data-testid="card-lecturer-question-bank"
-      >
-        <Card className="cursor-pointer transition hover:shadow-md hover:border-primary/40">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Question Bank</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Total Questions:{" "}
-              <span className="font-semibold">{questions?.length ?? 0}</span>
-            </p>
-            <p className="mt-2 text-sm" data-testid="text-waiting-approval">
-              Waiting for approval:{" "}
-              <span
-                className={
-                  waitingApproval > 0
-                    ? "font-semibold text-destructive"
-                    : "font-semibold"
-                }
-              >
-                {waitingApproval}
-              </span>
-            </p>
-          </CardContent>
-        </Card>
-      </Link>
     </div>
   );
 }
