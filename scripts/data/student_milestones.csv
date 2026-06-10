@@ -1,0 +1,5 @@
+"id","user_id","milestone_type","milestone_key","achieved_at","notification_id","created_at"
+"1","1","practice","first_practice_completed","""2026-06-02T01:54:59.125Z""","41","""2026-06-02T01:54:59.125Z"""
+"2","1","exam","first_mock_exam_completed","""2026-06-02T01:54:59.223Z""","42","""2026-06-02T01:54:59.223Z"""
+"5","1","recommendation","first_recommendation_completed","""2026-06-07T13:51:24.953Z""","46","""2026-06-07T13:51:24.953Z"""
+"6","205","exam","first_mock_exam_completed","""2026-06-07T14:36:29.064Z""","57","""2026-06-07T14:36:29.064Z"""

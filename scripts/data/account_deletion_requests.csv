@@ -1,0 +1,4 @@
+"id","former_user_id","former_email","former_full_name","former_role","reason","deleted_at"
+"1","1","student@eps.com","Sam Student","student","Done with my exams, thanks!","""2026-05-17T14:51:24.445Z"""
+"2","4","123@sce.com","studet1","student","check","""2026-05-17T14:54:53.718Z"""
+"3","5","abc@abc.abc","abc","student","test abc delete","""2026-05-17T15:22:15.852Z"""

@@ -1,0 +1,14 @@
+"id","sender_id","recipient_id","subject","body","status","created_at","read_at"
+"1","2","1","Practice before your next exam","Hi Shai,
+
+A reminder to take at least one mock exam before our midterm next week. Focus on the indexing and normalization topics.
+
+— Dr. Liat Levi","read","""2026-05-24T21:17:47.427Z""","""2026-05-26T08:31:11.897Z"""
+"2","3","1","Welcome to EPS","Welcome! You're enrolled in CS101 and DB201. Generate a mock exam any time from the New Exam page.","read","""2026-05-24T21:17:47.427Z""","""2026-05-24T21:17:47.427Z"""
+"3","3","2","Please review your course questions","Hi Levi,
+
+When you have a moment, please review the pending questions in DB201 and mark them approved or archived.
+
+Thanks,
+Alex Adam","unread","""2026-05-24T21:17:47.427Z""",
+"4",,"3","System overview report is ready","The weekly system overview report has been generated and is ready to review in the admin dashboard.","unread","""2026-05-24T21:17:47.427Z""",

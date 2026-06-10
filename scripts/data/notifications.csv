@@ -1,0 +1,60 @@
+"id","user_id","type","title","message","related_entity_type","related_entity_id","status","created_at","read_at","action_url"
+"1","1","exam_submitted","Your CS101 mock exam was submitted","Score: 80%. Review your answers from the My Exams page.","exam",,"read","""2026-05-24T21:17:47.423Z""","""2026-05-24T21:17:47.420Z""",
+"2","1","course_update","New questions in DB201","Your lecturer added 5 new questions to your enrolled course.","course","4","read","""2026-05-24T21:17:47.423Z""","""2026-06-02T01:58:02.938Z""",
+"3","1","reminder","Practice reminder","You haven't taken a mock exam in 7 days.",,,"read","""2026-05-24T21:17:47.423Z""","""2026-06-02T01:58:02.938Z""",
+"4","2","question_created","Question added to your bank","Your question ""What is normalization?"" is now in the DB201 bank.","question",,"read","""2026-05-24T21:17:47.423Z""","""2026-05-24T21:17:47.420Z""",
+"5","2","course_update","Course question bank updated","10 questions in DB201 are now approved and available to students.","course","4","unread","""2026-05-24T21:17:47.423Z""",,
+"6","3","system","Weekly system activity","Daily active users up 12% this week.",,,"unread","""2026-05-24T21:17:47.423Z""",,
+"7","3","account_deleted","Account deletion processed","1 account deletion request was processed in the last 24h.",,,"unread","""2026-05-24T21:17:47.423Z""",,
+"8","3","course_update","Course structure changed","Topics for CS101 were reorganized by a lecturer.","course","1","unread","""2026-05-24T21:17:47.423Z""",,
+"9","1","exam_submitted","Your exam was submitted","Your DB201 Database Systems mock exam was submitted. Score: 46.67%.","exam","2","read","""2026-05-26T08:28:27.634Z""","""2026-06-02T01:58:02.938Z""",
+"10","3","exam_submitted","A new exam was submitted","A student submitted a DB201 Database Systems mock exam (score 46.67%).","exam","2","unread","""2026-05-26T08:28:27.638Z""",,
+"11","202","exam_submitted","A new exam was submitted","A student submitted a DB201 Database Systems mock exam (score 46.67%).","exam","2","unread","""2026-05-26T08:28:27.638Z""",,
+"12","203","exam_submitted","A new exam was submitted","A student submitted a DB201 Database Systems mock exam (score 46.67%).","exam","2","unread","""2026-05-26T08:28:27.638Z""",,
+"13","204","exam_submitted","A new exam was submitted","A student submitted a DB201 Database Systems mock exam (score 46.67%).","exam","2","unread","""2026-05-26T08:28:27.638Z""",,
+"14","1","exam_submitted","Your exam was submitted","Your OOP201 Object-Oriented Programming mock exam was submitted. Score: 0%.","exam","1","read","""2026-05-26T08:28:49.062Z""","""2026-06-02T01:58:02.938Z""",
+"15","3","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 0%).","exam","1","unread","""2026-05-26T08:28:49.066Z""",,
+"16","202","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 0%).","exam","1","unread","""2026-05-26T08:28:49.066Z""",,
+"17","203","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 0%).","exam","1","unread","""2026-05-26T08:28:49.066Z""",,
+"18","204","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 0%).","exam","1","unread","""2026-05-26T08:28:49.066Z""",,
+"19","1","exam_submitted","Your exam was submitted","Your OOP201 Object-Oriented Programming mock exam was submitted. Score: 5.55%.","exam","3","read","""2026-05-26T08:30:26.978Z""","""2026-06-02T01:58:02.938Z""",
+"20","3","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 5.55%).","exam","3","unread","""2026-05-26T08:30:26.983Z""",,
+"21","202","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 5.55%).","exam","3","unread","""2026-05-26T08:30:26.983Z""",,
+"22","203","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 5.55%).","exam","3","unread","""2026-05-26T08:30:26.983Z""",,
+"23","204","exam_submitted","A new exam was submitted","A student submitted a OOP201 Object-Oriented Programming mock exam (score 5.55%).","exam","3","unread","""2026-05-26T08:30:26.983Z""",,
+"24","1","exam_submitted","Your exam was submitted","Your DS201 Data Structures mock exam was submitted. Score: 0%.","exam","4","read","""2026-05-26T15:08:51.511Z""","""2026-06-02T01:58:02.938Z""",
+"25","3","exam_submitted","A new exam was submitted","A student submitted a DS201 Data Structures mock exam (score 0%).","exam","4","unread","""2026-05-26T15:08:51.519Z""",,
+"26","202","exam_submitted","A new exam was submitted","A student submitted a DS201 Data Structures mock exam (score 0%).","exam","4","unread","""2026-05-26T15:08:51.519Z""",,
+"27","203","exam_submitted","A new exam was submitted","A student submitted a DS201 Data Structures mock exam (score 0%).","exam","4","unread","""2026-05-26T15:08:51.519Z""",,
+"28","204","exam_submitted","A new exam was submitted","A student submitted a DS201 Data Structures mock exam (score 0%).","exam","4","unread","""2026-05-26T15:08:51.519Z""",,
+"29","1","exam_submitted","Your exam was submitted","Your 0300021 Calculus 1 mock exam was submitted. Score: 0%.","exam","5","read","""2026-06-01T10:03:37.093Z""","""2026-06-02T01:58:02.938Z""",
+"30","3","exam_submitted","A new exam was submitted","A student submitted a 0300021 Calculus 1 mock exam (score 0%).","exam","5","unread","""2026-06-01T10:03:37.099Z""",,
+"31","202","exam_submitted","A new exam was submitted","A student submitted a 0300021 Calculus 1 mock exam (score 0%).","exam","5","unread","""2026-06-01T10:03:37.099Z""",,
+"32","203","exam_submitted","A new exam was submitted","A student submitted a 0300021 Calculus 1 mock exam (score 0%).","exam","5","unread","""2026-06-01T10:03:37.099Z""",,
+"33","204","exam_submitted","A new exam was submitted","A student submitted a 0300021 Calculus 1 mock exam (score 0%).","exam","5","unread","""2026-06-01T10:03:37.099Z""",,
+"34","1","study_reminder","Study Reminder","You have topics waiting for practice. Continue your preparation today.",,,"read","""2026-06-02T01:51:58.750Z""","""2026-06-02T01:58:02.938Z""","/recommendations"
+"35","1","weak_area_alert","Weak Area Alert","Linear Data Structures needs more practice. Start a focused practice session.","weak_area","27","read","""2026-06-02T01:51:58.785Z""","""2026-06-02T01:58:02.938Z""","/weak-areas"
+"36","1","weak_area_alert","Weak Area Alert","Inheritance and Polymorphism needs more practice. Start a focused practice session.","weak_area","21","read","""2026-06-02T01:51:58.790Z""","""2026-06-02T01:58:02.938Z""","/weak-areas"
+"37","1","weak_area_alert","Weak Area Alert","Objects and References needs more practice. Start a focused practice session.","weak_area","17","read","""2026-06-02T01:51:58.795Z""","""2026-06-02T01:58:02.938Z""","/weak-areas"
+"38","1","recommendation_alert","Recommended Focus Area","Retry previous mistakes in Object Creation to reduce repeated errors.","recommendation","2","read","""2026-06-02T01:51:58.801Z""","""2026-06-02T01:58:02.938Z""","/recommendations"
+"39","1","recommendation_alert","Recommended Focus Area","Practice Method Overriding because your accuracy is 0%.","recommendation","3","read","""2026-06-02T01:51:58.805Z""","""2026-06-02T01:58:02.938Z""","/recommendations"
+"40","1","recommendation_alert","Recommended Focus Area","Practice Object Creation because your accuracy is 0%.","recommendation","1","read","""2026-06-02T01:51:58.809Z""","""2026-06-02T01:58:02.938Z""","/recommendations"
+"41","1","milestone","First Practice Completed","Great start! You completed your first practice session.","milestone","1","read","""2026-06-02T01:54:59.215Z""","""2026-06-02T01:58:02.938Z""","/practice"
+"42","1","milestone","First Mock Exam Completed","You completed your first mock exam. Review your results and keep improving.","milestone","2","read","""2026-06-02T01:54:59.226Z""","""2026-06-02T01:58:02.938Z""","/exams"
+"43","1","weak_area_alert","Weak Area Alert","Inheritance and Polymorphism needs more practice. Start a focused practice session.","weak_area","20","read","""2026-06-02T01:54:59.236Z""","""2026-06-02T01:58:02.938Z""","/weak-areas"
+"44","1","weak_area_alert","Weak Area Alert","Integration needs more practice. Start a focused practice session.","weak_area","164","read","""2026-06-02T01:54:59.239Z""","""2026-06-02T01:58:02.938Z""","/weak-areas"
+"45","1","study_reminder","Study Reminder","You have topics waiting for practice. Continue your preparation today.",,,"unread","""2026-06-07T08:36:41.318Z""",,"/recommendations"
+"46","1","milestone","First Recommendation Completed","You completed your first personalized recommendation.","milestone","5","unread","""2026-06-07T13:51:24.961Z""",,"/recommendations"
+"47","1","recommendation_alert","Recommended Focus Area","Retry previous mistakes in Method Overriding to reduce repeated errors.","recommendation","4","unread","""2026-06-07T13:51:38.200Z""",,"/recommendations"
+"48","3","user_registration","New student registration","Dani Lalosh <danilal@ac.sce.ac.il> requested an account and is awaiting approval.","user","205","unread","""2026-06-07T14:34:24.972Z""",,
+"49","203","user_registration","New student registration","Dani Lalosh <danilal@ac.sce.ac.il> requested an account and is awaiting approval.","user","205","unread","""2026-06-07T14:34:24.972Z""",,
+"50","204","user_registration","New student registration","Dani Lalosh <danilal@ac.sce.ac.il> requested an account and is awaiting approval.","user","205","unread","""2026-06-07T14:34:24.972Z""",,
+"51","202","user_registration","New student registration","Dani Lalosh <danilal@ac.sce.ac.il> requested an account and is awaiting approval.","user","205","unread","""2026-06-07T14:34:24.972Z""",,
+"52","205","exam_submitted","Your exam was submitted","Your EE101 Electronic Materials mock exam was submitted. Score: 12.5%.","exam","7","unread","""2026-06-07T14:36:29.029Z""",,
+"53","3","exam_submitted","A new exam was submitted","A student submitted a EE101 Electronic Materials mock exam (score 12.5%).","exam","7","unread","""2026-06-07T14:36:29.033Z""",,
+"54","203","exam_submitted","A new exam was submitted","A student submitted a EE101 Electronic Materials mock exam (score 12.5%).","exam","7","unread","""2026-06-07T14:36:29.033Z""",,
+"55","204","exam_submitted","A new exam was submitted","A student submitted a EE101 Electronic Materials mock exam (score 12.5%).","exam","7","unread","""2026-06-07T14:36:29.033Z""",,
+"56","202","exam_submitted","A new exam was submitted","A student submitted a EE101 Electronic Materials mock exam (score 12.5%).","exam","7","unread","""2026-06-07T14:36:29.033Z""",,
+"57","205","milestone","First Mock Exam Completed","You completed your first mock exam. Review your results and keep improving.","milestone","6","unread","""2026-06-07T14:36:29.067Z""",,"/exams"
+"58","1","study_reminder","Study Reminder","You have topics waiting for practice. Continue your preparation today.",,,"unread","""2026-06-08T12:06:00.853Z""",,"/recommendations"
+"59","1","study_reminder","Study Reminder","You have topics waiting for practice. Continue your preparation today.",,,"unread","""2026-06-09T11:07:08.280Z""",,"/recommendations"

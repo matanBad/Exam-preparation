@@ -16,8 +16,18 @@ import {
   programsTable,
   lecturerProgramsTable,
   courseOfferingsTable,
+  mockExamsTable,
+  mockExamQuestionsTable,
+  practiceSessionsTable,
+  practiceSessionQuestionsTable,
+  performanceSummaryTable,
+  recommendationsTable,
+  learningStreaksTable,
+  studentMilestonesTable,
+  accountDeletionRequestsTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, "../data");
@@ -85,6 +95,25 @@ function parseCsv(text: string): Record<string, string>[] {
 function readCsv(name: string): Record<string, string>[] {
   return parseCsv(fs.readFileSync(path.join(DATA_DIR, name), "utf8"));
 }
+function textOrNull(value: string | undefined): string | null {
+  if (!value || value.trim() === "") return null;
+  return value.replace(/^"+|"+$/g, "");
+}
+
+function numOrNull(value: string | undefined): number | null {
+  if (!value || value.trim() === "") return null;
+  return Number(value);
+}
+
+function boolOrNull(value: string | undefined): boolean | null {
+  if (!value || value.trim() === "") return null;
+  return value === "true";
+}
+
+function dateOrNull(value: string | undefined): Date | null {
+  const clean = textOrNull(value);
+  return clean ? new Date(clean) : null;
+}
 
 async function insertInChunks<T>(
   table: any,
@@ -118,9 +147,12 @@ const boolVal = (v: string) => v.toLowerCase() === "true" || v === "1";
 async function main() {
   console.log("Clearing existing data...");
   await db.execute(sql`TRUNCATE TABLE
-    notifications, messages, mock_exam_questions, mock_exams, answer_options,
-    questions, topics, enrollments, course_offerings, lecturer_programs,
-    courses, users, programs RESTART IDENTITY CASCADE`);
+    account_deletion_requests, student_milestones, learning_streaks, recommendations,
+    performance_summary, practice_session_questions, practice_sessions, notifications,
+    messages, mock_exam_questions, mock_exams, answer_options,
+    questions, topics, enrollments, course_offerings,
+    lecturer_programs, courses, users, programs
+    RESTART IDENTITY CASCADE`);
 
   const passwordHash = await bcrypt.hash("123456", 10);
 
@@ -409,19 +441,275 @@ async function main() {
   console.log(`Seeding ${lpPairs.size} lecturer_programs...`);
   await db.insert(lecturerProgramsTable).values([...lpPairs.values()]);
 
+  // ---- mock_exams ----
+  const mockExamRows = readCsv("mock_exams.csv");
+  const mockExamRowsValid = mockExamRows.filter(
+      (e) =>
+          validUserIds.has(Number(e.user_id)) &&
+          validCourseIds.has(Number(e.course_id)),
+  );
+
+  const mockExamSkipped = mockExamRows.length - mockExamRowsValid.length;
+  if (mockExamSkipped > 0) {
+    console.warn(`Skipping ${mockExamSkipped} mock_exam rows with missing FK.`);
+  }
+  const validMockExamIds = new Set(mockExamRowsValid.map((e) => Number(e.id)));
+  console.log(`Seeding ${mockExamRowsValid.length} mock_exams...`);
+  await insertInChunks(mockExamsTable, mockExamRowsValid.map((e) => ({
+        id: Number(e.id),
+        userId: Number(e.user_id),
+        courseId: Number(e.course_id),
+        generatedByRule: textOrNull(e.generated_by_rule),
+        examMode: e.exam_mode || "mock",
+        totalQuestions: Number(e.total_questions),
+        durationMinutes: numOrNull(e.duration_minutes),
+        startedAt: dateOrNull(e.started_at),
+        submittedAt: dateOrNull(e.submitted_at),
+        score: numOrNull(e.score),
+        status: e.status || "generated",
+        createdAt: dateOrNull(e.created_at) ?? new Date(),
+        updatedAt: dateOrNull(e.updated_at) ?? new Date(),
+      })),
+      13,
+  );
+
+  // ---- mock_exam_questions ----
+  const mockExamQuestionRows = readCsv("mock_exam_questions.csv");
+  const mockExamQuestionRowsValid = mockExamQuestionRows.filter(
+      (q) =>
+          validMockExamIds.has(Number(q.exam_id)) && validQuestionIds.has(Number(q.question_id)),
+  );
+  const mockExamQuestionSkipped =
+      mockExamQuestionRows.length - mockExamQuestionRowsValid.length;
+  if (mockExamQuestionSkipped > 0) {
+    console.warn(
+        `Skipping ${mockExamQuestionSkipped} mock_exam_question rows with missing FK.`,
+    );
+  }
+  console.log(`Seeding ${mockExamQuestionRowsValid.length} mock_exam_questions...`);
+  await insertInChunks(mockExamQuestionsTable, mockExamQuestionRowsValid.map((q) => ({
+        id: Number(q.id),
+        examId: Number(q.exam_id),
+        questionId: Number(q.question_id),
+        randomizedOrder: Number(q.randomized_order),
+        randomizedOptionOrder: q.randomized_option_order || "[]",
+        selectedAnswerOptionId: numOrNull(q.selected_answer_option_id),
+        selectedOptionIds: q.selected_option_ids || "[]",
+        isCorrect: boolOrNull(q.is_correct),
+        maxScore: Number(q.max_score),
+        earnedScore: numOrNull(q.earned_score),
+        responseTimeSeconds: numOrNull(q.response_time_seconds),
+      })),
+      11,
+  );
+
+  // ---- practice_sessions ----
+  const practiceSessionRows = readCsv("practice_sessions.csv");
+  const practiceSessionRowsValid = practiceSessionRows.filter((s) => {
+    const topicId = numOrNull(s.topic_id);
+    const subtopicId = numOrNull(s.subtopic_id);
+
+    return (
+        validUserIds.has(Number(s.user_id)) &&
+        validCourseIds.has(Number(s.course_id)) &&
+        (topicId === null || validTopicIds.has(topicId)) &&
+        (subtopicId === null || validTopicIds.has(subtopicId))
+    );
+  });
+  const practiceSessionSkipped = practiceSessionRows.length - practiceSessionRowsValid.length;
+  if (practiceSessionSkipped > 0) {
+    console.warn(`Skipping ${practiceSessionSkipped} practice_session rows with missing FK.`,
+    );
+  }
+  const validPracticeSessionIds = new Set(practiceSessionRowsValid.map((s) => Number(s.id)),);
+  console.log(`Seeding ${practiceSessionRowsValid.length} practice_sessions...`);
+  await insertInChunks(practiceSessionsTable, practiceSessionRowsValid.map((s) => ({
+        id: Number(s.id),
+        userId: Number(s.user_id),
+        courseId: Number(s.course_id),
+        topicId: numOrNull(s.topic_id),
+        subtopicId: numOrNull(s.subtopic_id),
+        sessionType: s.session_type || "topic",
+        status: s.status || "active",
+        totalQuestions: Number(s.total_questions),
+        answeredCount: Number(s.answered_count),
+        correctCount: Number(s.correct_count),
+        earnedScore: Number(s.earned_score),
+        totalMaxScore: Number(s.total_max_score),
+        startedAt: dateOrNull(s.started_at) ?? new Date(),
+        completedAt: dateOrNull(s.completed_at),
+        createdAt: dateOrNull(s.created_at) ?? new Date(),
+        updatedAt: dateOrNull(s.updated_at) ?? new Date(),
+      })),
+      16,
+  );
+
+  // ---- practice_session_questions ----
+  const practiceSessionQuestionRows = readCsv("practice_session_questions.csv");
+  const practiceSessionQuestionRowsValid = practiceSessionQuestionRows.filter(
+      (q) => validPracticeSessionIds.has(Number(q.session_id)) && validQuestionIds.has(Number(q.question_id)),);
+  const practiceSessionQuestionSkipped = practiceSessionQuestionRows.length - practiceSessionQuestionRowsValid.length;
+  if (practiceSessionQuestionSkipped > 0) {
+    console.warn(`Skipping ${practiceSessionQuestionSkipped} practice_session_question rows with missing FK.`,);}
+  console.log(`Seeding ${practiceSessionQuestionRowsValid.length} practice_session_questions...`,);
+  await insertInChunks(practiceSessionQuestionsTable, practiceSessionQuestionRowsValid.map((q) => ({
+        id: Number(q.id),
+        sessionId: Number(q.session_id),
+        questionId: Number(q.question_id),
+        questionOrder: Number(q.question_order),
+        randomizedOptionOrder: q.randomized_option_order || "[]",
+        selectedAnswerOptionId: numOrNull(q.selected_answer_option_id),
+        selectedOptionIds: q.selected_option_ids || "[]",
+        isCorrect: boolOrNull(q.is_correct),
+        confidenceLevel: textOrNull(q.confidence_level),
+        responseTimeSeconds: numOrNull(q.response_time_seconds),
+        maxScore: Number(q.max_score),
+        earnedScore: numOrNull(q.earned_score),
+        status: q.status || "not_answered",
+        answeredAt: dateOrNull(q.answered_at),
+        createdAt: dateOrNull(q.created_at) ?? new Date(),
+        updatedAt: dateOrNull(q.updated_at) ?? new Date(),
+      })),
+      16,
+  );
+
+  // ---- performance_summary ----
+  const performanceSummaryRows = readCsv("performance_summary.csv");
+  const performanceSummaryRowsValid = performanceSummaryRows.filter((p) => {
+    const subtopicId = numOrNull(p.subtopic_id);
+    return (
+        validUserIds.has(Number(p.user_id)) && validCourseIds.has(Number(p.course_id)) &&
+        validTopicIds.has(Number(p.topic_id)) && (subtopicId === null || validTopicIds.has(subtopicId)));
+  });
+  const performanceSummarySkipped = performanceSummaryRows.length - performanceSummaryRowsValid.length;
+  if (performanceSummarySkipped > 0) {
+    console.warn(`Skipping ${performanceSummarySkipped} performance_summary rows with missing FK.`,);}
+  console.log(`Seeding ${performanceSummaryRowsValid.length} performance_summary...`);
+  await insertInChunks(performanceSummaryTable, performanceSummaryRowsValid.map((p) => ({
+        id: Number(p.id),
+        userId: Number(p.user_id),
+        courseId: Number(p.course_id),
+        topicId: Number(p.topic_id),
+        subtopicId: numOrNull(p.subtopic_id),
+        attemptsCount: Number(p.attempts_count),
+        correctCount: Number(p.correct_count),
+        incorrectCount: Number(p.incorrect_count),
+        totalEarnedScore: Number(p.total_earned_score),
+        totalPossibleScore: Number(p.total_possible_score),
+        accuracyRate: Number(p.accuracy_rate),
+        averageResponseTime: numOrNull(p.average_response_time),
+        lowConfidenceCount: Number(p.low_confidence_count),
+        repeatedMistakeCount: Number(p.repeated_mistake_count),
+        weaknessScore: Number(p.weakness_score),
+        weaknessLevel: p.weakness_level || "strong",
+        lastActivityAt: dateOrNull(p.last_activity_at),
+        createdAt: dateOrNull(p.created_at) ?? new Date(),
+        updatedAt: dateOrNull(p.updated_at) ?? new Date(),
+      })),
+      19,
+  );
+
+  // ---- recommendations ----
+  const recommendationRows = readCsv("recommendations.csv");
+  const recommendationRowsValid = recommendationRows.filter((r) => {
+    const topicId = numOrNull(r.topic_id);
+    const subtopicId = numOrNull(r.subtopic_id);
+    return (
+        validUserIds.has(Number(r.user_id)) && validCourseIds.has(Number(r.course_id)) &&
+        (topicId === null || validTopicIds.has(topicId)) && (subtopicId === null || validTopicIds.has(subtopicId)));
+  });
+  const recommendationSkipped = recommendationRows.length - recommendationRowsValid.length;
+  if (recommendationSkipped > 0) {
+    console.warn(
+        `Skipping ${recommendationSkipped} recommendation rows with missing FK.`,);}
+  console.log(`Seeding ${recommendationRowsValid.length} recommendations...`);
+  await insertInChunks(recommendationsTable, recommendationRowsValid.map((r) => ({
+        id: Number(r.id),
+        userId: Number(r.user_id),
+        courseId: Number(r.course_id),
+        topicId: numOrNull(r.topic_id),
+        subtopicId: numOrNull(r.subtopic_id),
+        recommendationType: r.recommendation_type,
+        recommendationText: r.recommendation_text,
+        priority: r.priority || "medium",
+        status: r.status || "active",
+        source: r.source || "performance_summary",
+        createdAt: dateOrNull(r.created_at) ?? new Date(),
+        updatedAt: dateOrNull(r.updated_at) ?? new Date(),
+      })),
+      12,
+  );
+
+  // ---- learning_streaks ----
+  const learningStreakRows = readCsv("learning_streaks.csv");
+  const learningStreakRowsValid = learningStreakRows.filter((s) =>
+      validUserIds.has(Number(s.user_id)),
+  );
+  const learningStreakSkipped = learningStreakRows.length - learningStreakRowsValid.length;
+  if (learningStreakSkipped > 0) {
+    console.warn(
+        `Skipping ${learningStreakSkipped} learning_streak rows with missing FK.`,
+    );
+  }
+  console.log(`Seeding ${learningStreakRowsValid.length} learning_streaks...`);
+  await insertInChunks(learningStreaksTable, learningStreakRowsValid.map((s) => ({
+        id: Number(s.id),
+        userId: Number(s.user_id),
+        currentStreak: Number(s.current_streak),
+        longestStreak: Number(s.longest_streak),
+        lastActivityDate: textOrNull(s.last_activity_date),
+        createdAt: dateOrNull(s.created_at) ?? new Date(),
+        updatedAt: dateOrNull(s.updated_at) ?? new Date(),
+      })),
+      7,
+  );
+
+  // ---- student_milestones ----
+  const studentMilestoneRows = readCsv("student_milestones.csv");
+  const studentMilestoneRowsValid = studentMilestoneRows.filter((m) =>
+      validUserIds.has(Number(m.user_id)),
+  );
+  const studentMilestoneSkipped = studentMilestoneRows.length - studentMilestoneRowsValid.length;
+  if (studentMilestoneSkipped > 0) {
+    console.warn(
+        `Skipping ${studentMilestoneSkipped} student_milestone rows with missing FK.`,);}
+  console.log(`Seeding ${studentMilestoneRowsValid.length} student_milestones...`);
+  await insertInChunks(studentMilestonesTable, studentMilestoneRowsValid.map((m) => ({
+        id: Number(m.id),
+        userId: Number(m.user_id),
+        milestoneType: m.milestone_type,
+        milestoneKey: m.milestone_key,
+        achievedAt: dateOrNull(m.achieved_at) ?? new Date(),
+        notificationId: null,
+        createdAt: dateOrNull(m.created_at) ?? new Date(),
+      })),
+      7,
+  );
+
   // Bump serial sequences past the largest explicit id we inserted, so future
   // inserts (registration, lecturer-created questions, etc.) don't collide.
   console.log("Resyncing sequences...");
   for (const table of [
+    "programs",
     "users",
     "courses",
     "enrollments",
     "topics",
     "questions",
     "answer_options",
-    "programs",
-    "lecturer_programs",
     "course_offerings",
+    "lecturer_programs",
+    "mock_exams",
+    "mock_exam_questions",
+    "practice_sessions",
+    "practice_session_questions",
+    "performance_summary",
+    "recommendations",
+    "learning_streaks",
+    "notifications",
+    "messages",
+    "student_milestones",
+    "account_deletion_requests",
   ]) {
     await db.execute(
       sql.raw(
