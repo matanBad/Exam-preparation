@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -113,10 +114,15 @@ export default function Account() {
   };
 
   const [email, setEmail] = useState(user?.email ?? "");
+  const [newEmail, setNewEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showEmailPw, setShowEmailPw] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
@@ -174,7 +180,7 @@ export default function Account() {
     e.preventDefault();
     if (!email || !emailPassword) return;
     changeEmail.mutate(
-      { data: { newEmail: email, currentPassword: emailPassword } },
+      { data: { newEmail: newEmail, currentPassword: emailPassword } },
       {
         onSuccess: (updated) => {
           if (user) setAuthUser({ ...user, email: updated.email });
@@ -369,32 +375,47 @@ export default function Account() {
         <CardContent>
           <form onSubmit={submitEmail} className="space-y-4" data-testid="form-change-email">
             <div className="space-y-2">
-              <Label htmlFor="email">Current email</Label>
+              <Label htmlFor="current-email">Current email</Label>
               <Input
-                id="email"
+                id="current-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                readOnly
+                disabled
+                data-testid="input-current-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">New email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
                 required
                 data-testid="input-new-email"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-cur-pw">New email</Label>
-              <Input
-                id="email-cur-pw"
-                type="password"
-                value={emailPassword}
-                onChange={(e) => setEmailPassword(e.target.value)}
-                required
-                data-testid="input-email-current-password"
-              />
+              <Label htmlFor="email-cur-pw">Current password</Label>
+              <div className="relative">
+                <Input
+                  id="email-cur-pw"
+                  type={showEmailPw ? "text" : "password"}
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                  data-testid="input-email-current-password"
+                />
+                <button type="button" onClick={() => setShowEmailPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1} aria-label={showEmailPw ? "Hide password" : "Show password"}>
+                  {showEmailPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <Button
-              type="submit"
-              disabled={changeEmail.isPending}
-              data-testid="btn-save-email"
-            >
+            <Button type="submit" disabled={changeEmail.isPending} data-testid="btn-save-email">
               {changeEmail.isPending ? "Saving..." : "Update email"}
             </Button>
           </form>
@@ -412,38 +433,36 @@ export default function Account() {
           >
             <div className="space-y-2">
               <Label htmlFor="cur-pw">Current password</Label>
-              <Input
-                id="cur-pw"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                data-testid="input-current-password"
-              />
+              <div className="relative">
+                <Input id="cur-pw" type={showCurrentPw ? "text" : "password"} value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)} required className="pr-10" data-testid="input-current-password" />
+                <button type="button" onClick={() => setShowCurrentPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} aria-label="Toggle password">
+                  {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-pw">New password</Label>
-              <Input
-                id="new-pw"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-                data-testid="input-new-password"
-              />
+              <div className="relative">
+                <Input id="new-pw" type={showNewPw ? "text" : "password"} value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)} required minLength={6} className="pr-10" data-testid="input-new-password" />
+                <button type="button" onClick={() => setShowNewPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} aria-label="Toggle password">
+                  {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-pw">Confirm new password</Label>
-              <Input
-                id="confirm-pw"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                data-testid="input-confirm-password"
-              />
+              <div className="relative">
+                <Input id="confirm-pw" type={showConfirmPw ? "text" : "password"} value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="pr-10" data-testid="input-confirm-password" />
+                <button type="button" onClick={() => setShowConfirmPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} aria-label="Toggle password">
+                  {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"

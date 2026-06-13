@@ -176,22 +176,14 @@ export default function ExamTake({ params }: { params: { id: string } }) {
             {q.topicName && (
               <p className="text-xs text-muted-foreground">{q.topicName}</p>
             )}
-            {q.questionType === "multiple_choice" && (
-              <div
-                className="mt-3 rounded-md border border-amber-400/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-900 dark:text-amber-200"
-                data-testid={`info-partial-credit-${q.id}`}
-              >
-                <span className="font-semibold">
-                  This question may have one or more correct answers.
-                </span>{" "}
-                Select every option you think is correct. You'll get a share of
-                the points for each correct answer you mark. Incorrect
-                selections don't deduct points.
-              </div>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-base whitespace-pre-wrap">{q.questionText}</p>
+            {q.questionType === "multiple_choice" && (
+              <p className="text-sm text-muted-foreground italic" data-testid={`info-select-all-${q.id}`}>
+                Select all correct answers.
+              </p>
+            )}
             <div className="space-y-2">
               {q.options.map((opt, idx) => {
                 const selected = (answers[q.id] ?? []).includes(opt.id);

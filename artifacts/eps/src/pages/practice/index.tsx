@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, History, Lightbulb } from "lucide-react";
+import { Sparkles, History, TrendingDown } from "lucide-react";
 
 export default function PracticeIndex() {
   const user = getAuthUser();
@@ -85,62 +85,64 @@ export default function PracticeIndex() {
     );
   };
 
-  const activeSessions = history?.active ?? [];
+  const activeSessions = (history?.active ?? []).slice(0, 4);
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Practice Mode</h1>
-        </div>
-      </div>
+    <div className="space-y-6 max-w-4xl">
+      <h1 className="text-3xl font-bold tracking-tight">Practice Mode</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            New practice session
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Course</Label>
-            <Select
-              value={courseId?.toString() ?? ""}
-              onValueChange={(v) => {
-                setCourseId(parseInt(v, 10));
-                setTopicId(null);
-                setSubtopicId(null);
-              }}
-            >
-              <SelectTrigger data-testid="select-practice-course">
-                <SelectValue placeholder="Choose a course" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses?.map((c) => (
-                  <SelectItem key={c.id} value={c.id.toString()}>
-                    {c.courseCode} — {c.courseName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Row 1: New practice session | Resume practice */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              New practice session
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select a course and optionally focus on a topic or subtopic.
+            </p>
 
-          {courseId && (
             <div className="space-y-2">
-              <Label>Topic (optional)</Label>
+              <Label>Course</Label>
+              <Select
+                value={courseId?.toString() ?? ""}
+                onValueChange={(v) => {
+                  setCourseId(parseInt(v, 10));
+                  setTopicId(null);
+                  setSubtopicId(null);
+                }}
+              >
+                <SelectTrigger data-testid="select-practice-course">
+                  <SelectValue placeholder="Choose a course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses?.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>
+                      {c.courseCode} — {c.courseName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Topic</Label>
               <Select
                 value={topicId?.toString() ?? "all"}
                 onValueChange={(v) => {
                   setTopicId(v === "all" ? null : parseInt(v, 10));
                   setSubtopicId(null);
                 }}
+                disabled={!courseId}
               >
                 <SelectTrigger data-testid="select-practice-topic">
-                  <SelectValue />
+                  <SelectValue placeholder="All topics" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All topics (mixed)</SelectItem>
+                  <SelectItem value="all">All topics</SelectItem>
                   {topLevelTopics.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
                       {t.topicName}
@@ -149,128 +151,206 @@ export default function PracticeIndex() {
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {courseId && topicId != null && subtopics.length > 0 && (
-            <div className="space-y-2">
-              <Label>Subtopic (optional)</Label>
-              <Select
-                value={subtopicId?.toString() ?? "all"}
-                onValueChange={(v) =>
-                  setSubtopicId(v === "all" ? null : parseInt(v, 10))
-                }
-              >
-                <SelectTrigger data-testid="select-practice-subtopic">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All subtopics</SelectItem>
-                  {subtopics.map((t) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.topicName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="count">Number of questions</Label>
-            <Input
-              id="count"
-              type="number"
-              min={1}
-              max={50}
-              value={questionCount}
-              onChange={(e) =>
-                setQuestionCount(
-                  Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)),
-                )
-              }
-              data-testid="input-practice-count"
-            />
-            <p className="text-xs text-muted-foreground">
-              Up to 50 questions, drawn from approved questions for your selection.
-            </p>
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive" data-testid="text-practice-error">
-              {error}
-            </p>
-          )}
-
-          <Button
-            onClick={start}
-            disabled={generate.isPending}
-            data-testid="btn-start-practice"
-          >
-            {generate.isPending ? "Starting..." : "Start practicing"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {activeSessions.length > 0 && (
-        <Card data-testid="card-unfinished-practice">
-          <CardHeader>
-            <CardTitle>Resume practice</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {activeSessions.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between border-b pb-2 last:border-0"
+            {courseId && topicId != null && subtopics.length > 0 && (
+              <div className="space-y-2">
+                <Label>Subtopic</Label>
+                <Select
+                  value={subtopicId?.toString() ?? "all"}
+                  onValueChange={(v) =>
+                    setSubtopicId(v === "all" ? null : parseInt(v, 10))
+                  }
                 >
-                  <span className="text-sm">
-                    {s.courseName ?? `Course ${s.courseId}`}
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {s.answeredCount}/{s.totalQuestions} answered
-                    </span>
-                  </span>
-                  <Link
-                    href={`/practice/${s.id}`}
-                    className="text-primary hover:underline text-sm"
-                    data-testid={`link-resume-practice-${s.id}`}
-                  >
-                    Resume
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                  <SelectTrigger data-testid="select-practice-subtopic">
+                    <SelectValue placeholder="All subtopics" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All subtopics</SelectItem>
+                    {subtopics.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.topicName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="count">Number of questions</Label>
+              <Input
+                id="count"
+                type="number"
+                min={1}
+                max={50}
+                value={questionCount}
+                onChange={(e) =>
+                  setQuestionCount(
+                    Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                  )
+                }
+                className="max-w-[120px]"
+                data-testid="input-practice-count"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive" data-testid="text-practice-error">
+                {error}
+              </p>
+            )}
+
+            <Button
+              onClick={start}
+              disabled={generate.isPending}
+              data-testid="btn-start-practice"
+            >
+              {generate.isPending ? "Starting..." : "Start practicing"}
+            </Button>
           </CardContent>
         </Card>
-      )}
 
+        <Card data-testid="card-resume-practice">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Resume practice</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activeSessions.length > 0 ? (
+              <ul className="space-y-3">
+                {activeSessions.map((s) => {
+                  const pct =
+                    s.totalQuestions > 0
+                      ? Math.round((s.answeredCount / s.totalQuestions) * 100)
+                      : 0;
+                  return (
+                    <li key={s.id} className="space-y-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium truncate block">
+                            {s.courseName ?? `Course ${s.courseId}`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {s.answeredCount}/{s.totalQuestions} answered
+                          </span>
+                        </div>
+                        <Link
+                          href={`/practice/${s.id}`}
+                          className="text-primary hover:underline text-sm shrink-0"
+                          data-testid={`link-resume-practice-${s.id}`}
+                        >
+                          Resume
+                        </Link>
+                      </div>
+                      <div
+                        className="h-1.5 w-full rounded-full bg-muted"
+                        role="progressbar"
+                        aria-valuenow={pct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="py-8 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  No practice sessions in progress.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Start a new session on the left to begin.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: In progress | Completed */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link href="/practice/history" className="block">
-          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <History className="w-4 h-4" />
-                Practice history
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Review your past sessions and accuracy.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Card className="h-full opacity-70" data-testid="card-weak-areas">
+        <Card data-testid="card-practice-in-progress">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Lightbulb className="w-4 h-4" />
-              Weak areas
+              <History className="w-4 h-4 text-primary" />
+              Practice in progress
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Available after more practice data is collected.
-            </p>
+            {activeSessions.length > 0 ? (
+              <ul className="space-y-3">
+                {activeSessions.map((s) => {
+                  const pct = s.totalQuestions > 0
+                    ? Math.round((s.answeredCount / s.totalQuestions) * 100)
+                    : 0;
+                  return (
+                    <li key={s.id} className="space-y-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium truncate block">
+                            {s.courseName ?? `Course ${s.courseId}`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {s.answeredCount}/{s.totalQuestions} answered
+                          </span>
+                        </div>
+                        <Link href={`/practice/${s.id}`} className="text-primary hover:underline text-sm shrink-0"
+                          data-testid={`link-resume-${s.id}`}>
+                          Resume
+                        </Link>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No sessions in progress.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-practice-completed">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingDown className="w-4 h-4 text-primary" />
+              Completed practice
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(history?.completed ?? []).length > 0 ? (
+              <ul className="space-y-2">
+                {(history?.completed ?? []).slice(0, 4).map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-3 border-b pb-2 last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {s.courseName ?? `Course ${s.courseId}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.correctCount}/{s.totalQuestions} correct
+                        {s.earnedScore != null && ` · ${Math.round(s.earnedScore)}%`}
+                      </p>
+                    </div>
+                    <Link href={`/practice/${s.id}/review`}
+                      className="text-primary hover:underline text-sm shrink-0">
+                      Review
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No completed sessions yet.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -10,6 +10,10 @@ import {
   useRemoveCourseMember,
   useListUsers,
   useGetLecturerCourseAnalytics,
+  useGetStudentDashboardAnalytics,
+  useGetStudentProgressOverTime,
+  useGetPracticeHistory,
+  useGetUserExams,
   getListCourseTopicsQueryKey,
   getGetCourseQueryKey,
   getListCourseMembersQueryKey,
@@ -19,15 +23,25 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAuthUser } from "@/lib/auth";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import {
   TrendingDown,
   AlertTriangle,
   FileWarning,
   Users,
+  ChevronRight,
 } from "lucide-react";
 
 function fmtScore(n: number | null | undefined): string {
@@ -46,6 +60,479 @@ type Topic = {
   parentTopicId?: number | null;
 };
 
+const WEAKNESS_STYLES: Record<string, string> = {
+  weak: "bg-destructive/10 text-destructive border-destructive/20",
+  needs_practice: "bg-amber-100 text-amber-700 border-amber-200",
+  strong: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+const WEAKNESS_LABEL: Record<string, string> = {
+  weak: "Weak",
+  needs_practice: "Needs Practice",
+  strong: "Strong",
+};
+
+const TOPIC_MIN_ATTEMPTS = 3;
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Student-specific course detail view: shows course-scoped analytics,
+// topics (read-only), topic performance, progress over time, and recent/unfinished activity.
+function StudentCourseView({
+  courseId,
+  courseName,
+  courseCode,
+  topics,
+}: {
+  courseId: number;
+  courseName: string;
+  courseCode?: string | null;
+  topics: Topic[];
+}) {
+  const user = getAuthUser();
+
+  const [expandedTopics, setExpandedTopics] = useState<Set<number>>(new Set());
+  const [studentTopicSearch, setStudentTopicSearch] = useState("");
+  const toggleTopic = useCallback((id: number) => {
+    setExpandedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const roots = useMemo(
+    () => topics.filter((t) => t.parentTopicId == null),
+    [topics],
+  );
+  const childrenOf = useCallback(
+    (id: number) => topics.filter((t) => t.parentTopicId === id),
+    [topics],
+  );
+
+  const { data: analytics } = useGetStudentDashboardAnalytics();
+  const { data: progressData } = useGetStudentProgressOverTime();
+  const { data: history } = useGetPracticeHistory();
+  const { data: exams } = useGetUserExams(user?.id ?? 0);
+
+  // Filter progress trend to this course only
+  const courseTrend = (progressData ?? [])
+    .filter((p) => p.courseId === courseId)
+    .map((p, i) => ({
+      i,
+      name: fmtDate(p.date),
+      score: Math.round(p.score),
+      label: p.label,
+    }));
+
+  // Filter topic performance to this course
+  const courseTopicPerf = (analytics?.topicPerformance ?? []).filter(
+    (t) => t.courseId === courseId,
+  );
+
+  // Average scores: split practice vs exams using progressData
+  const examPoints = (progressData ?? []).filter(
+    (p) => p.courseId === courseId && p.type === "exam",
+  );
+  const practicePoints = (progressData ?? []).filter(
+    (p) => p.courseId === courseId && p.type === "practice",
+  );
+
+  const avgExam =
+    examPoints.length > 0
+      ? Math.round(examPoints.reduce((s, p) => s + p.score, 0) / examPoints.length)
+      : null;
+  const avgPractice =
+    practicePoints.length > 0
+      ? Math.round(practicePoints.reduce((s, p) => s + p.score, 0) / practicePoints.length)
+      : null;
+
+  // Course-scoped exams and practice
+  const courseExams = (exams ?? []).filter(
+    (e) => e.courseId === courseId,
+  );
+  const completedExams = courseExams.filter((e) => e.status === "submitted");
+  const unfinishedExams = courseExams.filter((e) => e.status !== "submitted");
+
+  const activePractice = (history?.active ?? []).filter(
+    (s) => s.courseId === courseId,
+  );
+
+  // Per-course readiness: calculated from course-specific data only
+  const courseAttempts = [...examPoints, ...practicePoints];
+  const hasEnoughCourseData = courseAttempts.length >= 2;
+  let courseReadiness: number | null = null;
+  let courseReadinessLabel = "";
+  if (hasEnoughCourseData) {
+    const avgScore = courseAttempts.reduce((s, p) => s + p.score, 0) / courseAttempts.length;
+    const weakPenalty = courseTopicPerf.filter(
+      (t) => t.weaknessLevel === "weak" && (t.attemptsCount ?? 0) >= TOPIC_MIN_ATTEMPTS
+    ).length * 8;
+    courseReadiness = Math.max(0, Math.min(100, Math.round(avgScore - weakPenalty)));
+    if (courseReadiness >= 75) courseReadinessLabel = "Good — keep practicing";
+    else if (courseReadiness >= 50) courseReadinessLabel = "Getting there";
+    else courseReadinessLabel = "Needs more work";
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Course-scoped summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card data-testid="metric-avg-exams">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Average Score — Exams
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {avgExam != null ? `${avgExam}%` : "—"}
+            </p>
+            {examPoints.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Not enough data</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="metric-avg-practice">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Average Score — Practice
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {avgPractice != null ? `${avgPractice}%` : "—"}
+            </p>
+            {practicePoints.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Not enough data</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="metric-course-readiness">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+              Readiness
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {hasEnoughCourseData && courseReadiness != null ? (
+              <>
+                <p className={`text-2xl font-bold ${
+                  courseReadiness >= 75 ? "text-emerald-600" :
+                  courseReadiness >= 50 ? "text-amber-600" :
+                  "text-destructive"
+                }`}>
+                  {courseReadiness}/100
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{courseReadinessLabel}</p>
+                <div className="mt-2 h-1.5 rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full ${
+                      courseReadiness >= 75 ? "bg-emerald-500" :
+                      courseReadiness >= 50 ? "bg-amber-500" :
+                      "bg-destructive"
+                    }`}
+                    style={{ width: `${courseReadiness}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-muted-foreground">—</p>
+                <p className="text-xs text-muted-foreground mt-1">Not enough data yet</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Topics (course structure) and Topic Performance (student results) — side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card data-testid="card-student-topics">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Topics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              placeholder="Search topics or subtopics..."
+              value={studentTopicSearch}
+              onChange={(e) => setStudentTopicSearch(e.target.value)}
+              className="mb-4"
+              data-testid="input-search-topics-student"
+            />
+            {(() => {
+              const q = studentTopicSearch.toLowerCase();
+              const filteredRoots = roots.filter((root) => {
+                if (!q) return true;
+                if (root.topicName.toLowerCase().includes(q)) return true;
+                return childrenOf(root.id).some((c) => c.topicName.toLowerCase().includes(q));
+              });
+              return filteredRoots.length ? (
+                <ul className="space-y-2">
+                  {filteredRoots.map((root) => {
+                    const children = childrenOf(root.id);
+                    const hasChildren = children.length > 0;
+                    const isOpen = expandedTopics.has(root.id);
+                    return (
+                      <li key={root.id} className="border rounded-md overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => hasChildren ? toggleTopic(root.id) : undefined}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 text-left ${hasChildren ? "hover:bg-accent cursor-pointer" : "cursor-default"}`}
+                          aria-expanded={hasChildren ? isOpen : undefined}
+                        >
+                          <span className="flex items-center gap-2 text-sm font-medium">
+                            {hasChildren ? (
+                              <i
+                                className={`ti ${isOpen ? "ti-chevron-down" : "ti-chevron-right"}`}
+                                style={{ fontSize: 14, color: isOpen ? "#534AB7" : "var(--muted-foreground)" }}
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <i className="ti ti-minus" style={{ fontSize: 14, color: "var(--muted-foreground)" }} aria-hidden="true" />
+                            )}
+                            {root.topicName}
+                            <span className="text-xs text-muted-foreground font-normal">({children.length})</span>
+                          </span>
+                        </button>
+                        {isOpen && hasChildren && (
+                          <div className="border-t px-3 pb-2 pt-1">
+                            <ul className="space-y-1">
+                              {children.map((sub) => (
+                                <li key={sub.id} className="text-xs text-muted-foreground py-1 border-b last:border-0">
+                                  {sub.topicName}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {q ? `No topics match "${studentTopicSearch}".` : "No topics yet."}
+                </p>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-student-topic-performance">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Topic Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {courseTopicPerf.length ? (
+              <ul className="space-y-2">
+                {courseTopicPerf.map((t) => {
+                  const key = `${t.topicId}-${t.subtopicId}`;
+                  const enoughData = (t.attemptsCount ?? 0) >= TOPIC_MIN_ATTEMPTS;
+                  return (
+                    <li
+                      key={key}
+                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                    >
+                      <p className="truncate text-sm">
+                        {t.subtopicName ?? t.topicName ?? "Topic"}
+                      </p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-medium">
+                          {enoughData ? `${Math.round(t.accuracyRate)}%` : "—"}
+                        </span>
+                        {enoughData ? (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full border ${
+                              WEAKNESS_STYLES[t.weaknessLevel] ?? WEAKNESS_STYLES.strong
+                            }`}
+                          >
+                            {WEAKNESS_LABEL[t.weaknessLevel] ?? t.weaknessLevel}
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full border bg-muted text-muted-foreground border-border">
+                            Not enough data
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Topic performance appears once you have enough graded answers.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress over time — scoped to this course */}
+      <Card data-testid="card-student-progress-over-time">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Progress Over Time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {courseTrend.length >= 2 ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={courseTrend}
+                  margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" fontSize={11} tickLine={false} />
+                  <YAxis domain={[0, 100]} fontSize={11} tickLine={false} />
+                  <Tooltip
+                    formatter={(v: number) => [`${v}%`, "Score"]}
+                    labelFormatter={(_, p) => p?.[0]?.payload?.label ?? ""}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Not enough progress data yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Bottom: Recent Exams | Unfinished Exams | Unfinished Practice — course scoped */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card data-testid="card-student-recent-exams">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Recent Exams</CardTitle>
+            <Link href="/exams" className="text-xs text-primary hover:underline shrink-0">
+              View all →
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {completedExams.length ? (
+              <ul className="space-y-2">
+                {completedExams.slice(0, 3).map((e) => (
+                  <li key={e.id} className="border-b pb-2 last:border-0">
+                    <Link
+                      href={`/exams/${e.id}/review`}
+                      className="text-sm hover:text-primary transition-colors"
+                    >
+                      {e.courseName ?? `Exam ${e.id}`}
+                      {e.score != null && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          — {e.score}%
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No completed exams for this course.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-student-unfinished-exams">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Unfinished Exams</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {unfinishedExams.length ? (
+              <ul className="space-y-2">
+                {unfinishedExams.slice(0, 3).map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                  >
+                    <p className="truncate text-sm font-medium">
+                      {e.courseName ?? `Exam ${e.id}`}
+                    </p>
+                    <Link
+                      href={`/exams/${e.id}/take`}
+                      className="text-sm text-primary hover:underline shrink-0"
+                    >
+                      Continue
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No exams in progress.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-student-unfinished-practice">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Unfinished Practice</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activePractice.length ? (
+              <ul className="space-y-3">
+                {activePractice.slice(0, 3).map((s) => {
+                  const pct =
+                    s.totalQuestions > 0
+                      ? Math.round((s.answeredCount / s.totalQuestions) * 100)
+                      : 0;
+                  return (
+                    <li key={s.id}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium truncate">
+                          {s.courseName ?? `Course ${s.courseId}`}
+                        </span>
+                        <Link
+                          href={`/practice/${s.id}`}
+                          className="text-sm text-primary hover:underline shrink-0"
+                        >
+                          Continue
+                        </Link>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="h-1.5 flex-1 rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {s.answeredCount}/{s.totalQuestions}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No practice in progress.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export default function CourseDetail({ params }: { params: { id: string } }) {
   const id = parseInt(params.id, 10);
   const { data: course, isLoading: loadingCourse } = useGetCourse(id, {
@@ -58,6 +545,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
   const isLecturer = user?.role === "lecturer";
+  const isStudent = user?.role === "student";
   const [, setLocation] = useLocation();
 
   // Prefer the browser's previous page; fall back to the courses list when
@@ -144,7 +632,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const [editName, setEditName] = useState("");
   const [newSubtopicName, setNewSubtopicName] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
-  const isStudent = user?.role === "student";
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const toggleExpand = (tid: number) => {
     setExpanded((prev) => {
@@ -497,16 +984,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
         <h1 className="text-3xl font-bold">
           {course.courseCode}: {course.courseName}
         </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {course.lecturerName && (
+        {!isStudent && course.lecturerName && (
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span data-testid="text-course-lecturer">
               Lecturer:{" "}
               <span className="font-medium text-foreground">
                 {course.lecturerName}
               </span>
             </span>
-          )}
-        </div>
+          </div>
+        )}
         </div>
         <Button
           type="button"
@@ -518,21 +1005,19 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
         </Button>
       </div>
 
+      {isStudent && (
+        <StudentCourseView
+          courseId={id}
+          courseName={course.courseName}
+          courseCode={course.courseCode}
+          topics={all}
+        />
+      )}
+
       {isLecturer && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <Card data-testid="metric-course-average">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Class average
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {fmtScore(analytics?.averageScore)}
-                </p>
-              </CardContent>
-            </Card>
+          {/* Row 1: Students | Class average | Problematic questions */}
+          <div className="grid grid-cols-3 gap-3">
             <Card data-testid="metric-course-students">
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -543,8 +1028,24 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                 <p className="text-2xl font-bold">
                   {analytics?.studentsCount ?? courseStudents?.length ?? 0}
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">enrolled in this course</p>
               </CardContent>
             </Card>
+
+            <Card data-testid="metric-course-average">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Class average
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {fmtScore(analytics?.averageScore)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">across submitted exams</p>
+              </CardContent>
+            </Card>
+
             <Card data-testid="metric-course-problematic">
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -552,238 +1053,217 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">
+                <p className={`text-2xl font-bold ${(analytics?.problematicQuestions?.length ?? 0) > 0 ? "text-destructive" : ""}`}>
                   {analytics?.problematicQuestions?.length ?? 0}
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">high failure rate</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card data-testid="card-course-students">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="w-4 h-4 text-primary" />
-                Students in this course
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {courseStudents && courseStudents.length ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Name</th>
-                        <th className="py-2 pr-3 font-medium">Email</th>
-                        <th className="py-2 pr-3 font-medium">Program</th>
-                        <th className="py-2 pr-3 font-medium">Year</th>
-                        <th className="py-2 font-medium">Semester</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {courseStudents.map((s) => (
-                        <tr
-                          key={s.id}
-                          className="border-b last:border-0"
-                          data-testid={`course-student-${s.id}`}
-                        >
-                          <td className="py-2 pr-3 font-medium">
-                            {s.fullName}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.email}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.programName ?? "—"}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.studyYear ?? "—"}
-                          </td>
-                          <td className="py-2 text-muted-foreground">
-                            {s.semester ?? "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No students enrolled in this course yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Topics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Search topics or subtopics..."
-            value={topicSearch}
-            onChange={(e) => setTopicSearch(e.target.value)}
-            className="max-w-md mb-4"
-            data-testid="input-search-topics"
-          />
-          <ul className="space-y-2 mb-6">
-            {roots.map((t) =>
-              isStudent ? renderStudentTopic(t, 0) : renderPrivilegedRoot(t),
-            )}
-            {all.length === 0 && (
-              <p className="text-muted-foreground">No topics yet.</p>
-            )}
-            {all.length > 0 && roots.length === 0 && (
-              <p className="text-muted-foreground">
-                No topics match "{topicSearch}".
-              </p>
-            )}
-          </ul>
-
-          {isPrivileged && (
-            <div className="space-y-2 border-t pt-4" data-testid="add-topic">
-              <h3 className="font-semibold">Add topic</h3>
-              <Input
-                placeholder="New topic name"
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-              />
-              <Button onClick={handleAddRoot} disabled={createTopic.isPending}>
-                Add Topic
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {isLecturer && (
-        <>
-          <Card data-testid="card-topic-performance">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingDown className="w-4 h-4 text-primary" />
-                Topic performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.topicPerformance?.length ? (
-                <div className="space-y-2">
-                  {analytics.topicPerformance.map((t) => (
-                    <div
-                      key={t.topicId}
-                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
-                      data-testid={`course-topic-${t.topicId}`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {t.topicName ?? `Topic ${t.topicId}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.attemptsCount} attempts · {t.weakStudentsCount}{" "}
-                          student{t.weakStudentsCount === 1 ? "" : "s"} below
-                          threshold
-                        </p>
-                      </div>
-                      <span
-                        className={`text-sm font-semibold shrink-0 ${accuracyClass(
-                          t.averageAccuracy,
-                        )}`}
-                      >
-                        {Math.round(t.averageAccuracy)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Topic performance appears once students have enough graded
-                  answers.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-problematic-questions">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-                Most failed questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.mostFailedQuestions?.length ? (
-                <div className="space-y-3">
-                  {analytics.mostFailedQuestions.map((q) => (
-                    <div
-                      key={q.questionId}
-                      className="flex items-start justify-between gap-4 border-b pb-3 last:border-0"
-                      data-testid={`problematic-question-${q.questionId}`}
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <p className="text-sm font-medium line-clamp-2">
-                          {q.questionPreview}
-                        </p>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          {q.topicName && <span>{q.topicName}</span>}
-                          {q.difficultyLevel && <span>{q.difficultyLevel}</span>}
-                          <span>{q.attemptsCount} attempts</span>
-                          <span className="text-destructive font-medium">
-                            {Math.round(q.incorrectRate)}% incorrect
-                          </span>
-                        </div>
-                      </div>
-                      <Link
-                        href={`/lecturer/questions/${q.questionId}/edit`}
-                        className="text-sm font-medium text-primary hover:underline shrink-0"
-                        data-testid={`link-view-question-${q.questionId}`}
-                      >
-                        View Question
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No questions meet the failure threshold yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-content-gaps">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileWarning className="w-4 h-4 text-amber-600" />
-                Content gaps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.contentGaps?.length ? (
-                <ul className="space-y-2">
-                  {analytics.contentGaps.map((g, i) => (
-                    <li
-                      key={`${g.topicId ?? "none"}-${i}`}
-                      className="text-sm border-b pb-2 last:border-0"
-                      data-testid={`content-gap-${i}`}
-                    >
-                      {g.topicName && (
-                        <span className="font-medium">{g.topicName}: </span>
-                      )}
-                      <span className="text-muted-foreground">
-                        {g.description}
-                      </span>
-                    </li>
-                  ))}
+          {/* Row 2: Topics | Topic performance | Most failed questions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Topics with add/edit for lecturers */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Topics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  placeholder="Search topics or subtopics..."
+                  value={topicSearch}
+                  onChange={(e) => setTopicSearch(e.target.value)}
+                  className="mb-4"
+                  data-testid="input-search-topics"
+                />
+                <ul className="space-y-2 mb-4">
+                  {roots.map((t) => renderPrivilegedRoot(t))}
+                  {all.length === 0 && (
+                    <p className="text-muted-foreground text-sm">No topics yet.</p>
+                  )}
+                  {all.length > 0 && roots.length === 0 && (
+                    <p className="text-muted-foreground text-sm">No topics match "{topicSearch}".</p>
+                  )}
                 </ul>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No content gaps detected for this course.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                <div className="space-y-2 border-t pt-4" data-testid="add-topic">
+                  <h3 className="font-semibold text-sm">Add topic</h3>
+                  <Input
+                    placeholder="New topic name"
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                  />
+                  <Button onClick={handleAddRoot} disabled={createTopic.isPending}>
+                    Add Topic
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-topic-performance">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TrendingDown className="w-4 h-4 text-primary" />
+                  Topic performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analytics?.topicPerformance?.length ? (
+                  <div className="space-y-2">
+                    {analytics.topicPerformance.map((t) => (
+                      <div
+                        key={t.topicId}
+                        className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                        data-testid={`course-topic-${t.topicId}`}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {t.topicName ?? `Topic ${t.topicId}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t.attemptsCount} attempts · {t.weakStudentsCount}{" "}
+                            student{t.weakStudentsCount === 1 ? "" : "s"} below threshold
+                          </p>
+                        </div>
+                        <span className={`text-sm font-semibold shrink-0 ${accuracyClass(t.averageAccuracy)}`}>
+                          {Math.round(t.averageAccuracy)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Topic performance appears once students have enough graded answers.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-problematic-questions">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                  Most failed questions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analytics?.mostFailedQuestions?.length ? (
+                  <div className="space-y-3">
+                    {analytics.mostFailedQuestions.map((q) => (
+                      <div
+                        key={q.questionId}
+                        className="flex items-start justify-between gap-4 border-b pb-3 last:border-0"
+                        data-testid={`problematic-question-${q.questionId}`}
+                      >
+                        <div className="min-w-0 space-y-1">
+                          <p className="text-sm font-medium line-clamp-2">
+                            {q.questionPreview}
+                          </p>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            {q.topicName && <span>{q.topicName}</span>}
+                            {q.difficultyLevel && <span>{q.difficultyLevel}</span>}
+                            <span>{q.attemptsCount} attempts</span>
+                            <span className="text-destructive font-medium">
+                              {Math.round(q.incorrectRate)}% incorrect
+                            </span>
+                          </div>
+                        </div>
+                        <Link
+                          href={`/lecturer/questions/${q.questionId}/edit`}
+                          className="text-sm font-medium text-primary hover:underline shrink-0"
+                          data-testid={`link-view-question-${q.questionId}`}
+                        >
+                          View
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No questions meet the failure threshold yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 3: Students in this course | Content gaps */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card data-testid="card-course-students">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="w-4 h-4 text-primary" />
+                  Students in this course
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {courseStudents && courseStudents.length ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="py-2 pr-3 font-medium">Name</th>
+                          <th className="py-2 pr-3 font-medium">Email</th>
+                          <th className="py-2 pr-3 font-medium">Program</th>
+                          <th className="py-2 pr-3 font-medium">Year</th>
+                          <th className="py-2 font-medium">Semester</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {courseStudents.map((s) => (
+                          <tr
+                            key={s.id}
+                            className="border-b last:border-0"
+                            data-testid={`course-student-${s.id}`}
+                          >
+                            <td className="py-2 pr-3 font-medium">{s.fullName}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{s.email}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{s.programName ?? "—"}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{s.studyYear ?? "—"}</td>
+                            <td className="py-2 text-muted-foreground">{s.semester ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    No students enrolled in this course yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-content-gaps">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileWarning className="w-4 h-4 text-amber-600" />
+                  Content gaps
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analytics?.contentGaps?.length ? (
+                  <ul className="space-y-2">
+                    {analytics.contentGaps.map((g, i) => (
+                      <li
+                        key={`${g.topicId ?? "none"}-${i}`}
+                        className="text-sm border-b pb-2 last:border-0"
+                        data-testid={`content-gap-${i}`}
+                      >
+                        {g.topicName && (
+                          <span className="font-medium">{g.topicName}: </span>
+                        )}
+                        <span className="text-muted-foreground">{g.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No content gaps detected for this course.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
 

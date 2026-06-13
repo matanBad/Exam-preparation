@@ -28,6 +28,7 @@ export type QuestionFormValues = {
   questionType: "single_choice" | "multiple_choice";
   difficultyLevel: "Easy" | "Medium" | "Hard";
   explanationText: string | null;
+  imageUrl: string | null;
   sourceReference: string | null;
   status: "draft" | "pending" | "approved" | "archived";
   options: { answerText: string; isCorrect: boolean }[];
@@ -41,6 +42,7 @@ const empty: QuestionFormValues = {
   questionType: "single_choice",
   difficultyLevel: "Medium",
   explanationText: null,
+  imageUrl: null,
   sourceReference: null,
   status: "approved",
   options: [
@@ -200,6 +202,54 @@ export function QuestionForm({
               }
               data-testid="input-q-text"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Question image <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            {values.imageUrl ? (
+              <div className="space-y-2">
+                <img
+                  src={values.imageUrl}
+                  alt="Question illustration"
+                  className="max-h-48 rounded-md border object-contain"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setValues((s) => ({ ...s, imageUrl: null }))}
+                >
+                  Remove image
+                </Button>
+              </div>
+            ) : (
+              <label
+                htmlFor="q-image-upload"
+                className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-md p-6 cursor-pointer hover:bg-accent transition-colors"
+              >
+                <Plus className="w-6 h-6 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Click to upload image</span>
+                <span className="text-xs text-muted-foreground">PNG, JPG, SVG, GIF — max 2 MB</span>
+                <input
+                  id="q-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  data-testid="input-q-image"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      alert("Image must be under 2 MB");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => setValues((s) => ({ ...s, imageUrl: String(reader.result) }));
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
