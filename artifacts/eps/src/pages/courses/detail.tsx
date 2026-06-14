@@ -956,16 +956,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           <h1 className="text-3xl font-bold">
             {course.courseCode}: {course.courseName}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            {course.lecturerName && (
+          {!isLecturer && course.lecturerName && (
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span data-testid="text-course-lecturer">
                 Lecturer:{" "}
                 <span className="font-medium text-foreground">
                   {course.lecturerName}
                 </span>
               </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <Button
           type="button"
@@ -985,7 +985,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
               icon={<Users className="w-3.5 h-3.5" />}
               label="Students"
               value={String(
-                analytics?.studentsCount ?? courseStudents?.length ?? 0,
+                courseStudents?.length ?? analytics?.studentsCount ?? 0,
               )}
               testid="metric-course-students"
             />
@@ -1010,14 +1010,14 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </div>
 
           {/* Row 2: Topics | Topic performance | Most failed questions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 auto-rows-fr">
             {topicsCard}
             {lecturerTopicPerfCard}
             {lecturerMostFailedCard}
           </div>
 
           {/* Row 3: Students in this course | Content gaps */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-fr">
             {studentsInCourseCard}
             {contentGapsCard}
           </div>
@@ -1060,7 +1060,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </div>
 
           {/* Row 2: Topics | Topic performance | Progress over time | Most failed questions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-fr">
             {topicsCard}
             {studentTopicPerfCard}
             {studentProgressCard}
@@ -1068,7 +1068,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           </div>
 
           {/* Row 3: Recent exams | Unfinished exams | Recent practice | Unfinished practice */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 auto-rows-fr">
             <Card data-testid="card-course-recent-exams">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Recent exams</CardTitle>

@@ -63,7 +63,12 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submit} className="space-y-4" data-testid="form-login">
+          <form
+            onSubmit={submit}
+            className="space-y-4"
+            data-testid="form-login"
+            autoComplete="off"
+          >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -72,6 +77,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 data-testid="input-email"
               />
             </div>
@@ -82,6 +88,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 data-testid="input-password"
               />
             </div>

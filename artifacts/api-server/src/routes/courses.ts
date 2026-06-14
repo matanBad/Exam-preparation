@@ -594,14 +594,35 @@ router.get(
       return;
     }
     const auth = req.auth!;
-    // Lecturers may only view students of courses they actually teach. Admins
-    // may view any course.
+    // Lecturers may only view students of courses they actually teach, and only
+    // those enrolled via the program(s) the lecturer offers this course in — so
+    // this list matches the program-scoped "Students" count shown on the course
+    // page. Admins see every enrolled student.
+    const filters = [
+      eq(enrollmentsTable.courseId, id),
+      eq(usersTable.role, "student"),
+      eq(enrollmentsTable.enrollmentStatus, "active"),
+    ];
     if (auth.role === "lecturer") {
-      const teaches = await lecturerTeachesCourse(auth.userId, id);
-      if (!teaches) {
+      const offerings = await db
+        .select({ programId: courseOfferingsTable.programId })
+        .from(courseOfferingsTable)
+        .where(
+          and(
+            eq(courseOfferingsTable.courseId, id),
+            eq(courseOfferingsTable.lecturerId, auth.userId),
+          ),
+        );
+      if (offerings.length === 0) {
         res.status(403).json({ error: "You do not teach this course" });
         return;
       }
+      filters.push(
+        inArray(
+          usersTable.programId,
+          offerings.map((o) => o.programId),
+        ),
+      );
     }
     const rows = await db
       .select({
@@ -615,13 +636,7 @@ router.get(
       .from(enrollmentsTable)
       .innerJoin(usersTable, eq(usersTable.id, enrollmentsTable.userId))
       .leftJoin(programsTable, eq(programsTable.id, usersTable.programId))
-      .where(
-        and(
-          eq(enrollmentsTable.courseId, id),
-          eq(usersTable.role, "student"),
-          eq(enrollmentsTable.enrollmentStatus, "active"),
-        ),
-      );
+      .where(and(...filters));
     res.json(rows);
   },
 );

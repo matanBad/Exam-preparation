@@ -370,7 +370,12 @@ export default function Account() {
           <CardTitle>Change email</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submitEmail} className="space-y-4" data-testid="form-change-email">
+          <form
+            onSubmit={submitEmail}
+            className="space-y-4"
+            data-testid="form-change-email"
+            autoComplete="off"
+          >
             <p className="text-sm text-muted-foreground">
               Current email:{" "}
               <span className="font-medium text-foreground">{user.email}</span>
@@ -384,6 +389,7 @@ export default function Account() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@new-email.com"
                 required
+                autoComplete="off"
                 data-testid="input-new-email"
               />
             </div>
@@ -394,6 +400,7 @@ export default function Account() {
                 value={emailPassword}
                 onChange={(e) => setEmailPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 data-testid="input-email-current-password"
               />
             </div>

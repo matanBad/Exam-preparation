@@ -8,6 +8,9 @@ import {
   useGetStudentDashboardAnalytics,
   useGetLecturerDashboardAnalytics,
   useGetEngagementSummary,
+  useListUsers,
+  useListDeletionRequests,
+  getListUsersQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -642,11 +645,39 @@ function StatTile({ stat }: { stat: StatCard }) {
 
 function AdminDashboardView() {
   const { data, isLoading } = useGetAdminOverview();
+  // Counts for the actionable "needs attention" row — reuse existing endpoints.
+  const { data: allUsers } = useListUsers(
+    {},
+    { query: { queryKey: getListUsersQueryKey({}) } },
+  );
+  const { data: deletionRequests } = useListDeletionRequests();
   if (isLoading || !data) return <p>Loading...</p>;
   const t = data.totals;
 
+  const pendingApprovals = (allUsers ?? []).filter(
+    (u) => u.accountStatus === "pending",
+  ).length;
+  const deletionCount = deletionRequests?.length ?? 0;
+  const draftQuestions = Math.max(
+    0,
+    t.questions - t.approvedQuestions - t.archivedQuestions,
+  );
+
+  // Three tiles per row; every tile links to its page.
   const stats: StatCard[] = [
     { label: "Users", value: t.users, key: "users", href: "/admin/users" },
+    {
+      label: "User approvals",
+      value: pendingApprovals,
+      key: "user-approvals",
+      href: "/admin/user-approvals",
+    },
+    {
+      label: "Deletion requests",
+      value: deletionCount,
+      key: "deletion-requests",
+      href: "/admin/deletion-requests",
+    },
     { label: "Courses", value: t.courses, key: "courses", href: "/courses" },
     { label: "Topics", value: t.topics, key: "topics", href: "/courses" },
     {
@@ -656,13 +687,19 @@ function AdminDashboardView() {
       href: "/lecturer/questions",
     },
     {
-      label: "Approved",
+      label: "Draft questions",
+      value: draftQuestions,
+      key: "draft",
+      href: "/lecturer/questions?status=draft",
+    },
+    {
+      label: "Approved questions",
       value: t.approvedQuestions,
       key: "approved",
       href: "/lecturer/questions?status=approved",
     },
     {
-      label: "Archived",
+      label: "Archived questions",
       value: t.archivedQuestions,
       key: "archived",
       href: "/lecturer/questions?status=archived",

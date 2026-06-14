@@ -161,8 +161,8 @@ export default function AdminUsers() {
           setShowCreate(false);
         },
         onError: (err: unknown) => {
-          const e = err as { response?: { data?: { error?: string } }; message?: string };
-          setCreateError(e?.response?.data?.error ?? e?.message ?? "Failed to create user");
+          const e = err as { data?: { error?: string }; message?: string };
+          setCreateError(e?.data?.error ?? e?.message ?? "Failed to create user");
         },
       },
     );

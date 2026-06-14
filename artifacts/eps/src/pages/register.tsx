@@ -125,6 +125,7 @@ export default function Register() {
               onSubmit={submit}
               className="space-y-4"
               data-testid="form-register"
+              autoComplete="off"
             >
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full name</Label>

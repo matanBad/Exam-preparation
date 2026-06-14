@@ -7,6 +7,7 @@ import {
   getListQuestionsQueryKey,
 } from "@workspace/api-client-react";
 import { QuestionForm } from "./form";
+import { getAuthUser } from "@/lib/auth";
 
 export default function QuestionEdit({ params }: { params: { id: string } }) {
   const id = parseInt(params.id, 10);
@@ -14,6 +15,8 @@ export default function QuestionEdit({ params }: { params: { id: string } }) {
   const { data: question, isLoading } = useGetQuestion(id);
   const update = useUpdateQuestion();
   const queryClient = useQueryClient();
+  // Only admins set question status; lecturers don't see the field.
+  const isAdmin = getAuthUser()?.role === "admin";
 
   if (isLoading || !question) return <p>Loading...</p>;
 
@@ -23,6 +26,7 @@ export default function QuestionEdit({ params }: { params: { id: string } }) {
       <QuestionForm
         submitting={update.isPending}
         submitLabel="Save changes"
+        showStatus={isAdmin}
         onCancel={() => setLocation("/lecturer/questions")}
         initial={{
           courseId: question.courseId,
