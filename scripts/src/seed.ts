@@ -686,6 +686,41 @@ async function main() {
       7,
   );
 
+  // ---- notifications (generated weak-area / milestone alerts) ----
+  // Loaded from CSV with explicit ids so the rich, derived notification feed
+  // (weak-area alerts, milestone/streak updates) is seeded. The small demo
+  // notifications inserted further below use auto-incremented ids that start
+  // after the sequence is resynced past these explicit ids.
+  const notificationRows = readCsv("notifications.csv");
+  const notificationRowsValid = notificationRows.filter((n) =>
+    validUserIds.has(Number(n.user_id)),
+  );
+  const notificationSkipped =
+    notificationRows.length - notificationRowsValid.length;
+  if (notificationSkipped > 0) {
+    console.warn(
+      `Skipping ${notificationSkipped} notification rows with missing FK.`,
+    );
+  }
+  console.log(`Seeding ${notificationRowsValid.length} notifications...`);
+  await insertInChunks(
+    notificationsTable,
+    notificationRowsValid.map((n) => ({
+      id: Number(n.id),
+      userId: Number(n.user_id),
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      relatedEntityType: textOrNull(n.related_entity_type),
+      relatedEntityId: numOrNull(n.related_entity_id),
+      actionUrl: textOrNull(n.action_url),
+      status: n.status || "unread",
+      createdAt: dateOrNull(n.created_at) ?? new Date(),
+      readAt: dateOrNull(n.read_at),
+    })),
+    11,
+  );
+
   // Bump serial sequences past the largest explicit id we inserted, so future
   // inserts (registration, lecturer-created questions, etc.) don't collide.
   console.log("Resyncing sequences...");
