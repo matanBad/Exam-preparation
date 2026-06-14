@@ -67,6 +67,7 @@ import type {
   RegisterResponse,
   RevisionPlan,
   SearchQuestionsParams,
+  StudentCourseAnalytics,
   StudentDashboardAnalytics,
   SubmitExamRequest,
   SubmitPracticeAnswerRequest,
@@ -3996,6 +3997,97 @@ export function useGetStudentDashboardAnalytics<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetStudentDashboardAnalyticsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Per-course analytics for the authenticated student. 403 unless the course is offered in their program and they are actively enrolled.
+ */
+export const getGetStudentCourseAnalyticsUrl = (courseId: number) => {
+  return `/api/dashboard/student/course/${courseId}/analytics`;
+};
+
+export const getStudentCourseAnalytics = async (
+  courseId: number,
+  options?: RequestInit,
+): Promise<StudentCourseAnalytics> => {
+  return customFetch<StudentCourseAnalytics>(
+    getGetStudentCourseAnalyticsUrl(courseId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStudentCourseAnalyticsQueryKey = (courseId: number) => {
+  return [`/api/dashboard/student/course/${courseId}/analytics`] as const;
+};
+
+export const getGetStudentCourseAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudentCourseAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  courseId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudentCourseAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudentCourseAnalyticsQueryKey(courseId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudentCourseAnalytics>>
+  > = ({ signal }) =>
+    getStudentCourseAnalytics(courseId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!courseId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudentCourseAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudentCourseAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudentCourseAnalytics>>
+>;
+export type GetStudentCourseAnalyticsQueryError = ErrorType<ForbiddenResponse>;
+
+export function useGetStudentCourseAnalytics<
+  TData = Awaited<ReturnType<typeof getStudentCourseAnalytics>>,
+  TError = ErrorType<ForbiddenResponse>,
+>(
+  courseId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudentCourseAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudentCourseAnalyticsQueryOptions(
+    courseId,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useListCourses,
@@ -28,6 +28,8 @@ export type QuestionFormValues = {
   questionType: "single_choice" | "multiple_choice";
   difficultyLevel: "Easy" | "Medium" | "Hard";
   explanationText: string | null;
+  explanationImageUrl: string | null;
+  questionImageUrl: string | null;
   sourceReference: string | null;
   status: "draft" | "pending" | "approved" | "archived";
   options: { answerText: string; isCorrect: boolean }[];
@@ -41,6 +43,8 @@ const empty: QuestionFormValues = {
   questionType: "single_choice",
   difficultyLevel: "Medium",
   explanationText: null,
+  explanationImageUrl: null,
+  questionImageUrl: null,
   sourceReference: null,
   status: "approved",
   options: [
@@ -52,6 +56,93 @@ const empty: QuestionFormValues = {
 };
 
 const NONE = "_none";
+
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+// Optional image upload that stores the chosen file as a base64 data URL and
+// shows a preview. Used for both the question body and the explanation image.
+function ImageField({
+  label,
+  value,
+  onChange,
+  testid,
+}: {
+  label: string;
+  value: string | null;
+  onChange: (v: string | null) => void;
+  testid: string;
+}) {
+  const ref = useRef<HTMLInputElement | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const handle = (file: File) => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErr("Please choose a PNG, JPEG, or WebP image.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setErr("Image must be under 2 MB.");
+      return;
+    }
+    setErr(null);
+    const reader = new FileReader();
+    reader.onload = () => onChange(String(reader.result ?? ""));
+    reader.onerror = () => setErr("Could not read the image.");
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {value ? (
+        <div className="space-y-2">
+          <img
+            src={value}
+            alt="Preview"
+            className="max-h-48 rounded-md border object-contain"
+            data-testid={`${testid}-preview`}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange(null)}
+            data-testid={`${testid}-remove`}
+          >
+            Remove image
+          </Button>
+        </div>
+      ) : (
+        <>
+          <input
+            type="file"
+            ref={ref}
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            data-testid={testid}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handle(f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => ref.current?.click()}
+            data-testid={`${testid}-btn`}
+          >
+            Upload image
+          </Button>
+        </>
+      )}
+      {err && <p className="text-xs text-destructive">{err}</p>}
+      <p className="text-xs text-muted-foreground">
+        PNG, JPEG, or WebP. Max 2 MB. Optional.
+      </p>
+    </div>
+  );
+}
 
 export function QuestionForm({
   initial,
@@ -201,6 +292,15 @@ export function QuestionForm({
               data-testid="input-q-text"
             />
           </div>
+
+          <ImageField
+            label="Question image (optional)"
+            value={values.questionImageUrl}
+            onChange={(v) =>
+              setValues((s) => ({ ...s, questionImageUrl: v }))
+            }
+            testid="input-q-image"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -353,6 +453,14 @@ export function QuestionForm({
               data-testid="input-q-explanation"
             />
           </div>
+          <ImageField
+            label="Explanation image (optional)"
+            value={values.explanationImageUrl}
+            onChange={(v) =>
+              setValues((s) => ({ ...s, explanationImageUrl: v }))
+            }
+            testid="input-q-explanation-image"
+          />
           <div className="space-y-2">
             <Label htmlFor="src">Source reference</Label>
             <Input

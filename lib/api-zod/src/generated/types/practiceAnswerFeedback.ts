@@ -16,6 +16,11 @@ export interface PracticeAnswerFeedback {
   selectedAnswerOptionIds: number[];
   /** @nullable */
   explanationText?: string | null;
+  /**
+   * Optional explanation image (data URL).
+   * @nullable
+   */
+  explanationImageUrl?: string | null;
   /** Running count of answered questions in this session. */
   answeredCount: number;
   /** Running count of fully-correct questions in this session. */

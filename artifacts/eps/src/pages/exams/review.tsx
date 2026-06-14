@@ -131,6 +131,14 @@ export default function ExamReview({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm whitespace-pre-wrap">{item.questionText}</p>
+              {item.questionImageUrl && (
+                <img
+                  src={item.questionImageUrl}
+                  alt="Question illustration"
+                  className="max-h-72 rounded-md border object-contain"
+                  data-testid={`img-review-question-${item.examQuestionId}`}
+                />
+              )}
               <div className="space-y-2">
                 {item.options.map((opt) => {
                   const isCorrect = item.correctAnswerOptionIds.includes(opt.id);
@@ -165,12 +173,22 @@ export default function ExamReview({ params }: { params: { id: string } }) {
                   );
                 })}
               </div>
-              {item.explanationText && (
-                <div className="mt-2 p-3 rounded-md bg-muted text-sm">
-                  <p className="font-medium mb-1">Explanation</p>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {item.explanationText}
-                  </p>
+              {(item.explanationText || item.explanationImageUrl) && (
+                <div className="mt-2 p-3 rounded-md bg-muted text-sm space-y-2">
+                  <p className="font-medium">Explanation</p>
+                  {item.explanationText && (
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {item.explanationText}
+                    </p>
+                  )}
+                  {item.explanationImageUrl && (
+                    <img
+                      src={item.explanationImageUrl}
+                      alt="Explanation illustration"
+                      className="max-h-72 rounded-md border object-contain"
+                      data-testid={`img-review-explanation-${item.examQuestionId}`}
+                    />
+                  )}
                 </div>
               )}
               {wrong && (

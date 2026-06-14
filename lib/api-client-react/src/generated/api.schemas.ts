@@ -427,6 +427,10 @@ export interface Question {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   explanationText?: string | null;
+  /** Optional image for the question body (PNG/JPEG/WebP data URL). */
+  questionImageUrl?: string | null;
+  /** Optional image for the explanation (PNG/JPEG/WebP data URL). */
+  explanationImageUrl?: string | null;
   sourceReference?: string | null;
   status: QuestionStatus;
   createdBy?: number | null;
@@ -444,6 +448,10 @@ export interface CreateQuestionRequest {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   explanationText?: string | null;
+  /** Optional image for the question body (PNG/JPEG/WebP data URL). */
+  questionImageUrl?: string | null;
+  /** Optional image for the explanation (PNG/JPEG/WebP data URL). */
+  explanationImageUrl?: string | null;
   sourceReference?: string | null;
   status?: QuestionStatus;
   /** @minItems 2 */
@@ -459,6 +467,10 @@ export interface UpdateQuestionRequest {
   questionType?: QuestionType;
   difficultyLevel?: Difficulty;
   explanationText?: string | null;
+  /** Optional image for the question body (PNG/JPEG/WebP data URL). */
+  questionImageUrl?: string | null;
+  /** Optional image for the explanation (PNG/JPEG/WebP data URL). */
+  explanationImageUrl?: string | null;
   sourceReference?: string | null;
   status?: QuestionStatus;
   options?: AnswerOptionInput[];
@@ -491,6 +503,8 @@ export interface ExamQuestion {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   topicName?: string | null;
+  /** Optional question-body image (data URL). */
+  questionImageUrl?: string | null;
   randomizedOrder: number;
   options: ExamQuestionOption[];
   /** Legacy single-choice selection (kept for backward compat). For multi-select use selectedAnswerOptionIds. */
@@ -558,6 +572,10 @@ export interface ReviewItem {
   difficultyLevel: Difficulty;
   topicName?: string | null;
   explanationText?: string | null;
+  /** Optional question-body image (data URL). */
+  questionImageUrl?: string | null;
+  /** Optional explanation image (data URL). */
+  explanationImageUrl?: string | null;
   /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;
   maxScore: number;
@@ -657,6 +675,11 @@ export interface PracticeQuestion {
   difficultyLevel: Difficulty;
   /** @nullable */
   topicName?: string | null;
+  /**
+   * Optional question-body image (data URL).
+   * @nullable
+   */
+  questionImageUrl?: string | null;
   questionOrder: number;
   /** Points this question is worth (Easy=1, Medium=2, Hard=3). */
   maxScore: number;
@@ -677,6 +700,11 @@ export interface PracticeQuestion {
    * @nullable
    */
   explanationText?: string | null;
+  /**
+   * Optional explanation image (data URL). Only populated once answered.
+   * @nullable
+   */
+  explanationImageUrl?: string | null;
   /** Correct option ids. Empty until the question has been answered (avoids leaking answers early). */
   correctAnswerOptionIds: number[];
 }
@@ -736,6 +764,11 @@ export interface PracticeAnswerFeedback {
   selectedAnswerOptionIds: number[];
   /** @nullable */
   explanationText?: string | null;
+  /**
+   * Optional explanation image (data URL).
+   * @nullable
+   */
+  explanationImageUrl?: string | null;
   /** Running count of answered questions in this session. */
   answeredCount: number;
   /** Running count of fully-correct questions in this session. */
@@ -1006,22 +1039,6 @@ export interface StudentDashboardAnalytics {
   progressTrend: ProgressPoint[];
 }
 
-export interface EngagementSummary {
-  currentStreak: number;
-  longestStreak: number;
-  milestonesCount: number;
-  unreadNotificationsCount: number;
-  /** YYYY-MM-DD of the last qualifying activity, or null. */
-  lastActivityDate?: string | null;
-}
-
-export interface Milestone {
-  milestoneType: string;
-  milestoneKey: string;
-  title: string;
-  achievedAt: string;
-}
-
 export interface ProblematicQuestion {
   questionId: number;
   questionPreview: string;
@@ -1041,6 +1058,48 @@ export interface ProblematicQuestion {
   /** 0-100. */
   incorrectRate: number;
   status: QuestionStatus;
+}
+
+export interface StudentCourseAnalytics {
+  courseId: number;
+  /** @nullable */
+  courseName?: string | null;
+  /**
+   * 0-100 across submitted mock exams in this course; null when none.
+   * @nullable
+   */
+  averageScoreExam: number | null;
+  /**
+   * 0-100 across completed practice sessions in this course; null when none.
+   * @nullable
+   */
+  averageScorePractice: number | null;
+  /** @nullable */
+  readinessScore?: number | null;
+  readinessLabel: string;
+  /** @nullable */
+  readinessMessage?: string | null;
+  /** Milestones the student earned in this course. */
+  milestonesCount: number;
+  topicPerformance: TopicPerformance[];
+  progressTrend: ProgressPoint[];
+  mostFailedQuestions: ProblematicQuestion[];
+}
+
+export interface EngagementSummary {
+  currentStreak: number;
+  longestStreak: number;
+  milestonesCount: number;
+  unreadNotificationsCount: number;
+  /** YYYY-MM-DD of the last qualifying activity, or null. */
+  lastActivityDate?: string | null;
+}
+
+export interface Milestone {
+  milestoneType: string;
+  milestoneKey: string;
+  title: string;
+  achievedAt: string;
 }
 
 export interface FailedTopic {
@@ -1105,6 +1164,8 @@ export interface LecturerCourseAnalytics {
   /** @nullable */
   averageScore?: number | null;
   studentsCount: number;
+  /** Non-archived questions in this course's bank. */
+  questionBankCount: number;
   topicPerformance: ClassTopicPerformance[];
   mostFailedQuestions: ProblematicQuestion[];
   problematicQuestions: ProblematicQuestion[];

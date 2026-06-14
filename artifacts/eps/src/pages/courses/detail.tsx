@@ -10,11 +10,17 @@ import {
   useRemoveCourseMember,
   useListUsers,
   useGetLecturerCourseAnalytics,
+  useGetStudentCourseAnalytics,
+  useGetUserExams,
+  useGetPracticeHistory,
   getListCourseTopicsQueryKey,
   getGetCourseQueryKey,
   getListCourseMembersQueryKey,
   getListCourseStudentsQueryKey,
   getGetLecturerCourseAnalyticsQueryKey,
+  getGetStudentCourseAnalyticsQueryKey,
+  getGetUserExamsQueryKey,
+  getGetPracticeHistoryQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,16 +34,76 @@ import {
   AlertTriangle,
   FileWarning,
   Users,
+  Target,
+  Gauge,
+  Trophy,
+  BookOpen,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 function fmtScore(n: number | null | undefined): string {
   return n == null ? "—" : `${Math.round(n)}%`;
+}
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function accuracyClass(pct: number): string {
   if (pct < 60) return "text-destructive";
   if (pct < 75) return "text-amber-600";
   return "text-emerald-600";
+}
+
+const WEAKNESS_STYLES: Record<string, string> = {
+  weak: "bg-destructive/10 text-destructive border-destructive/20",
+  needs_practice: "bg-amber-100 text-amber-700 border-amber-200",
+  strong: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+const WEAKNESS_LABEL: Record<string, string> = {
+  weak: "Weak",
+  needs_practice: "Needs practice",
+  strong: "Strong",
+};
+
+// Compact metric tile for the course analytics rows.
+function Stat({
+  icon,
+  label,
+  value,
+  sub,
+  testid,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub?: string;
+  testid?: string;
+}) {
+  return (
+    <Card className="h-full" data-testid={testid}>
+      <CardHeader className="pb-1">
+        <CardTitle className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+          {icon}
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold leading-tight">{value}</p>
+        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+      </CardContent>
+    </Card>
+  );
 }
 
 type Topic = {
@@ -58,6 +124,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const isPrivileged = user?.role === "lecturer" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
   const isLecturer = user?.role === "lecturer";
+  const isStudent = user?.role === "student";
   const [, setLocation] = useLocation();
 
   // Prefer the browser's previous page; fall back to the courses list when
@@ -85,6 +152,28 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
       enabled: !!id && isLecturer,
       queryKey: getListCourseStudentsQueryKey(id),
       retry: false,
+    },
+  });
+
+  // Student-only per-course analytics and the student's own exam / practice
+  // history (filtered to this course below).
+  const { data: studentAnalytics } = useGetStudentCourseAnalytics(id, {
+    query: {
+      enabled: !!id && isStudent,
+      queryKey: getGetStudentCourseAnalyticsQueryKey(id),
+      retry: false,
+    },
+  });
+  const { data: myExams } = useGetUserExams(user?.id ?? 0, {
+    query: {
+      enabled: !!id && isStudent && !!user?.id,
+      queryKey: getGetUserExamsQueryKey(user?.id ?? 0),
+    },
+  });
+  const { data: practiceHistory } = useGetPracticeHistory({
+    query: {
+      enabled: !!id && isStudent,
+      queryKey: getGetPracticeHistoryQueryKey(),
     },
   });
 
@@ -144,7 +233,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   const [editName, setEditName] = useState("");
   const [newSubtopicName, setNewSubtopicName] = useState("");
   const [topicSearch, setTopicSearch] = useState("");
-  const isStudent = user?.role === "student";
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const toggleExpand = (tid: number) => {
     setExpanded((prev) => {
@@ -278,7 +366,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
   }
   const isVisible = (t: Topic) => !q || visibleIds.has(t.id);
   const roots = all.filter((t) => !t.parentTopicId).filter(isVisible);
-  // Helper for filtered children
   const visibleChildrenOf = (pid: number) =>
     childrenOf(pid).filter(isVisible);
 
@@ -348,9 +435,6 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
     const children = childrenOf(t.id);
     const hasChildren = children.length > 0;
     const isEditing = editingRootId === t.id;
-    // Outside edit mode, privileged users can expand/collapse a root to
-    // preview its subtopics (read-only) — same behaviour as students.
-    // Search auto-expands ancestors of matching subtopics.
     const isOpen = autoExpanded.has(t.id);
     const childrenToRender = isEditing ? children : visibleChildrenOf(t.id);
     return (
@@ -440,7 +524,7 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
               </li>
             ))}
             {isEditing && (
-            <li
+              <li
                 className="p-2 border rounded-md border-dashed"
                 data-testid={`add-subtopic-${t.id}`}
               >
@@ -490,23 +574,398 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
     );
   };
 
+  // --- Shared / per-role cards, arranged into the requested row layouts below.
+
+  const topicsCard = (
+    <Card data-testid="card-topics">
+      <CardHeader>
+        <CardTitle>Topics</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input
+          placeholder="Search topics or subtopics..."
+          value={topicSearch}
+          onChange={(e) => setTopicSearch(e.target.value)}
+          className="max-w-md mb-4"
+          data-testid="input-search-topics"
+        />
+        <ul className="space-y-2 mb-6">
+          {roots.map((t) =>
+            isStudent ? renderStudentTopic(t, 0) : renderPrivilegedRoot(t),
+          )}
+          {all.length === 0 && (
+            <p className="text-muted-foreground">No topics yet.</p>
+          )}
+          {all.length > 0 && roots.length === 0 && (
+            <p className="text-muted-foreground">
+              No topics match "{topicSearch}".
+            </p>
+          )}
+        </ul>
+
+        {isPrivileged && (
+          <div className="space-y-2 border-t pt-4" data-testid="add-topic">
+            <h3 className="font-semibold">Add topic</h3>
+            <Input
+              placeholder="New topic name"
+              value={newTopic}
+              onChange={(e) => setNewTopic(e.target.value)}
+            />
+            <Button onClick={handleAddRoot} disabled={createTopic.isPending}>
+              Add Topic
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const lecturerTopicPerfCard = (
+    <Card data-testid="card-topic-performance">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingDown className="w-4 h-4 text-primary" />
+          Topic performance
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {analytics?.topicPerformance?.length ? (
+          <div className="space-y-2">
+            {analytics.topicPerformance.map((t) => (
+              <div
+                key={t.topicId}
+                className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                data-testid={`course-topic-${t.topicId}`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {t.topicName ?? `Topic ${t.topicId}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.attemptsCount} attempts · {t.weakStudentsCount} student
+                    {t.weakStudentsCount === 1 ? "" : "s"} below threshold
+                  </p>
+                </div>
+                <span
+                  className={`text-sm font-semibold shrink-0 ${accuracyClass(
+                    t.averageAccuracy,
+                  )}`}
+                >
+                  {Math.round(t.averageAccuracy)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Topic performance appears once students have enough graded answers.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const lecturerMostFailedCard = (
+    <Card data-testid="card-problematic-questions">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <AlertTriangle className="w-4 h-4 text-destructive" />
+          Most failed questions
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {analytics?.mostFailedQuestions?.length ? (
+          <div className="space-y-3">
+            {analytics.mostFailedQuestions.map((qq) => (
+              <div
+                key={qq.questionId}
+                className="flex items-start justify-between gap-4 border-b pb-3 last:border-0"
+                data-testid={`problematic-question-${qq.questionId}`}
+              >
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium line-clamp-2">
+                    {qq.questionPreview}
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {qq.topicName && <span>{qq.topicName}</span>}
+                    {qq.difficultyLevel && <span>{qq.difficultyLevel}</span>}
+                    <span>{qq.attemptsCount} attempts</span>
+                    <span className="text-destructive font-medium">
+                      {Math.round(qq.incorrectRate)}% incorrect
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href={`/lecturer/questions/${qq.questionId}/edit`}
+                  className="text-sm font-medium text-primary hover:underline shrink-0"
+                  data-testid={`link-view-question-${qq.questionId}`}
+                >
+                  View Question
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No questions meet the failure threshold yet.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const studentsInCourseCard = (
+    <Card data-testid="card-course-students">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Users className="w-4 h-4 text-primary" />
+          Students in this course
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {courseStudents && courseStudents.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2 pr-3 font-medium">Name</th>
+                  <th className="py-2 pr-3 font-medium">Email</th>
+                  <th className="py-2 pr-3 font-medium">Program</th>
+                  <th className="py-2 pr-3 font-medium">Year</th>
+                  <th className="py-2 font-medium">Semester</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courseStudents.map((s) => (
+                  <tr
+                    key={s.id}
+                    className="border-b last:border-0"
+                    data-testid={`course-student-${s.id}`}
+                  >
+                    <td className="py-2 pr-3 font-medium">{s.fullName}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {s.email}
+                    </td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {s.programName ?? "—"}
+                    </td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {s.studyYear ?? "—"}
+                    </td>
+                    <td className="py-2 text-muted-foreground">
+                      {s.semester ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No students enrolled in this course yet.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const contentGapsCard = (
+    <Card data-testid="card-content-gaps">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <FileWarning className="w-4 h-4 text-amber-600" />
+          Content gaps
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {analytics?.contentGaps?.length ? (
+          <ul className="space-y-2">
+            {analytics.contentGaps.map((g, i) => (
+              <li
+                key={`${g.topicId ?? "none"}-${i}`}
+                className="text-sm border-b pb-2 last:border-0"
+                data-testid={`content-gap-${i}`}
+              >
+                {g.topicName && (
+                  <span className="font-medium">{g.topicName}: </span>
+                )}
+                <span className="text-muted-foreground">{g.description}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No content gaps detected for this course.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // --- Student per-course cards ---
+
+  const studentTopicPerfCard = (
+    <Card data-testid="card-student-topic-performance">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingDown className="w-4 h-4 text-primary" />
+          Topic performance
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {studentAnalytics?.topicPerformance?.length ? (
+          <ul className="space-y-2">
+            {studentAnalytics.topicPerformance.map((t) => {
+              const key = `${t.topicId}-${t.subtopicId}`;
+              return (
+                <li
+                  key={key}
+                  className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                  data-testid={`student-topic-${key}`}
+                >
+                  <p className="min-w-0 truncate text-sm font-medium">
+                    {t.subtopicName ?? t.topicName ?? "Topic"}
+                  </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-medium">
+                      {Math.round(t.accuracyRate)}%
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full border ${
+                        WEAKNESS_STYLES[t.weaknessLevel] ??
+                        WEAKNESS_STYLES.strong
+                      }`}
+                    >
+                      {WEAKNESS_LABEL[t.weaknessLevel] ?? t.weaknessLevel}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Topic performance appears once you have enough graded answers.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const trend = (studentAnalytics?.progressTrend ?? []).map((p, i) => ({
+    i,
+    name: fmtDate(p.date),
+    score: Math.round(p.score),
+    label: p.label,
+  }));
+
+  const studentProgressCard = (
+    <Card data-testid="card-progress-over-time">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Progress over time</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {trend.length >= 2 ? (
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={trend}
+                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" fontSize={11} tickLine={false} />
+                <YAxis domain={[0, 100]} fontSize={11} tickLine={false} />
+                <Tooltip
+                  formatter={(v: number) => [`${v}%`, "Score"]}
+                  labelFormatter={(_, p) => p?.[0]?.payload?.label ?? ""}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Complete at least two exams or practice sessions in this course to
+            see your progress trend.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const studentMostFailedCard = (
+    <Card data-testid="card-student-most-failed">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <AlertTriangle className="w-4 h-4 text-destructive" />
+          Most failed questions
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {studentAnalytics?.mostFailedQuestions?.length ? (
+          <div className="space-y-3">
+            {studentAnalytics.mostFailedQuestions.map((qq) => (
+              <div
+                key={qq.questionId}
+                className="border-b pb-3 last:border-0 space-y-1"
+                data-testid={`student-failed-question-${qq.questionId}`}
+              >
+                <p className="text-sm font-medium line-clamp-2">
+                  {qq.questionPreview}
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {qq.topicName && <span>{qq.topicName}</span>}
+                  {qq.difficultyLevel && <span>{qq.difficultyLevel}</span>}
+                  <span className="text-destructive font-medium">
+                    {Math.round(qq.incorrectRate)}% incorrect
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Questions you've struggled with in this course will appear here.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // Student exam / practice lists, scoped to this course.
+  const courseExams = (myExams ?? []).filter((e) => e.courseId === id);
+  const recentExams = courseExams.filter((e) => e.status === "submitted");
+  const unfinishedExams = courseExams.filter((e) => e.status !== "submitted");
+  const recentPractice = (practiceHistory?.completed ?? []).filter(
+    (s) => s.courseId === id,
+  );
+  const unfinishedPractice = (practiceHistory?.active ?? []).filter(
+    (s) => s.courseId === id,
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start gap-3 flex-wrap">
         <div>
-        <h1 className="text-3xl font-bold">
-          {course.courseCode}: {course.courseName}
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {course.lecturerName && (
-            <span data-testid="text-course-lecturer">
-              Lecturer:{" "}
-              <span className="font-medium text-foreground">
-                {course.lecturerName}
+          <h1 className="text-3xl font-bold">
+            {course.courseCode}: {course.courseName}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            {course.lecturerName && (
+              <span data-testid="text-course-lecturer">
+                Lecturer:{" "}
+                <span className="font-medium text-foreground">
+                  {course.lecturerName}
+                </span>
               </span>
-            </span>
-          )}
-        </div>
+            )}
+          </div>
         </div>
         <Button
           type="button"
@@ -520,333 +979,286 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
 
       {isLecturer && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <Card data-testid="metric-course-average">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Class average
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {fmtScore(analytics?.averageScore)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card data-testid="metric-course-students">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Students
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {analytics?.studentsCount ?? courseStudents?.length ?? 0}
-                </p>
-              </CardContent>
-            </Card>
-            <Card data-testid="metric-course-problematic">
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Problematic questions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">
-                  {analytics?.problematicQuestions?.length ?? 0}
-                </p>
-              </CardContent>
-            </Card>
+          {/* Row 1: Students | Class average | Questions bank | Problematic questions */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Stat
+              icon={<Users className="w-3.5 h-3.5" />}
+              label="Students"
+              value={String(
+                analytics?.studentsCount ?? courseStudents?.length ?? 0,
+              )}
+              testid="metric-course-students"
+            />
+            <Stat
+              icon={<Target className="w-3.5 h-3.5" />}
+              label="Class average"
+              value={fmtScore(analytics?.averageScore)}
+              testid="metric-course-average"
+            />
+            <Stat
+              icon={<BookOpen className="w-3.5 h-3.5" />}
+              label="Questions bank"
+              value={String(analytics?.questionBankCount ?? 0)}
+              testid="metric-course-question-bank"
+            />
+            <Stat
+              icon={<AlertTriangle className="w-3.5 h-3.5" />}
+              label="Problematic questions"
+              value={String(analytics?.problematicQuestions?.length ?? 0)}
+              testid="metric-course-problematic"
+            />
           </div>
 
-          <Card data-testid="card-course-students">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="w-4 h-4 text-primary" />
-                Students in this course
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {courseStudents && courseStudents.length ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Name</th>
-                        <th className="py-2 pr-3 font-medium">Email</th>
-                        <th className="py-2 pr-3 font-medium">Program</th>
-                        <th className="py-2 pr-3 font-medium">Year</th>
-                        <th className="py-2 font-medium">Semester</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {courseStudents.map((s) => (
-                        <tr
-                          key={s.id}
-                          className="border-b last:border-0"
-                          data-testid={`course-student-${s.id}`}
-                        >
-                          <td className="py-2 pr-3 font-medium">
-                            {s.fullName}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.email}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.programName ?? "—"}
-                          </td>
-                          <td className="py-2 pr-3 text-muted-foreground">
-                            {s.studyYear ?? "—"}
-                          </td>
-                          <td className="py-2 text-muted-foreground">
-                            {s.semester ?? "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  No students enrolled in this course yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Row 2: Topics | Topic performance | Most failed questions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+            {topicsCard}
+            {lecturerTopicPerfCard}
+            {lecturerMostFailedCard}
+          </div>
+
+          {/* Row 3: Students in this course | Content gaps */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {studentsInCourseCard}
+            {contentGapsCard}
+          </div>
         </>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Topics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Search topics or subtopics..."
-            value={topicSearch}
-            onChange={(e) => setTopicSearch(e.target.value)}
-            className="max-w-md mb-4"
-            data-testid="input-search-topics"
-          />
-          <ul className="space-y-2 mb-6">
-            {roots.map((t) =>
-              isStudent ? renderStudentTopic(t, 0) : renderPrivilegedRoot(t),
-            )}
-            {all.length === 0 && (
-              <p className="text-muted-foreground">No topics yet.</p>
-            )}
-            {all.length > 0 && roots.length === 0 && (
-              <p className="text-muted-foreground">
-                No topics match "{topicSearch}".
-              </p>
-            )}
-          </ul>
-
-          {isPrivileged && (
-            <div className="space-y-2 border-t pt-4" data-testid="add-topic">
-              <h3 className="font-semibold">Add topic</h3>
-              <Input
-                placeholder="New topic name"
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-              />
-              <Button onClick={handleAddRoot} disabled={createTopic.isPending}>
-                Add Topic
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {isLecturer && (
+      {isStudent && (
         <>
-          <Card data-testid="card-topic-performance">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingDown className="w-4 h-4 text-primary" />
-                Topic performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.topicPerformance?.length ? (
-                <div className="space-y-2">
-                  {analytics.topicPerformance.map((t) => (
-                    <div
-                      key={t.topicId}
-                      className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
-                      data-testid={`course-topic-${t.topicId}`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {t.topicName ?? `Topic ${t.topicId}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.attemptsCount} attempts · {t.weakStudentsCount}{" "}
-                          student{t.weakStudentsCount === 1 ? "" : "s"} below
-                          threshold
-                        </p>
-                      </div>
-                      <span
-                        className={`text-sm font-semibold shrink-0 ${accuracyClass(
-                          t.averageAccuracy,
-                        )}`}
-                      >
-                        {Math.round(t.averageAccuracy)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Topic performance appears once students have enough graded
-                  answers.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Row 1: Avg Score Exam | Avg Score Practice | Readiness | Milestones */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Stat
+              icon={<Target className="w-3.5 h-3.5" />}
+              label="Avg Score (Exams)"
+              value={fmtScore(studentAnalytics?.averageScoreExam)}
+              testid="metric-student-avg-exam"
+            />
+            <Stat
+              icon={<Target className="w-3.5 h-3.5" />}
+              label="Avg Score (Practice)"
+              value={fmtScore(studentAnalytics?.averageScorePractice)}
+              testid="metric-student-avg-practice"
+            />
+            <Stat
+              icon={<Gauge className="w-3.5 h-3.5" />}
+              label="Readiness"
+              value={
+                studentAnalytics?.readinessScore == null
+                  ? "—"
+                  : `${Math.round(studentAnalytics.readinessScore)}/100`
+              }
+              sub={studentAnalytics?.readinessLabel}
+              testid="metric-student-readiness"
+            />
+            <Stat
+              icon={<Trophy className="w-3.5 h-3.5" />}
+              label="Milestones"
+              value={String(studentAnalytics?.milestonesCount ?? 0)}
+              testid="metric-student-milestones"
+            />
+          </div>
 
-          <Card data-testid="card-problematic-questions">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-                Most failed questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.mostFailedQuestions?.length ? (
-                <div className="space-y-3">
-                  {analytics.mostFailedQuestions.map((q) => (
-                    <div
-                      key={q.questionId}
-                      className="flex items-start justify-between gap-4 border-b pb-3 last:border-0"
-                      data-testid={`problematic-question-${q.questionId}`}
-                    >
-                      <div className="min-w-0 space-y-1">
-                        <p className="text-sm font-medium line-clamp-2">
-                          {q.questionPreview}
-                        </p>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          {q.topicName && <span>{q.topicName}</span>}
-                          {q.difficultyLevel && <span>{q.difficultyLevel}</span>}
-                          <span>{q.attemptsCount} attempts</span>
-                          <span className="text-destructive font-medium">
-                            {Math.round(q.incorrectRate)}% incorrect
+          {/* Row 2: Topics | Topic performance | Progress over time | Most failed questions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {topicsCard}
+            {studentTopicPerfCard}
+            {studentProgressCard}
+            {studentMostFailedCard}
+          </div>
+
+          {/* Row 3: Recent exams | Unfinished exams | Recent practice | Unfinished practice */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+            <Card data-testid="card-course-recent-exams">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recent exams</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentExams.length ? (
+                  <ul className="space-y-2">
+                    {recentExams.slice(0, 5).map((e) => (
+                      <li key={e.id} className="border-b pb-2 last:border-0">
+                        <Link
+                          href={`/exams/${e.id}/review`}
+                          className="text-sm hover:text-primary transition-colors"
+                        >
+                          Score: {e.score ?? "-"}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No completed exams yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-course-unfinished-exams">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Unfinished exams</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {unfinishedExams.length ? (
+                  <ul className="space-y-2">
+                    {unfinishedExams.slice(0, 5).map((e) => (
+                      <li
+                        key={e.id}
+                        className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                      >
+                        <span className="text-xs uppercase text-muted-foreground">
+                          {e.status === "in_progress"
+                            ? "in progress"
+                            : "not started"}
+                        </span>
+                        <Link
+                          href={`/exams/${e.id}/take`}
+                          className="shrink-0 text-sm text-primary hover:underline"
+                          data-testid={`link-resume-exam-${e.id}`}
+                        >
+                          Continue
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No exams in progress.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-course-recent-practice">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recent practice</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentPractice.length ? (
+                  <ul className="space-y-2">
+                    {recentPractice.slice(0, 5).map((s) => (
+                      <li key={s.id} className="border-b pb-2 last:border-0">
+                        <Link
+                          href={`/practice/${s.id}/summary`}
+                          className="flex items-center justify-between gap-3 text-sm hover:text-primary transition-colors"
+                          data-testid={`link-practice-summary-${s.id}`}
+                        >
+                          <span className="text-muted-foreground">Session</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {s.correctCount}/{s.totalQuestions}
                           </span>
-                        </div>
-                      </div>
-                      <Link
-                        href={`/lecturer/questions/${q.questionId}/edit`}
-                        className="text-sm font-medium text-primary hover:underline shrink-0"
-                        data-testid={`link-view-question-${q.questionId}`}
-                      >
-                        View Question
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No questions meet the failure threshold yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No completed practice yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-          <Card data-testid="card-content-gaps">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileWarning className="w-4 h-4 text-amber-600" />
-                Content gaps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics?.contentGaps?.length ? (
-                <ul className="space-y-2">
-                  {analytics.contentGaps.map((g, i) => (
-                    <li
-                      key={`${g.topicId ?? "none"}-${i}`}
-                      className="text-sm border-b pb-2 last:border-0"
-                      data-testid={`content-gap-${i}`}
-                    >
-                      {g.topicName && (
-                        <span className="font-medium">{g.topicName}: </span>
-                      )}
-                      <span className="text-muted-foreground">
-                        {g.description}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No content gaps detected for this course.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+            <Card data-testid="card-course-unfinished-practice">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Unfinished practice</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {unfinishedPractice.length ? (
+                  <ul className="space-y-2">
+                    {unfinishedPractice.slice(0, 5).map((s) => (
+                      <li
+                        key={s.id}
+                        className="flex items-center justify-between gap-3 border-b pb-2 last:border-0"
+                      >
+                        <span className="text-xs text-muted-foreground">
+                          {s.answeredCount}/{s.totalQuestions}
+                        </span>
+                        <Link
+                          href={`/practice/${s.id}`}
+                          className="shrink-0 text-sm text-primary hover:underline"
+                          data-testid={`link-resume-practice-${s.id}`}
+                        >
+                          Continue
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No practice in progress.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
 
       {isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 mb-6">
-              {(members ?? []).map((m) => (
-                <li
-                  key={m.id}
-                  className="flex justify-between items-center p-3 border rounded-md"
-                >
-                  <div>
-                    <span className="font-medium">{m.fullName}</span>
-                    <span className="text-muted-foreground ml-2 text-sm">
-                      ({m.email}) — {m.role}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleRemoveMember(m.id)}
-                    disabled={removeMember.isPending}
+        <>
+          {topicsCard}
+          <Card>
+            <CardHeader>
+              <CardTitle>Members</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 mb-6">
+                {(members ?? []).map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex justify-between items-center p-3 border rounded-md"
                   >
-                    Remove
-                  </Button>
-                </li>
-              ))}
-              {(members ?? []).length === 0 && (
-                <p className="text-muted-foreground">No members yet.</p>
-              )}
-            </ul>
-
-            <div className="space-y-2 border-t pt-4">
-              <h3 className="font-semibold">Add member</h3>
-              <select
-                className="border rounded px-2 py-1 w-full"
-                value={memberToAdd}
-                onChange={(e) =>
-                  setMemberToAdd(
-                    e.target.value === "" ? "" : parseInt(e.target.value, 10),
-                  )
-                }
-              >
-                <option value="">Select a student or lecturer...</option>
-                {assignable.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.fullName} ({u.email}) — {u.role}
-                  </option>
+                    <div>
+                      <span className="font-medium">{m.fullName}</span>
+                      <span className="text-muted-foreground ml-2 text-sm">
+                        ({m.email}) — {m.role}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleRemoveMember(m.id)}
+                      disabled={removeMember.isPending}
+                    >
+                      Remove
+                    </Button>
+                  </li>
                 ))}
-              </select>
-              <Button
-                onClick={handleAddMember}
-                disabled={memberToAdd === "" || addMember.isPending}
-              >
-                Add to course
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                {(members ?? []).length === 0 && (
+                  <p className="text-muted-foreground">No members yet.</p>
+                )}
+              </ul>
+
+              <div className="space-y-2 border-t pt-4">
+                <h3 className="font-semibold">Add member</h3>
+                <select
+                  className="border rounded px-2 py-1 w-full"
+                  value={memberToAdd}
+                  onChange={(e) =>
+                    setMemberToAdd(
+                      e.target.value === "" ? "" : parseInt(e.target.value, 10),
+                    )
+                  }
+                >
+                  <option value="">Select a student or lecturer...</option>
+                  {assignable.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName} ({u.email}) — {u.role}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  onClick={handleAddMember}
+                  disabled={memberToAdd === "" || addMember.isPending}
+                >
+                  Add to course
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

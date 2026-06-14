@@ -644,6 +644,16 @@ export const ListQuestionsResponseItem = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
@@ -672,6 +682,16 @@ export const CreateQuestionBody = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
   options: zod
@@ -702,6 +722,16 @@ export const SearchQuestionsResponseItem = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
@@ -733,6 +763,16 @@ export const GetQuestionResponse = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
@@ -762,6 +802,16 @@ export const UpdateQuestionBody = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]).optional(),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]).optional(),
   options: zod
@@ -784,6 +834,16 @@ export const UpdateQuestionResponse = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
@@ -814,6 +874,16 @@ export const ArchiveQuestionResponse = zod.object({
   questionType: zod.enum(["single_choice", "multiple_choice"]),
   difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
   explanationText: zod.string().nullish(),
+  questionImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional image for the question body (PNG\/JPEG\/WebP data URL).",
+    ),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional image for the explanation (PNG\/JPEG\/WebP data URL)."),
   sourceReference: zod.string().nullish(),
   status: zod.enum(["draft", "pending", "approved", "archived"]),
   createdBy: zod.number().nullish(),
@@ -889,6 +959,10 @@ export const GetExamResponse = zod
           questionType: zod.enum(["single_choice", "multiple_choice"]),
           difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
           topicName: zod.string().nullish(),
+          questionImageUrl: zod
+            .string()
+            .nullish()
+            .describe("Optional question-body image (data URL)."),
           randomizedOrder: zod.number(),
           options: zod.array(
             zod.object({
@@ -956,6 +1030,10 @@ export const StartExamResponse = zod
           questionType: zod.enum(["single_choice", "multiple_choice"]),
           difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
           topicName: zod.string().nullish(),
+          questionImageUrl: zod
+            .string()
+            .nullish()
+            .describe("Optional question-body image (data URL)."),
           randomizedOrder: zod.number(),
           options: zod.array(
             zod.object({
@@ -1058,6 +1136,14 @@ export const GetExamReviewResponse = zod.object({
       difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
       topicName: zod.string().nullish(),
       explanationText: zod.string().nullish(),
+      questionImageUrl: zod
+        .string()
+        .nullish()
+        .describe("Optional question-body image (data URL)."),
+      explanationImageUrl: zod
+        .string()
+        .nullish()
+        .describe("Optional explanation image (data URL)."),
       isCorrect: zod
         .boolean()
         .describe("True only if earnedScore equals maxScore."),
@@ -1254,6 +1340,10 @@ export const GetPracticeSessionResponse = zod
           questionType: zod.enum(["single_choice", "multiple_choice"]),
           difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]),
           topicName: zod.string().nullish(),
+          questionImageUrl: zod
+            .string()
+            .nullish()
+            .describe("Optional question-body image (data URL)."),
           questionOrder: zod.number(),
           maxScore: zod
             .number()
@@ -1277,6 +1367,12 @@ export const GetPracticeSessionResponse = zod
             .string()
             .nullish()
             .describe("Only populated once the question has been answered."),
+          explanationImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Optional explanation image (data URL). Only populated once answered.",
+            ),
           correctAnswerOptionIds: zod
             .array(zod.number())
             .describe(
@@ -1318,6 +1414,10 @@ export const SubmitPracticeAnswerResponse = zod.object({
   correctAnswerOptionIds: zod.array(zod.number()),
   selectedAnswerOptionIds: zod.array(zod.number()),
   explanationText: zod.string().nullish(),
+  explanationImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Optional explanation image (data URL)."),
   answeredCount: zod
     .number()
     .describe("Running count of answered questions in this session."),
@@ -1559,6 +1659,79 @@ export const GetStudentDashboardAnalyticsResponse = zod.object({
 });
 
 /**
+ * Per-course analytics for the authenticated student. 403 unless the course is offered in their program and they are actively enrolled.
+ */
+export const GetStudentCourseAnalyticsParams = zod.object({
+  courseId: zod.coerce.number(),
+});
+
+export const GetStudentCourseAnalyticsResponse = zod.object({
+  courseId: zod.number(),
+  courseName: zod.string().nullish(),
+  averageScoreExam: zod
+    .number()
+    .nullable()
+    .describe(
+      "0-100 across submitted mock exams in this course; null when none.",
+    ),
+  averageScorePractice: zod
+    .number()
+    .nullable()
+    .describe(
+      "0-100 across completed practice sessions in this course; null when none.",
+    ),
+  readinessScore: zod.number().nullish(),
+  readinessLabel: zod.string(),
+  readinessMessage: zod.string().nullish(),
+  milestonesCount: zod
+    .number()
+    .describe("Milestones the student earned in this course."),
+  topicPerformance: zod.array(
+    zod.object({
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      accuracyRate: zod.number().describe("0-100."),
+      weaknessLevel: zod.enum(["strong", "needs_practice", "weak"]),
+      weaknessScore: zod.number().describe("0-100, higher = weaker."),
+      attemptsCount: zod.number(),
+      priority: zod.enum(["high", "medium", "low"]),
+    }),
+  ),
+  progressTrend: zod.array(
+    zod.object({
+      date: zod.coerce.date().nullish(),
+      type: zod.enum(["mock_exam", "practice"]),
+      label: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      score: zod.number().describe("0-100."),
+      earnedScore: zod.number().nullish(),
+      maxScore: zod.number().nullish(),
+    }),
+  ),
+  mostFailedQuestions: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      questionPreview: zod.string(),
+      courseId: zod.number(),
+      courseName: zod.string().nullish(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      subtopicId: zod.number().nullish(),
+      subtopicName: zod.string().nullish(),
+      difficultyLevel: zod.enum(["Easy", "Medium", "Hard"]).optional(),
+      attemptsCount: zod.number(),
+      incorrectRate: zod.number().describe("0-100."),
+      status: zod.enum(["draft", "pending", "approved", "archived"]),
+    }),
+  ),
+});
+
+/**
  * The authenticated student's per-topic/subtopic performance, weakest first.
  */
 export const GetStudentTopicPerformanceResponseItem = zod.object({
@@ -1670,6 +1843,9 @@ export const GetLecturerCourseAnalyticsResponse = zod.object({
   courseName: zod.string(),
   averageScore: zod.number().nullish(),
   studentsCount: zod.number(),
+  questionBankCount: zod
+    .number()
+    .describe("Non-archived questions in this course's bank."),
   topicPerformance: zod.array(
     zod.object({
       topicId: zod.number(),

@@ -15,6 +15,8 @@ export interface LecturerCourseAnalytics {
   /** @nullable */
   averageScore?: number | null;
   studentsCount: number;
+  /** Non-archived questions in this course's bank. */
+  questionBankCount: number;
   topicPerformance: ClassTopicPerformance[];
   mostFailedQuestions: ProblematicQuestion[];
   problematicQuestions: ProblematicQuestion[];

@@ -21,6 +21,11 @@ export interface PracticeQuestion {
   difficultyLevel: Difficulty;
   /** @nullable */
   topicName?: string | null;
+  /**
+   * Optional question-body image (data URL).
+   * @nullable
+   */
+  questionImageUrl?: string | null;
   questionOrder: number;
   /** Points this question is worth (Easy=1, Medium=2, Hard=3). */
   maxScore: number;
@@ -41,6 +46,11 @@ export interface PracticeQuestion {
    * @nullable
    */
   explanationText?: string | null;
+  /**
+   * Optional explanation image (data URL). Only populated once answered.
+   * @nullable
+   */
+  explanationImageUrl?: string | null;
   /** Correct option ids. Empty until the question has been answered (avoids leaking answers early). */
   correctAnswerOptionIds: number[];
 }

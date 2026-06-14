@@ -32,6 +32,8 @@ export default function QuestionEdit({ params }: { params: { id: string } }) {
           questionType: question.questionType,
           difficultyLevel: question.difficultyLevel,
           explanationText: question.explanationText ?? null,
+          explanationImageUrl: question.explanationImageUrl ?? null,
+          questionImageUrl: question.questionImageUrl ?? null,
           sourceReference: question.sourceReference ?? null,
           status: question.status,
           options: question.options.map((o) => ({

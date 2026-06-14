@@ -109,6 +109,7 @@ async function loadPracticeSession(sessionId: number) {
           | "multiple_choice",
         difficultyLevel: row.q.difficultyLevel as "Easy" | "Medium" | "Hard",
         topicName: row.topicName,
+        questionImageUrl: row.q.questionImageUrl,
         questionOrder: row.psq.questionOrder,
         maxScore: row.psq.maxScore,
         options: orderedOpts,
@@ -124,6 +125,7 @@ async function loadPracticeSession(sessionId: number) {
         earnedScore: row.psq.earnedScore,
         responseTimeSeconds: row.psq.responseTimeSeconds,
         explanationText: answered ? row.q.explanationText : null,
+        explanationImageUrl: answered ? row.q.explanationImageUrl : null,
         correctAnswerOptionIds: answered
           ? qOpts.filter((o) => o.isCorrect).map((o) => o.id)
           : [],
@@ -486,7 +488,10 @@ router.post(
     const totals = await recomputeSessionTotals(session.id);
 
     const [questionRow] = await db
-      .select({ explanationText: questionsTable.explanationText })
+      .select({
+        explanationText: questionsTable.explanationText,
+        explanationImageUrl: questionsTable.explanationImageUrl,
+      })
       .from(questionsTable)
       .where(eq(questionsTable.id, psq.questionId));
 
@@ -500,6 +505,7 @@ router.post(
         correctAnswerOptionIds: correctIds,
         selectedAnswerOptionIds: grade.validSubmitted,
         explanationText: questionRow?.explanationText ?? null,
+        explanationImageUrl: questionRow?.explanationImageUrl ?? null,
         answeredCount: totals.answeredCount,
         correctCount: totals.correctCount,
       }),

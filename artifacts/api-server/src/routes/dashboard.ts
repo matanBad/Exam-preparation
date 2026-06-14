@@ -1,12 +1,16 @@
 import { Router, type IRouter } from "express";
 import {
   GetStudentDashboardAnalyticsResponse,
+  GetStudentCourseAnalyticsResponse,
+  GetStudentCourseAnalyticsParams,
   GetLecturerDashboardAnalyticsResponse,
   GetLecturerCourseAnalyticsResponse,
   GetLecturerCourseAnalyticsParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { getStudentDashboardAnalytics } from "../lib/dashboard";
+import { getStudentCourseAnalytics } from "../lib/student-course-analytics";
+import { checkStudentCourseAccess } from "../lib/student-access";
 import {
   getLecturerDashboard,
   getLecturerCourseAnalytics,
@@ -23,6 +27,22 @@ router.get(
   async (req, res): Promise<void> => {
     const result = await getStudentDashboardAnalytics(req.auth!.userId);
     res.json(GetStudentDashboardAnalyticsResponse.parse(result));
+  },
+);
+
+router.get(
+  "/dashboard/student/course/:courseId/analytics",
+  requireAuth,
+  requireRole("student"),
+  async (req, res): Promise<void> => {
+    const { courseId } = GetStudentCourseAnalyticsParams.parse(req.params);
+    const denied = await checkStudentCourseAccess(req.auth!.userId, courseId);
+    if (denied) {
+      res.status(denied.status).json({ error: denied.error });
+      return;
+    }
+    const result = await getStudentCourseAnalytics(req.auth!.userId, courseId);
+    res.json(GetStudentCourseAnalyticsResponse.parse(result));
   },
 );
 

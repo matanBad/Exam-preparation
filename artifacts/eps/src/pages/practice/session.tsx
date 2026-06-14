@@ -33,6 +33,7 @@ type Feedback = {
   correctAnswerOptionIds: number[];
   selectedAnswerOptionIds: number[];
   explanationText: string | null;
+  explanationImageUrl: string | null;
 };
 
 export default function PracticeSession({
@@ -80,6 +81,7 @@ export default function PracticeSession({
           correctAnswerOptionIds: q.correctAnswerOptionIds,
           selectedAnswerOptionIds: q.selectedAnswerOptionIds,
           explanationText: q.explanationText ?? null,
+          explanationImageUrl: q.explanationImageUrl ?? null,
         };
       }
     }
@@ -153,6 +155,7 @@ export default function PracticeSession({
               correctAnswerOptionIds: fb.correctAnswerOptionIds,
               selectedAnswerOptionIds: fb.selectedAnswerOptionIds,
               explanationText: fb.explanationText ?? null,
+              explanationImageUrl: fb.explanationImageUrl ?? null,
             },
           }));
         },
@@ -236,6 +239,14 @@ export default function PracticeSession({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-base whitespace-pre-wrap">{q.questionText}</p>
+          {q.questionImageUrl && (
+            <img
+              src={q.questionImageUrl}
+              alt="Question illustration"
+              className="max-h-80 rounded-md border object-contain"
+              data-testid={`img-practice-question-${q.id}`}
+            />
+          )}
           <div className="space-y-2">
             {q.options.map((opt, idx) => {
               const state = optionState(opt.id);
@@ -323,6 +334,14 @@ export default function PracticeSession({
                 <p className="text-sm whitespace-pre-wrap">
                   {qFeedback.explanationText}
                 </p>
+              )}
+              {qFeedback.explanationImageUrl && (
+                <img
+                  src={qFeedback.explanationImageUrl}
+                  alt="Explanation illustration"
+                  className="max-h-72 rounded-md border object-contain"
+                  data-testid={`img-practice-explanation-${q.id}`}
+                />
               )}
             </div>
           )}

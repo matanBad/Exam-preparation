@@ -938,6 +938,23 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /dashboard/student/course/{courseId}/analytics:
+    get:
+      operationId: getStudentCourseAnalytics
+      tags: [analytics]
+      description: Per-course analytics for the authenticated student. 403 unless the course is offered in their program and they are actively enrolled.
+      parameters:
+        - $ref: "#/components/parameters/CourseIdPath"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentCourseAnalytics"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /analytics/student/topic-performance:
     get:
       operationId: getStudentTopicPerformance
@@ -1681,6 +1698,8 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         explanationText: { type: string, nullable: true }
+        questionImageUrl: { type: string, nullable: true, description: "Optional image for the question body (PNG/JPEG/WebP data URL)." }
+        explanationImageUrl: { type: string, nullable: true, description: "Optional image for the explanation (PNG/JPEG/WebP data URL)." }
         sourceReference: { type: string, nullable: true }
         status: { $ref: "#/components/schemas/QuestionStatus" }
         createdBy: { type: integer, nullable: true }
@@ -1703,6 +1722,8 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         explanationText: { type: string, nullable: true }
+        questionImageUrl: { type: string, nullable: true, description: "Optional image for the question body (PNG/JPEG/WebP data URL)." }
+        explanationImageUrl: { type: string, nullable: true, description: "Optional image for the explanation (PNG/JPEG/WebP data URL)." }
         sourceReference: { type: string, nullable: true }
         status: { $ref: "#/components/schemas/QuestionStatus" }
         options:
@@ -1723,6 +1744,8 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         explanationText: { type: string, nullable: true }
+        questionImageUrl: { type: string, nullable: true, description: "Optional image for the question body (PNG/JPEG/WebP data URL)." }
+        explanationImageUrl: { type: string, nullable: true, description: "Optional image for the explanation (PNG/JPEG/WebP data URL)." }
         sourceReference: { type: string, nullable: true }
         status: { $ref: "#/components/schemas/QuestionStatus" }
         options:
@@ -1766,6 +1789,7 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: string, nullable: true }
+        questionImageUrl: { type: string, nullable: true, description: "Optional question-body image (data URL)." }
         randomizedOrder: { type: integer }
         options:
           type: array
@@ -1858,6 +1882,8 @@ components:
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: string, nullable: true }
         explanationText: { type: string, nullable: true }
+        questionImageUrl: { type: string, nullable: true, description: "Optional question-body image (data URL)." }
+        explanationImageUrl: { type: string, nullable: true, description: "Optional explanation image (data URL)." }
         isCorrect: { type: boolean, description: "True only if earnedScore equals maxScore." }
         maxScore: { type: number }
         earnedScore: { type: number, nullable: true, description: "Points earned for this question; null if not yet graded." }
@@ -1938,6 +1964,7 @@ components:
         questionType: { $ref: "#/components/schemas/QuestionType" }
         difficultyLevel: { $ref: "#/components/schemas/Difficulty" }
         topicName: { type: ["string", "null"] }
+        questionImageUrl: { type: ["string", "null"], description: "Optional question-body image (data URL)." }
         questionOrder: { type: integer }
         maxScore: { type: number, description: "Points this question is worth (Easy=1, Medium=2, Hard=3)." }
         options:
@@ -1958,6 +1985,9 @@ components:
         explanationText:
           type: ["string", "null"]
           description: "Only populated once the question has been answered."
+        explanationImageUrl:
+          type: ["string", "null"]
+          description: "Optional explanation image (data URL). Only populated once answered."
         correctAnswerOptionIds:
           type: array
           items: { type: integer }
@@ -2030,6 +2060,7 @@ components:
           type: array
           items: { type: integer }
         explanationText: { type: ["string", "null"] }
+        explanationImageUrl: { type: ["string", "null"], description: "Optional explanation image (data URL)." }
         answeredCount: { type: integer, description: "Running count of answered questions in this session." }
         correctCount: { type: integer, description: "Running count of fully-correct questions in this session." }
       required:
@@ -2257,6 +2288,29 @@ components:
       required:
         [recentScores, topicPerformance, weakAreasCount, strongAreasCount, activeRecommendationsCount, readinessLabel, practiceSessionsCount, progressTrend]
 
+    StudentCourseAnalytics:
+      type: object
+      properties:
+        courseId: { type: integer }
+        courseName: { type: ["string", "null"] }
+        averageScoreExam: { type: ["number", "null"], description: "0-100 across submitted mock exams in this course; null when none." }
+        averageScorePractice: { type: ["number", "null"], description: "0-100 across completed practice sessions in this course; null when none." }
+        readinessScore: { type: ["number", "null"] }
+        readinessLabel: { type: string }
+        readinessMessage: { type: ["string", "null"] }
+        milestonesCount: { type: integer, description: "Milestones the student earned in this course." }
+        topicPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/TopicPerformance" }
+        progressTrend:
+          type: array
+          items: { $ref: "#/components/schemas/ProgressPoint" }
+        mostFailedQuestions:
+          type: array
+          items: { $ref: "#/components/schemas/ProblematicQuestion" }
+      required:
+        [courseId, averageScoreExam, averageScorePractice, readinessLabel, milestonesCount, topicPerformance, progressTrend, mostFailedQuestions]
+
     EngagementSummary:
       type: object
       properties:
@@ -2361,6 +2415,7 @@ components:
         courseName: { type: string }
         averageScore: { type: ["number", "null"] }
         studentsCount: { type: integer }
+        questionBankCount: { type: integer, description: "Non-archived questions in this course's bank." }
         topicPerformance:
           type: array
           items: { $ref: "#/components/schemas/ClassTopicPerformance" }
@@ -2373,4 +2428,4 @@ components:
         contentGaps:
           type: array
           items: { $ref: "#/components/schemas/ContentGap" }
-      required: [courseId, courseName, studentsCount, topicPerformance, mostFailedQuestions, problematicQuestions, contentGaps]
+      required: [courseId, courseName, studentsCount, questionBankCount, topicPerformance, mostFailedQuestions, problematicQuestions, contentGaps]

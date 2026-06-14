@@ -360,7 +360,21 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, method, headers });
+  } catch (err) {
+    // TanStack Query aborts in-flight requests when a component unmounts, the
+    // user navigates away, or a query key changes. Those rejections are benign
+    // cancellations, not failures — normalize them to a DOMException AbortError
+    // so React Query (and the dev runtime-error overlay) treat them as such
+    // instead of surfacing "signal is aborted without reason".
+    const signal = init.signal as AbortSignal | undefined;
+    if (signal?.aborted || (err instanceof DOMException && err.name === "AbortError")) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

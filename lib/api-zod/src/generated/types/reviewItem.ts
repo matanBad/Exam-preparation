@@ -18,6 +18,10 @@ export interface ReviewItem {
   difficultyLevel: Difficulty;
   topicName?: string | null;
   explanationText?: string | null;
+  /** Optional question-body image (data URL). */
+  questionImageUrl?: string | null;
+  /** Optional explanation image (data URL). */
+  explanationImageUrl?: string | null;
   /** True only if earnedScore equals maxScore. */
   isCorrect: boolean;
   maxScore: number;

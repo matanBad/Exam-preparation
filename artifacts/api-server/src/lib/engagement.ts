@@ -1,9 +1,10 @@
-import { and, count, desc, eq, max } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, max } from "drizzle-orm";
 import {
   db,
   learningStreaksTable,
   studentMilestonesTable,
   notificationsTable,
+  coursesTable,
   mockExamsTable,
   practiceSessionsTable,
   performanceSummaryTable,
@@ -315,6 +316,139 @@ export async function checkMilestones(userId: number): Promise<void> {
   }
 }
 
+// Per-course milestones. The milestone key embeds the course id so the existing
+// (userId, milestoneKey) unique index still de-dupes one row per course, and the
+// courseId column is populated so the student course page can show only the
+// achievements earned in that course.
+interface CourseStats {
+  practice: number;
+  exams: number;
+  bestExam: number | null;
+}
+
+const COURSE_MILESTONE_DEFS: {
+  key: string;
+  type: string;
+  title: string;
+  message: (courseName: string) => string;
+  achieved: (a: CourseStats) => boolean;
+}[] = [
+  {
+    key: "course_first_practice",
+    type: "practice",
+    title: "First Practice in Course",
+    message: (c) => `You completed your first practice session in ${c}.`,
+    achieved: (a) => a.practice >= 1,
+  },
+  {
+    key: "course_five_practice",
+    type: "practice",
+    title: "5 Practice Sessions in Course",
+    message: (c) => `You completed 5 practice sessions in ${c}.`,
+    achieved: (a) => a.practice >= 5,
+  },
+  {
+    key: "course_first_exam",
+    type: "exam",
+    title: "First Mock Exam in Course",
+    message: (c) => `You completed your first mock exam in ${c}.`,
+    achieved: (a) => a.exams >= 1,
+  },
+  {
+    key: "course_exam_above_80",
+    type: "exam",
+    title: "Strong Result in Course",
+    message: (c) => `You scored above 80% on a mock exam in ${c}.`,
+    achieved: (a) => a.bestExam != null && a.bestExam >= 80,
+  },
+];
+
+export async function checkCourseMilestones(userId: number): Promise<void> {
+  const practiceByCourse = await db
+    .select({ courseId: practiceSessionsTable.courseId, c: count() })
+    .from(practiceSessionsTable)
+    .where(
+      and(
+        eq(practiceSessionsTable.userId, userId),
+        eq(practiceSessionsTable.status, "completed"),
+      ),
+    )
+    .groupBy(practiceSessionsTable.courseId);
+  const examByCourse = await db
+    .select({
+      courseId: mockExamsTable.courseId,
+      c: count(),
+      best: max(mockExamsTable.score),
+    })
+    .from(mockExamsTable)
+    .where(
+      and(
+        eq(mockExamsTable.userId, userId),
+        eq(mockExamsTable.status, "submitted"),
+      ),
+    )
+    .groupBy(mockExamsTable.courseId);
+
+  const stats = new Map<number, CourseStats>();
+  const ensure = (cid: number): CourseStats => {
+    let s = stats.get(cid);
+    if (!s) {
+      s = { practice: 0, exams: 0, bestExam: null };
+      stats.set(cid, s);
+    }
+    return s;
+  };
+  for (const r of practiceByCourse) ensure(r.courseId).practice = r.c;
+  for (const r of examByCourse) {
+    const s = ensure(r.courseId);
+    s.exams = r.c;
+    s.bestExam = r.best ?? null;
+  }
+  if (stats.size === 0) return;
+
+  const courseIds = [...stats.keys()];
+  const courseRows = await db
+    .select({ id: coursesTable.id, courseName: coursesTable.courseName })
+    .from(coursesTable)
+    .where(inArray(coursesTable.id, courseIds));
+  const courseNames = new Map(courseRows.map((c) => [c.id, c.courseName]));
+
+  for (const [courseId, a] of stats) {
+    const courseName = courseNames.get(courseId) ?? `Course ${courseId}`;
+    for (const def of COURSE_MILESTONE_DEFS) {
+      if (!def.achieved(a)) continue;
+      const milestoneKey = `${def.key}:c${courseId}`;
+      const inserted = await db
+        .insert(studentMilestonesTable)
+        .values({ userId, courseId, milestoneType: def.type, milestoneKey })
+        .onConflictDoNothing({
+          target: [
+            studentMilestonesTable.userId,
+            studentMilestonesTable.milestoneKey,
+          ],
+        })
+        .returning({ id: studentMilestonesTable.id });
+      if (inserted.length === 0) continue;
+      const milestoneId = inserted[0]!.id;
+
+      const { id: notificationId } = await createNotificationIfNotExists({
+        userId,
+        type: "milestone",
+        title: def.title,
+        message: def.message(courseName),
+        relatedEntityType: "milestone",
+        relatedEntityId: milestoneId,
+        actionUrl: `/courses/${courseId}`,
+      });
+
+      await db
+        .update(studentMilestonesTable)
+        .set({ notificationId })
+        .where(eq(studentMilestonesTable.id, milestoneId));
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Weak-area & recommendation alerts (driven by recalculated analytics)
 // ---------------------------------------------------------------------------
@@ -474,6 +608,7 @@ export async function handlePracticeCompleted(userId: number): Promise<void> {
   try {
     await updateLearningStreak(userId);
     await checkMilestones(userId);
+    await checkCourseMilestones(userId);
     await handleAnalyticsUpdated(userId);
   } catch (err) {
     logger.warn({ err, userId }, "handlePracticeCompleted failed");
@@ -484,6 +619,7 @@ export async function handleExamSubmitted(userId: number): Promise<void> {
   try {
     await updateLearningStreak(userId);
     await checkMilestones(userId);
+    await checkCourseMilestones(userId);
     await handleAnalyticsUpdated(userId);
   } catch (err) {
     logger.warn({ err, userId }, "handleExamSubmitted failed");
@@ -536,7 +672,14 @@ export async function getEngagementSummary(
     db
       .select({ value: count() })
       .from(studentMilestonesTable)
-      .where(eq(studentMilestonesTable.userId, userId)),
+      // Account-wide milestones only; per-course milestones (courseId set) are
+      // surfaced on the course page, not the global dashboard count.
+      .where(
+        and(
+          eq(studentMilestonesTable.userId, userId),
+          isNull(studentMilestonesTable.courseId),
+        ),
+      ),
     db
       .select({ value: count() })
       .from(notificationsTable)
@@ -567,7 +710,12 @@ export async function getMilestones(userId: number): Promise<MilestoneView[]> {
   const rows = await db
     .select()
     .from(studentMilestonesTable)
-    .where(eq(studentMilestonesTable.userId, userId))
+    .where(
+      and(
+        eq(studentMilestonesTable.userId, userId),
+        isNull(studentMilestonesTable.courseId),
+      ),
+    )
     .orderBy(desc(studentMilestonesTable.achievedAt));
   return rows.map((r) => ({
     milestoneType: r.milestoneType,

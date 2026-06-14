@@ -296,9 +296,70 @@ export async function recalculateForUser(userId: number): Promise<{
 
   const eligible = summaries.filter((s) => s.attempts >= MIN_ATTEMPTS);
 
+  // A recommendation is considered satisfied once the student has practiced its
+  // topic/subtopic at least twice at >= 80% accuracy, even if the weakness
+  // formula hasn't fully cleared. We collect those "mastered" keys and skip
+  // generating recs for them, so the no-longer-desired pass below auto-completes
+  // any active rec the student worked through.
+  const MASTERY_ACCURACY = 80;
+  const MASTERY_MIN_SESSIONS = 2;
+  const masteredTopic = new Map<string, number>();
+  const masteredSubtopic = new Map<string, number>();
+  const completedPractice = await db
+    .select({
+      courseId: practiceSessionsTable.courseId,
+      topicId: practiceSessionsTable.topicId,
+      subtopicId: practiceSessionsTable.subtopicId,
+      earnedScore: practiceSessionsTable.earnedScore,
+      totalMaxScore: practiceSessionsTable.totalMaxScore,
+      correctCount: practiceSessionsTable.correctCount,
+      totalQuestions: practiceSessionsTable.totalQuestions,
+    })
+    .from(practiceSessionsTable)
+    .where(
+      and(
+        eq(practiceSessionsTable.userId, userId),
+        eq(practiceSessionsTable.status, "completed"),
+      ),
+    );
+  for (const p of completedPractice) {
+    const accuracy =
+      p.totalMaxScore > 0
+        ? (p.earnedScore / p.totalMaxScore) * 100
+        : p.totalQuestions > 0
+          ? (p.correctCount / p.totalQuestions) * 100
+          : 0;
+    if (accuracy < MASTERY_ACCURACY) continue;
+    // A subtopic-scoped session proves mastery of that subtopic ONLY — it must
+    // not credit the parent topic (mastering one child shouldn't clear the
+    // whole-topic recommendation). A whole-topic session (no subtopic) credits
+    // the topic.
+    if (p.subtopicId != null) {
+      const k = `${p.courseId}:${p.subtopicId}`;
+      masteredSubtopic.set(k, (masteredSubtopic.get(k) ?? 0) + 1);
+    } else if (p.topicId != null) {
+      const k = `${p.courseId}:${p.topicId}`;
+      masteredTopic.set(k, (masteredTopic.get(k) ?? 0) + 1);
+    }
+  }
+  const topicMastered = (courseId: number, topicId: number): boolean =>
+    (masteredTopic.get(`${courseId}:${topicId}`) ?? 0) >= MASTERY_MIN_SESSIONS;
+  const isMasteredViaPractice = (
+    courseId: number,
+    topicId: number,
+    subtopicId: number | null,
+  ): boolean =>
+    subtopicId != null
+      ? // A subtopic rec clears when the student mastered that subtopic, OR when
+        // they mastered the whole parent topic with topic-level practice.
+        (masteredSubtopic.get(`${courseId}:${subtopicId}`) ?? 0) >=
+          MASTERY_MIN_SESSIONS || topicMastered(courseId, topicId)
+      : topicMastered(courseId, topicId);
+
   // Build the set of recommendations the student should currently have.
   const desired: DesiredRec[] = [];
   for (const s of eligible) {
+    if (isMasteredViaPractice(s.courseId, s.topicId, s.subtopicId)) continue;
     const label =
       (s.subtopicId != null ? topicNames.get(s.subtopicId) : undefined) ??
       topicNames.get(s.topicId) ??

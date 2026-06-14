@@ -187,6 +187,11 @@ export const questionsTable = pgTable(
     questionType: text("question_type").notNull().default("single_choice"),
     difficultyLevel: text("difficulty_level").notNull().default("Medium"),
     explanationText: text("explanation_text"),
+    // Optional images (base64 data URLs) for the question body and the
+    // explanation, uploaded by lecturers when authoring a question. Nullable
+    // and backward-compatible: existing rows have null.
+    questionImageUrl: text("question_image_url"),
+    explanationImageUrl: text("explanation_image_url"),
     sourceReference: text("source_reference"),
     status: text("status").notNull().default("approved"),
     createdBy: integer("created_by").references(() => usersTable.id, {
@@ -576,6 +581,12 @@ export const studentMilestonesTable = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
+    // Course this milestone is attributable to, when applicable. Null for
+    // account-wide milestones (e.g. streaks). Lets the student course page show
+    // only the achievements earned in that course.
+    courseId: integer("course_id").references(() => coursesTable.id, {
+      onDelete: "cascade",
+    }),
     // Grouping label: practice | exam | streak | recommendation.
     milestoneType: text("milestone_type").notNull(),
     // Stable key, e.g. first_practice_completed. Unique per user.

@@ -91,6 +91,20 @@ async function visibleCourseIdsForQuestions(scope: {
   return rows.map((r) => r.courseId);
 }
 
+const MAX_IMAGE_DATA_URL = 3_000_000;
+// Validates an optional image data URL (PNG/JPEG/WebP, ~2MB cap). Returns an
+// error message to send, or null when acceptable (including a null value).
+function imageDataUrlError(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  if (
+    !/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(value) ||
+    value.length > MAX_IMAGE_DATA_URL
+  ) {
+    return "Image must be a PNG/JPEG/WebP data URL under ~2MB";
+  }
+  return null;
+}
+
 async function loadQuestionsWithOptions(
   filters: SQL[],
   scope:
@@ -238,6 +252,13 @@ router.post(
         return;
       }
     }
+    for (const img of [data.questionImageUrl, data.explanationImageUrl]) {
+      const imgErr = imageDataUrlError(img);
+      if (imgErr) {
+        res.status(400).json({ error: imgErr });
+        return;
+      }
+    }
     const [question] = await db
       .insert(questionsTable)
       .values({
@@ -249,6 +270,8 @@ router.post(
         questionType: data.questionType,
         difficultyLevel: data.difficultyLevel,
         explanationText: data.explanationText ?? null,
+        questionImageUrl: data.questionImageUrl ?? null,
+        explanationImageUrl: data.explanationImageUrl ?? null,
         sourceReference: data.sourceReference ?? null,
         status: data.status ?? "approved",
         createdBy: auth.userId,
@@ -366,6 +389,13 @@ router.put(
         return;
       }
     }
+    for (const img of [data.questionImageUrl, data.explanationImageUrl]) {
+      const imgErr = imageDataUrlError(img);
+      if (imgErr) {
+        res.status(400).json({ error: imgErr });
+        return;
+      }
+    }
     const updateValues: Record<string, unknown> = { updatedAt: new Date() };
     for (const key of [
       "courseId",
@@ -376,6 +406,8 @@ router.put(
       "questionType",
       "difficultyLevel",
       "explanationText",
+      "questionImageUrl",
+      "explanationImageUrl",
       "sourceReference",
       "status",
     ] as const) {

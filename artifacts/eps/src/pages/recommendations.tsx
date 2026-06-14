@@ -2,9 +2,7 @@ import { useLocation } from "wouter";
 import {
   useGetRecommendations,
   useGetRevisionPlan,
-  useCompleteRecommendation,
   useDismissRecommendation,
-  useGeneratePractice,
   getGetRecommendationsQueryKey,
   getGetRevisionPlanQueryKey,
   getGetWeakAreasQueryKey,
@@ -18,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Lightbulb, ListChecks, Check, X } from "lucide-react";
+import { Lightbulb, ListChecks } from "lucide-react";
 import { useState } from "react";
 
 const PRIORITY_STYLES: Record<string, string> = {
@@ -27,13 +25,28 @@ const PRIORITY_STYLES: Record<string, string> = {
   low: "bg-muted text-muted-foreground border-border",
 };
 
+// Build the practice-start URL with the topic context pre-filled. The practice
+// page reads these params and only asks the student for the question count, so
+// "Practice now" sends them straight into a scoped session.
+function practiceUrl(p: {
+  courseId: number;
+  topicId?: number | null;
+  subtopicId?: number | null;
+  count?: number;
+}): string {
+  const q = new URLSearchParams();
+  q.set("courseId", String(p.courseId));
+  if (p.topicId != null) q.set("topicId", String(p.topicId));
+  if (p.subtopicId != null) q.set("subtopicId", String(p.subtopicId));
+  if (p.count != null) q.set("count", String(p.count));
+  return `/practice?${q.toString()}`;
+}
+
 function RecommendationsTab() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { data: recs, isLoading } = useGetRecommendations();
-  const complete = useCompleteRecommendation();
   const dismiss = useDismissRecommendation();
-  const generate = useGeneratePractice();
   const [busyId, setBusyId] = useState<number | null>(null);
 
   const invalidate = () => {
@@ -42,43 +55,11 @@ function RecommendationsTab() {
     queryClient.invalidateQueries({ queryKey: getGetWeakAreasQueryKey() });
   };
 
-  const onComplete = (id: number) => {
-    setBusyId(id);
-    complete.mutate(
-      { id },
-      { onSuccess: invalidate, onSettled: () => setBusyId(null) },
-    );
-  };
-
   const onDismiss = (id: number) => {
     setBusyId(id);
     dismiss.mutate(
       { id },
       { onSuccess: invalidate, onSettled: () => setBusyId(null) },
-    );
-  };
-
-  const practiceNow = (rec: {
-    id: number;
-    courseId: number;
-    topicId?: number | null;
-    subtopicId?: number | null;
-  }) => {
-    setBusyId(rec.id);
-    generate.mutate(
-      {
-        data: {
-          courseId: rec.courseId,
-          topicId: rec.topicId,
-          subtopicId: rec.subtopicId,
-          questionCount: 10,
-          sessionType: "weak_area",
-        },
-      },
-      {
-        onSuccess: (session) => setLocation(`/practice/${session.id}`),
-        onError: () => setBusyId(null),
-      },
     );
   };
 
@@ -127,34 +108,29 @@ function RecommendationsTab() {
             <div className="flex flex-col gap-2 shrink-0">
               <Button
                 size="sm"
-                onClick={() => practiceNow(rec)}
-                disabled={busyId === rec.id}
+                onClick={() =>
+                  setLocation(
+                    practiceUrl({
+                      courseId: rec.courseId,
+                      topicId: rec.topicId,
+                      subtopicId: rec.subtopicId,
+                    }),
+                  )
+                }
                 data-testid={`btn-rec-practice-${rec.id}`}
               >
                 Practice now
               </Button>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onComplete(rec.id)}
-                  disabled={busyId === rec.id}
-                  data-testid={`btn-rec-complete-${rec.id}`}
-                  title="Mark as done"
-                >
-                  <Check className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onDismiss(rec.id)}
-                  disabled={busyId === rec.id}
-                  data-testid={`btn-rec-dismiss-${rec.id}`}
-                  title="Dismiss"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDismiss(rec.id)}
+                disabled={busyId === rec.id}
+                data-testid={`btn-rec-dismiss-${rec.id}`}
+                title="Dismiss this recommendation"
+              >
+                {busyId === rec.id ? "Dismissing..." : "Dismiss"}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -166,33 +142,6 @@ function RecommendationsTab() {
 function RevisionPlanTab() {
   const [, setLocation] = useLocation();
   const { data: plan, isLoading } = useGetRevisionPlan();
-  const generate = useGeneratePractice();
-  const [busyOrder, setBusyOrder] = useState<number | null>(null);
-
-  const practiceNow = (item: {
-    order: number;
-    courseId: number;
-    topicId?: number | null;
-    subtopicId?: number | null;
-    suggestedQuestionCount: number;
-  }) => {
-    setBusyOrder(item.order);
-    generate.mutate(
-      {
-        data: {
-          courseId: item.courseId,
-          topicId: item.topicId,
-          subtopicId: item.subtopicId,
-          questionCount: item.suggestedQuestionCount,
-          sessionType: "weak_area",
-        },
-      },
-      {
-        onSuccess: (session) => setLocation(`/practice/${session.id}`),
-        onError: () => setBusyOrder(null),
-      },
-    );
-  };
 
   if (isLoading) return <p className="text-muted-foreground">Loading...</p>;
 
@@ -238,11 +187,19 @@ function RevisionPlanTab() {
             </div>
             <Button
               size="sm"
-              onClick={() => practiceNow(item)}
-              disabled={busyOrder === item.order}
+              onClick={() =>
+                setLocation(
+                  practiceUrl({
+                    courseId: item.courseId,
+                    topicId: item.topicId,
+                    subtopicId: item.subtopicId,
+                    count: item.suggestedQuestionCount,
+                  }),
+                )
+              }
               data-testid={`btn-revision-practice-${item.order}`}
             >
-              {busyOrder === item.order ? "Starting..." : "Practice now"}
+              Practice now
             </Button>
           </CardContent>
         </Card>

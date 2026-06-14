@@ -1,12 +1,8 @@
 import { useLocation } from "wouter";
-import {
-  useGetWeakAreas,
-  useGeneratePractice,
-} from "@workspace/api-client-react";
+import { useGetWeakAreas } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lightbulb } from "lucide-react";
-import { useState } from "react";
 
 const PRIORITY_STYLES: Record<string, string> = {
   high: "bg-destructive/10 text-destructive border-destructive/20",
@@ -19,35 +15,23 @@ const LEVEL_LABEL: Record<string, string> = {
   needs_practice: "Needs practice",
 };
 
+// Send the student to the practice page with the topic context pre-filled; they
+// only choose the question count there. Mirrors the Recommendations behaviour.
+function practiceUrl(area: {
+  courseId: number;
+  topicId?: number | null;
+  subtopicId?: number | null;
+}): string {
+  const q = new URLSearchParams();
+  q.set("courseId", String(area.courseId));
+  if (area.topicId != null) q.set("topicId", String(area.topicId));
+  if (area.subtopicId != null) q.set("subtopicId", String(area.subtopicId));
+  return `/practice?${q.toString()}`;
+}
+
 export default function WeakAreas() {
   const [, setLocation] = useLocation();
   const { data: weakAreas, isLoading } = useGetWeakAreas();
-  const generate = useGeneratePractice();
-  const [startingKey, setStartingKey] = useState<string | null>(null);
-
-  const practiceNow = (area: {
-    courseId: number;
-    topicId?: number | null;
-    subtopicId?: number | null;
-  }) => {
-    const key = `${area.courseId}-${area.topicId}-${area.subtopicId}`;
-    setStartingKey(key);
-    generate.mutate(
-      {
-        data: {
-          courseId: area.courseId,
-          topicId: area.topicId,
-          subtopicId: area.subtopicId,
-          questionCount: 10,
-          sessionType: "weak_area",
-        },
-      },
-      {
-        onSuccess: (session) => setLocation(`/practice/${session.id}`),
-        onError: () => setStartingKey(null),
-      },
-    );
-  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -116,13 +100,10 @@ export default function WeakAreas() {
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => practiceNow(area)}
-                    disabled={generate.isPending && startingKey === key}
+                    onClick={() => setLocation(practiceUrl(area))}
                     data-testid={`btn-practice-${key}`}
                   >
-                    {generate.isPending && startingKey === key
-                      ? "Starting..."
-                      : "Practice now"}
+                    Practice now
                   </Button>
                 </CardContent>
               </Card>

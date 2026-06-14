@@ -13,6 +13,7 @@ import { useAuthUser, setAuthUser, clearAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ProfileAvatar } from "@/components/profile-avatar";
@@ -112,7 +113,9 @@ export default function Account() {
     );
   };
 
-  const [email, setEmail] = useState(user?.email ?? "");
+  // The change-email field is for the NEW address, so it starts empty rather
+  // than prefilled with the current email.
+  const [email, setEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -368,22 +371,26 @@ export default function Account() {
         </CardHeader>
         <CardContent>
           <form onSubmit={submitEmail} className="space-y-4" data-testid="form-change-email">
+            <p className="text-sm text-muted-foreground">
+              Current email:{" "}
+              <span className="font-medium text-foreground">{user.email}</span>
+            </p>
             <div className="space-y-2">
-              <Label htmlFor="email">Current email</Label>
+              <Label htmlFor="email">New email</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@new-email.com"
                 required
                 data-testid="input-new-email"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email-cur-pw">New email</Label>
-              <Input
+              <Label htmlFor="email-cur-pw">Current password</Label>
+              <PasswordInput
                 id="email-cur-pw"
-                type="password"
                 value={emailPassword}
                 onChange={(e) => setEmailPassword(e.target.value)}
                 required
@@ -412,9 +419,8 @@ export default function Account() {
           >
             <div className="space-y-2">
               <Label htmlFor="cur-pw">Current password</Label>
-              <Input
+              <PasswordInput
                 id="cur-pw"
-                type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
@@ -423,9 +429,8 @@ export default function Account() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-pw">New password</Label>
-              <Input
+              <PasswordInput
                 id="new-pw"
-                type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -435,9 +440,8 @@ export default function Account() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-pw">Confirm new password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-pw"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -487,9 +491,8 @@ export default function Account() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="del-pw">Current password</Label>
-                <Input
+                <PasswordInput
                   id="del-pw"
-                  type="password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                   required

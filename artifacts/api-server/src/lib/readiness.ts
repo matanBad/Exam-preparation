@@ -42,6 +42,9 @@ function buildMessage(score: number, weakCount: number): string {
 export interface ReadinessContext {
   activities?: StudentActivity[];
   accessible?: Set<number>;
+  // When set, the weak-area health component is restricted to this course, so
+  // the result reflects readiness for a single course rather than overall.
+  courseId?: number;
 }
 
 // Composite exam-readiness estimate (0-100). Weighting:
@@ -72,7 +75,12 @@ export async function computeReadiness(
   const recentProgressScore = clamp(50 + (laterAvg - earlierAvg) * 2.5, 0, 100);
 
   // Weak-area health: each weak/needs-practice topic chips away at readiness.
-  const eligible = await getEligibleSummaries(userId, accessible);
+  // Scope to a single course when requested (course-level readiness).
+  const allEligible = await getEligibleSummaries(userId, accessible);
+  const eligible =
+    ctx.courseId != null
+      ? allEligible.filter((s) => s.courseId === ctx.courseId)
+      : allEligible;
   const weakCount = eligible.filter(
     (s) => s.weaknessLevel === "weak" || s.weaknessLevel === "needs_practice",
   ).length;

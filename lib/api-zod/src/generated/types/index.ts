@@ -94,6 +94,7 @@ export * from "./revisionPlan";
 export * from "./revisionPlanItem";
 export * from "./role";
 export * from "./searchQuestionsParams";
+export * from "./studentCourseAnalytics";
 export * from "./studentDashboardAnalytics";
 export * from "./submitAnswer";
 export * from "./submitExamRequest";

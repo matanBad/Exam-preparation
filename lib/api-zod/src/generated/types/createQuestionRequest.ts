@@ -19,6 +19,10 @@ export interface CreateQuestionRequest {
   questionType: QuestionType;
   difficultyLevel: Difficulty;
   explanationText?: string | null;
+  /** Optional image for the question body (PNG/JPEG/WebP data URL). */
+  questionImageUrl?: string | null;
+  /** Optional image for the explanation (PNG/JPEG/WebP data URL). */
+  explanationImageUrl?: string | null;
   sourceReference?: string | null;
   status?: QuestionStatus;
   /** @minItems 2 */

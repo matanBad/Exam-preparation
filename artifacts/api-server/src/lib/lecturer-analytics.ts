@@ -630,6 +630,15 @@ export async function getLecturerCourseAnalytics(
 
   const problematicQuestions = await buildProblematicQuestions(data, courseId);
 
+  // Question-bank size for this course (all non-archived questions).
+  const bankRows = await db
+    .select({ id: questionsTable.id, status: questionsTable.status })
+    .from(questionsTable)
+    .where(eq(questionsTable.courseId, courseId));
+  const questionBankCount = bankRows.filter(
+    (q) => q.status !== "archived",
+  ).length;
+
   // Content gaps: active topics in the course with no approved questions.
   const courseTopics = await db
     .select({ id: topicsTable.id, topicName: topicsTable.topicName })
@@ -664,6 +673,7 @@ export async function getLecturerCourseAnalytics(
     courseName: meta?.courseName ?? "",
     averageScore: courseAverage(data, courseId),
     studentsCount: data.enrolledByCourse.get(courseId)?.size ?? 0,
+    questionBankCount,
     topicPerformance,
     mostFailedQuestions: problematicQuestions.slice(0, 5),
     problematicQuestions,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   useGetUserCourses,
   useListCourseTopics,
@@ -26,6 +26,16 @@ export default function PracticeIndex() {
   const user = getAuthUser();
   const [, setLocation] = useLocation();
 
+  // "Practice now" from Recommendations / Weak Areas links here with the topic
+  // context pre-filled via query params, so the student only picks a count.
+  const search = useSearch();
+  const initialParams = new URLSearchParams(search);
+  const numParam = (key: string): number | null => {
+    const raw = initialParams.get(key);
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+
   const { data: courses } = useGetUserCourses(user?.id ?? 0, {
     query: {
       enabled: !!user?.id,
@@ -33,10 +43,15 @@ export default function PracticeIndex() {
     },
   });
 
-  const [courseId, setCourseId] = useState<number | null>(null);
-  const [topicId, setTopicId] = useState<number | null>(null);
-  const [subtopicId, setSubtopicId] = useState<number | null>(null);
-  const [questionCount, setQuestionCount] = useState(10);
+  const [courseId, setCourseId] = useState<number | null>(() => numParam("courseId"));
+  const [topicId, setTopicId] = useState<number | null>(() => numParam("topicId"));
+  const [subtopicId, setSubtopicId] = useState<number | null>(() =>
+    numParam("subtopicId"),
+  );
+  const [questionCount, setQuestionCount] = useState(() => {
+    const c = numParam("count");
+    return c && c > 0 ? Math.min(50, c) : 10;
+  });
   const [error, setError] = useState<string | null>(null);
 
   const { data: topics } = useListCourseTopics(courseId ?? 0, {
@@ -86,6 +101,7 @@ export default function PracticeIndex() {
   };
 
   const activeSessions = history?.active ?? [];
+  const completedSessions = history?.completed ?? [];
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -211,12 +227,15 @@ export default function PracticeIndex() {
         </CardContent>
       </Card>
 
-      {activeSessions.length > 0 && (
-        <Card data-testid="card-unfinished-practice">
-          <CardHeader>
-            <CardTitle>Resume practice</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card data-testid="card-practice-in-progress">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="w-4 h-4 text-primary" />
+            Practice in progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activeSessions.length > 0 ? (
             <ul className="space-y-2">
               {activeSessions.map((s) => (
                 <li
@@ -239,41 +258,65 @@ export default function PracticeIndex() {
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link href="/practice/history" className="block">
-          <Card className="h-full cursor-pointer transition hover:shadow-md hover:border-primary/40">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <History className="w-4 h-4" />
-                Practice history
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Review your past sessions and accuracy.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Card className="h-full opacity-70" data-testid="card-weak-areas">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Lightbulb className="w-4 h-4" />
-              Weak areas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Available after more practice data is collected.
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No practice sessions in progress.
             </p>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card data-testid="card-completed-practice">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-primary" />
+            Completed practice
+          </CardTitle>
+          <Link
+            href="/practice/history"
+            className="text-xs font-medium text-primary hover:underline"
+            data-testid="link-practice-history"
+          >
+            View all →
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {completedSessions.length > 0 ? (
+            <ul className="space-y-2">
+              {completedSessions.slice(0, 8).map((s) => {
+                const pct =
+                  s.totalQuestions > 0
+                    ? Math.round((s.correctCount / s.totalQuestions) * 100)
+                    : 0;
+                return (
+                  <li
+                    key={s.id}
+                    className="flex items-center justify-between border-b pb-2 last:border-0"
+                  >
+                    <span className="min-w-0 truncate text-sm">
+                      {s.courseName ?? `Course ${s.courseId}`}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {s.correctCount}/{s.totalQuestions} correct · {pct}%
+                      </span>
+                    </span>
+                    <Link
+                      href={`/practice/${s.id}/summary`}
+                      className="shrink-0 text-primary hover:underline text-sm"
+                      data-testid={`link-practice-summary-${s.id}`}
+                    >
+                      Review
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No completed practice yet — finish a session to see it here.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

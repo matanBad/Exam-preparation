@@ -192,6 +192,14 @@ export default function ExamTake({ params }: { params: { id: string } }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-base whitespace-pre-wrap">{q.questionText}</p>
+            {q.questionImageUrl && (
+              <img
+                src={q.questionImageUrl}
+                alt="Question illustration"
+                className="max-h-80 rounded-md border object-contain"
+                data-testid={`img-question-${q.id}`}
+              />
+            )}
             <div className="space-y-2">
               {q.options.map((opt, idx) => {
                 const selected = (answers[q.id] ?? []).includes(opt.id);
