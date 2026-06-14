@@ -133,6 +133,25 @@ const pastDate = (maxDaysAgo: number) =>
 const FIRST = ["Noa", "Yael", "Tamar", "Shira", "Maya", "Avigail", "Adi", "Roni", "Daniel", "Itai", "Omer", "Yonatan", "Eitan", "Guy", "Lior", "Amit", "Nadav", "Tal", "Ori", "Gal", "Hila", "Bar", "Dana", "Eden", "Noam"];
 const LAST = ["Cohen", "Levi", "Mizrahi", "Peretz", "Biton", "Avraham", "Friedman", "Shapira", "Katz", "Bar-On", "Sharon", "Azoulay", "Gabay", "Maman", "Dahan", "Ben-David", "Sela", "Harel", "Vaknin", "Naor"];
 
+// Distinct, sentence-form claims used to build presentable single-choice
+// "concept check" questions for courses that ship with no question bank.
+const CORRECT_CLAIMS = [
+  "Definitions and assumptions must be stated before they are used.",
+  "Units must stay consistent throughout a calculation.",
+  "A result should be sanity-checked against a known limiting case.",
+  "Edge cases must be analysed separately from the general case.",
+  "Intermediate steps should be shown so the reasoning is verifiable.",
+  "Each assumption should be traceable to the course material.",
+];
+const WRONG_CLAIMS = [
+  "Any assumption can be skipped because it will be inferred for you.",
+  "Units never affect the validity of a final answer.",
+  "A single example is enough to prove a general statement.",
+  "Edge cases can always be ignored without any consequence.",
+  "An approximation is exact whenever it is convenient.",
+  "Showing intermediate steps is unnecessary if the answer is right.",
+];
+
 async function main() {
   console.log("Clearing existing data...");
   await db.execute(sql`TRUNCATE TABLE
@@ -215,23 +234,60 @@ async function main() {
   }
 
   // ---- questions + options ----
+  const seenQText = new Set<string>();
   const questionRows = readCsv("questions.csv").filter((q) => {
     if (!validCourseIds.has(Number(q.course_id))) return false;
     const tid = intOrNull(q.topic_id);
     if (tid !== null && !validTopicIds.has(tid)) return false;
     const sid = intOrNull(q.subtopic_id);
     if (sid !== null && !validTopicIds.has(sid)) return false;
+    // Drop exact-duplicate question texts (keep the first occurrence) so the
+    // bank doesn't carry the same question many times.
+    const key = (q.question_text || "").trim().toLowerCase();
+    if (key && seenQText.has(key)) return false;
+    if (key) seenQText.add(key);
     return true;
   });
   const validQuestionIds = new Set(questionRows.map((q) => Number(q.id)));
   const optionRows = readCsv("answer_options.csv").filter((o) =>
     validQuestionIds.has(Number(o.question_id)),
   );
+  // Group options per question, then (a) drop identical-text distractors,
+  // keeping the correct one, and (b) re-shuffle display_order so the correct
+  // answer isn't almost always stored first.
   const optionsByQuestion = new Map<number, { id: number; correct: boolean }[]>();
+  const cleanOptionRows: {
+    id: number; questionId: number; answerText: string; isCorrect: boolean; displayOrder: number;
+  }[] = [];
+  const rawOptsByQ = new Map<number, Record<string, string>[]>();
   for (const o of optionRows) {
     const qid = Number(o.question_id);
-    if (!optionsByQuestion.has(qid)) optionsByQuestion.set(qid, []);
-    optionsByQuestion.get(qid)!.push({ id: Number(o.id), correct: boolVal(o.is_correct) });
+    if (!rawOptsByQ.has(qid)) rawOptsByQ.set(qid, []);
+    rawOptsByQ.get(qid)!.push(o);
+  }
+  for (const [qid, opts] of rawOptsByQ) {
+    const byText = new Map<string, Record<string, string>>();
+    for (const o of opts) {
+      const k = (o.answer_text || "").trim().toLowerCase();
+      const ex = byText.get(k);
+      if (!ex || (boolVal(o.is_correct) && !boolVal(ex.is_correct))) byText.set(k, o);
+    }
+    let kept = [...byText.values()];
+    if (kept.length < 2) kept = opts; // never reduce a question below 2 options
+    const positions = shuffle(kept.map((_, i) => i));
+    kept.forEach((o, i) => {
+      cleanOptionRows.push({
+        id: Number(o.id),
+        questionId: qid,
+        answerText: o.answer_text,
+        isCorrect: boolVal(o.is_correct),
+        displayOrder: positions[i],
+      });
+    });
+    optionsByQuestion.set(
+      qid,
+      kept.map((o) => ({ id: Number(o.id), correct: boolVal(o.is_correct) })),
+    );
   }
 
   // Generated questions for courses with no bank (rule 7) + ensure a topic.
@@ -251,24 +307,31 @@ async function main() {
       validTopicIds.add(topicId);
     }
     const diffs = ["Easy", "Medium", "Hard"];
+    const cname = courseName.get(cid) ?? "this course";
     for (let i = 0; i < 16; i++) {
       const qid = qSeq++;
       const diff = diffs[i % 3];
+      const correctClaim = CORRECT_CLAIMS[(i + cid) % CORRECT_CLAIMS.length];
+      const wrongs = shuffle(WRONG_CLAIMS).slice(0, 3);
+      // Distinct options, correct answer in a shuffled position.
+      const choices = shuffle([
+        { text: correctClaim, correct: true },
+        ...wrongs.map((w) => ({ text: w, correct: false })),
+      ]);
       genQuestions.push({
         id: qid, courseId: cid, topicId, subtopicId: null,
-        title: `${courseName.get(cid) ?? "Course"} — practice question ${i + 1}`,
-        questionText: `Sample ${diff} question ${i + 1} for ${courseName.get(cid) ?? "this course"}. Choose the correct answer.`,
+        title: `${cname} — concept check ${i + 1}`,
+        questionText: `Concept check ${i + 1}: which statement reflects correct practice in ${cname}?`,
         questionType: "single_choice", difficultyLevel: diff,
-        explanationText: "The correct option follows directly from the course material.",
+        explanationText: `Correct: ${correctClaim}`,
         sourceReference: null, status: "approved", createdBy: null,
       });
-      const correctIdx = Math.floor(rng() * 4);
       const optIds: { id: number; correct: boolean }[] = [];
-      for (let k = 0; k < 4; k++) {
+      choices.forEach((c, k) => {
         const oid = oSeq++;
-        genOptions.push({ id: oid, questionId: qid, answerText: `Option ${String.fromCharCode(65 + k)}`, isCorrect: k === correctIdx, displayOrder: k });
-        optIds.push({ id: oid, correct: k === correctIdx });
-      }
+        genOptions.push({ id: oid, questionId: qid, answerText: c.text, isCorrect: c.correct, displayOrder: k });
+        optIds.push({ id: oid, correct: c.correct });
+      });
       optionsByQuestion.set(qid, optIds);
       validQuestionIds.add(qid);
     }
@@ -320,13 +383,7 @@ async function main() {
   });
   for (const gq of genQuestions) addPool(gq.courseId, gq.id, gq.difficultyLevel, gq.topicId, null);
 
-  await insertInChunks(answerOptionsTable, [
-    ...optionRows.map((o) => ({
-      id: Number(o.id), questionId: Number(o.question_id), answerText: o.answer_text,
-      isCorrect: boolVal(o.is_correct), displayOrder: Number(o.display_order),
-    })),
-    ...genOptions,
-  ], 5);
+  await insertInChunks(answerOptionsTable, [...cleanOptionRows, ...genOptions], 5);
 
   // ---- course_offerings (CSV + generated for the orphan course) ----
   const validProgramIds = new Set(programRows.map((p) => Number(p.id)));
