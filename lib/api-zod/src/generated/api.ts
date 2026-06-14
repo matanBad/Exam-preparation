@@ -1901,6 +1901,43 @@ export const GetLecturerCourseAnalyticsResponse = zod.object({
 });
 
 /**
+ * A single enrolled student's recent activity and topic performance in one of the lecturer's courses. 403 if the lecturer doesn't teach it, 404 if the student isn't enrolled.
+ */
+export const GetLecturerStudentCourseDetailParams = zod.object({
+  courseId: zod.coerce.number(),
+  studentId: zod.coerce.number(),
+});
+
+export const GetLecturerStudentCourseDetailResponse = zod.object({
+  studentId: zod.number(),
+  fullName: zod.string(),
+  studyYear: zod.string().nullish(),
+  semester: zod.string().nullish(),
+  programName: zod.string().nullish(),
+  recentExams: zod.array(
+    zod.object({
+      score: zod.number().nullable(),
+      submittedAt: zod.string().nullable(),
+    }),
+  ),
+  recentPractices: zod.array(
+    zod.object({
+      accuracy: zod.number().nullable().describe("0-100"),
+      completedAt: zod.string().nullable(),
+    }),
+  ),
+  topicPerformance: zod.array(
+    zod.object({
+      topicId: zod.number(),
+      topicName: zod.string().nullish(),
+      accuracyRate: zod.number(),
+      attemptsCount: zod.number(),
+      weaknessLevel: zod.string(),
+    }),
+  ),
+});
+
+/**
  * Questions in the lecturer's courses with high failure rates (attempts >= 5 and incorrect rate >= 70%).
  */
 export const GetLecturerProblematicQuestionsQueryParams = zod.object({

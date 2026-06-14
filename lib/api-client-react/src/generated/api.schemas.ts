@@ -1172,6 +1172,46 @@ export interface LecturerCourseAnalytics {
   contentGaps: ContentGap[];
 }
 
+export type StudentCourseDetailRecentExamsItem = {
+  /** @nullable */
+  score: number | null;
+  /** @nullable */
+  submittedAt: string | null;
+};
+
+export type StudentCourseDetailRecentPracticesItem = {
+  /**
+   * 0-100
+   * @nullable
+   */
+  accuracy: number | null;
+  /** @nullable */
+  completedAt: string | null;
+};
+
+export type StudentCourseDetailTopicPerformanceItem = {
+  topicId: number;
+  /** @nullable */
+  topicName?: string | null;
+  accuracyRate: number;
+  attemptsCount: number;
+  weaknessLevel: string;
+};
+
+export interface StudentCourseDetail {
+  studentId: number;
+  fullName: string;
+  /** @nullable */
+  studyYear?: string | null;
+  /** @nullable */
+  semester?: string | null;
+  /** @nullable */
+  programName?: string | null;
+  recentExams: StudentCourseDetailRecentExamsItem[];
+  recentPractices: StudentCourseDetailRecentPracticesItem[];
+  topicPerformance: StudentCourseDetailTopicPerformanceItem[];
+}
+
 /**
  * Bad request
  */

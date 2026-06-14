@@ -68,6 +68,7 @@ import type {
   RevisionPlan,
   SearchQuestionsParams,
   StudentCourseAnalytics,
+  StudentCourseDetail,
   StudentDashboardAnalytics,
   SubmitExamRequest,
   SubmitPracticeAnswerRequest,
@@ -4472,6 +4473,115 @@ export function useGetLecturerCourseAnalytics<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLecturerCourseAnalyticsQueryOptions(
     courseId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * A single enrolled student's recent activity and topic performance in one of the lecturer's courses. 403 if the lecturer doesn't teach it, 404 if the student isn't enrolled.
+ */
+export const getGetLecturerStudentCourseDetailUrl = (
+  courseId: number,
+  studentId: number,
+) => {
+  return `/api/dashboard/lecturer/course/${courseId}/student/${studentId}`;
+};
+
+export const getLecturerStudentCourseDetail = async (
+  courseId: number,
+  studentId: number,
+  options?: RequestInit,
+): Promise<StudentCourseDetail> => {
+  return customFetch<StudentCourseDetail>(
+    getGetLecturerStudentCourseDetailUrl(courseId, studentId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLecturerStudentCourseDetailQueryKey = (
+  courseId: number,
+  studentId: number,
+) => {
+  return [
+    `/api/dashboard/lecturer/course/${courseId}/student/${studentId}`,
+  ] as const;
+};
+
+export const getGetLecturerStudentCourseDetailQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  courseId: number,
+  studentId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetLecturerStudentCourseDetailQueryKey(courseId, studentId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>
+  > = ({ signal }) =>
+    getLecturerStudentCourseDetail(courseId, studentId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(courseId && studentId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLecturerStudentCourseDetailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>
+>;
+export type GetLecturerStudentCourseDetailQueryError = ErrorType<
+  ForbiddenResponse | NotFoundResponse
+>;
+
+export function useGetLecturerStudentCourseDetail<
+  TData = Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>,
+  TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+>(
+  courseId: number,
+  studentId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLecturerStudentCourseDetail>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLecturerStudentCourseDetailQueryOptions(
+    courseId,
+    studentId,
     options,
   );
 

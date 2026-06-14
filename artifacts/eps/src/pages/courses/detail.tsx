@@ -10,6 +10,7 @@ import {
   useRemoveCourseMember,
   useListUsers,
   useGetLecturerCourseAnalytics,
+  useGetLecturerStudentCourseDetail,
   useGetStudentCourseAnalytics,
   useGetUserExams,
   useGetPracticeHistory,
@@ -18,11 +19,18 @@ import {
   getListCourseMembersQueryKey,
   getListCourseStudentsQueryKey,
   getGetLecturerCourseAnalyticsQueryKey,
+  getGetLecturerStudentCourseDetailQueryKey,
   getGetStudentCourseAnalyticsQueryKey,
   getGetUserExamsQueryKey,
   getGetPracticeHistoryQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -154,6 +162,17 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
       retry: false,
     },
   });
+
+  // Lecturer: click a student row to see their detail in this course.
+  const [selStudent, setSelStudent] = useState<{ id: number; name: string } | null>(null);
+  const { data: studentDetail, isLoading: loadingDetail } =
+    useGetLecturerStudentCourseDetail(id, selStudent?.id ?? 0, {
+      query: {
+        enabled: !!id && isLecturer && !!selStudent,
+        queryKey: getGetLecturerStudentCourseDetailQueryKey(id, selStudent?.id ?? 0),
+        retry: false,
+      },
+    });
 
   // Student-only per-course analytics and the student's own exam / practice
   // history (filtered to this course below).
@@ -742,7 +761,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                     className="border-b last:border-0"
                     data-testid={`course-student-${s.id}`}
                   >
-                    <td className="py-2 pr-3 font-medium">{s.fullName}</td>
+                    <td className="py-2 pr-3 font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setSelStudent({ id: s.id, name: s.fullName })}
+                        className="text-left text-primary hover:underline"
+                        data-testid={`btn-student-${s.id}`}
+                      >
+                        {s.fullName}
+                      </button>
+                    </td>
                     <td className="py-2 pr-3 text-muted-foreground">
                       {s.email}
                     </td>
@@ -976,6 +1004,127 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
           Return
         </Button>
       </div>
+
+      <Dialog
+        open={!!selStudent}
+        onOpenChange={(o) => {
+          if (!o) setSelStudent(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selStudent?.name ?? "Student"}</DialogTitle>
+          </DialogHeader>
+          {loadingDetail || !studentDetail ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <div className="space-y-4 text-sm" data-testid="student-detail">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
+                <span>
+                  Year:{" "}
+                  <span className="text-foreground">
+                    {studentDetail.studyYear ?? "—"}
+                  </span>
+                </span>
+                <span>
+                  Semester:{" "}
+                  <span className="text-foreground">
+                    {studentDetail.semester ?? "—"}
+                  </span>
+                </span>
+                {studentDetail.programName && (
+                  <span>
+                    Program:{" "}
+                    <span className="text-foreground">
+                      {studentDetail.programName}
+                    </span>
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <p className="font-medium mb-1">Last 3 exams</p>
+                {studentDetail.recentExams.length ? (
+                  <ul className="space-y-1">
+                    {studentDetail.recentExams.map((e, i) => (
+                      <li
+                        key={i}
+                        className="flex justify-between border-b pb-1 last:border-0"
+                      >
+                        <span className="text-muted-foreground">
+                          {e.submittedAt
+                            ? new Date(e.submittedAt).toLocaleDateString()
+                            : "—"}
+                        </span>
+                        <span className="font-medium">
+                          {e.score != null ? `${Math.round(e.score)}%` : "—"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No exams yet.</p>
+                )}
+              </div>
+
+              <div>
+                <p className="font-medium mb-1">Last 3 practice sessions</p>
+                {studentDetail.recentPractices.length ? (
+                  <ul className="space-y-1">
+                    {studentDetail.recentPractices.map((p, i) => (
+                      <li
+                        key={i}
+                        className="flex justify-between border-b pb-1 last:border-0"
+                      >
+                        <span className="text-muted-foreground">
+                          {p.completedAt
+                            ? new Date(p.completedAt).toLocaleDateString()
+                            : "—"}
+                        </span>
+                        <span className="font-medium">
+                          {p.accuracy != null
+                            ? `${Math.round(p.accuracy)}%`
+                            : "—"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No practice yet.</p>
+                )}
+              </div>
+
+              <div>
+                <p className="font-medium mb-1">Topic performance</p>
+                {studentDetail.topicPerformance.length ? (
+                  <ul className="space-y-1">
+                    {studentDetail.topicPerformance.map((t) => (
+                      <li
+                        key={t.topicId}
+                        className="flex justify-between border-b pb-1 last:border-0"
+                      >
+                        <span className="min-w-0 truncate">
+                          {t.topicName ?? `Topic ${t.topicId}`}
+                        </span>
+                        <span className="shrink-0">
+                          <span className={accuracyClass(t.accuracyRate)}>
+                            {Math.round(t.accuracyRate)}%
+                          </span>{" "}
+                          <span className="text-xs text-muted-foreground">
+                            ({t.attemptsCount})
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">Not enough data yet.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {isLecturer && (
         <>

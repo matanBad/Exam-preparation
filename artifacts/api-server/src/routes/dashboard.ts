@@ -6,6 +6,8 @@ import {
   GetLecturerDashboardAnalyticsResponse,
   GetLecturerCourseAnalyticsResponse,
   GetLecturerCourseAnalyticsParams,
+  GetLecturerStudentCourseDetailResponse,
+  GetLecturerStudentCourseDetailParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { getStudentDashboardAnalytics } from "../lib/dashboard";
@@ -14,6 +16,7 @@ import { checkStudentCourseAccess } from "../lib/student-access";
 import {
   getLecturerDashboard,
   getLecturerCourseAnalytics,
+  getLecturerStudentCourseDetail,
   getLecturerCourseIds,
   courseExists,
 } from "../lib/lecturer-analytics";
@@ -76,6 +79,31 @@ router.get(
 
     const result = await getLecturerCourseAnalytics(lecturerId, courseId);
     res.json(GetLecturerCourseAnalyticsResponse.parse(result));
+  },
+);
+
+router.get(
+  "/dashboard/lecturer/course/:courseId/student/:studentId",
+  requireAuth,
+  requireRole("lecturer", "admin"),
+  async (req, res): Promise<void> => {
+    const { courseId, studentId } =
+      GetLecturerStudentCourseDetailParams.parse(req.params);
+    if (req.auth!.role === "lecturer") {
+      const taught = await getLecturerCourseIds(req.auth!.userId);
+      if (!taught.has(courseId)) {
+        res.status(403).json({ error: "You do not teach this course." });
+        return;
+      }
+    }
+    const result = await getLecturerStudentCourseDetail(courseId, studentId);
+    if (!result) {
+      res
+        .status(404)
+        .json({ error: "Student is not enrolled in this course." });
+      return;
+    }
+    res.json(GetLecturerStudentCourseDetailResponse.parse(result));
   },
 );
 

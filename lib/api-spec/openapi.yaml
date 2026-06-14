@@ -1038,6 +1038,29 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /dashboard/lecturer/course/{courseId}/student/{studentId}:
+    get:
+      operationId: getLecturerStudentCourseDetail
+      tags: [analytics]
+      description: A single enrolled student's recent activity and topic performance in one of the lecturer's courses. 403 if the lecturer doesn't teach it, 404 if the student isn't enrolled.
+      parameters:
+        - $ref: "#/components/parameters/CourseIdPath"
+        - in: path
+          name: studentId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentCourseDetail"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /analytics/lecturer/problematic-questions:
     get:
       operationId: getLecturerProblematicQuestions
@@ -2429,3 +2452,40 @@ components:
           type: array
           items: { $ref: "#/components/schemas/ContentGap" }
       required: [courseId, courseName, studentsCount, questionBankCount, topicPerformance, mostFailedQuestions, problematicQuestions, contentGaps]
+
+    StudentCourseDetail:
+      type: object
+      properties:
+        studentId: { type: integer }
+        fullName: { type: string }
+        studyYear: { type: ["string", "null"] }
+        semester: { type: ["string", "null"] }
+        programName: { type: ["string", "null"] }
+        recentExams:
+          type: array
+          items:
+            type: object
+            properties:
+              score: { type: ["number", "null"] }
+              submittedAt: { type: ["string", "null"] }
+            required: [score, submittedAt]
+        recentPractices:
+          type: array
+          items:
+            type: object
+            properties:
+              accuracy: { type: ["number", "null"], description: "0-100" }
+              completedAt: { type: ["string", "null"] }
+            required: [accuracy, completedAt]
+        topicPerformance:
+          type: array
+          items:
+            type: object
+            properties:
+              topicId: { type: integer }
+              topicName: { type: ["string", "null"] }
+              accuracyRate: { type: number }
+              attemptsCount: { type: integer }
+              weaknessLevel: { type: string }
+            required: [topicId, accuracyRate, attemptsCount, weaknessLevel]
+      required: [studentId, fullName, recentExams, recentPractices, topicPerformance]

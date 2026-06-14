@@ -530,7 +530,7 @@ export default function Account() {
                 }
                 data-testid="btn-delete-account"
               >
-                {deleteAccount.isPending ? "Deleting..." : "Permanently delete my account"}
+                {deleteAccount.isPending ? "Deleting..." : "Delete my account"}
               </Button>
             </form>
           </CardContent>

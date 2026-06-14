@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   db,
   coursesTable,
@@ -12,6 +12,7 @@ import {
   mockExamQuestionsTable,
   practiceSessionsTable,
   practiceSessionQuestionsTable,
+  performanceSummaryTable,
 } from "@workspace/db";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -678,6 +679,140 @@ export async function getLecturerCourseAnalytics(
     mostFailedQuestions: problematicQuestions.slice(0, 5),
     problematicQuestions,
     contentGaps,
+  };
+}
+
+// Per-student, per-course detail for a lecturer who teaches the course. Shows
+// the student's recent activity and topic performance IN THIS COURSE only.
+// Returns null if the student isn't actively enrolled in the course.
+export async function getLecturerStudentCourseDetail(
+  courseId: number,
+  studentId: number,
+): Promise<null | {
+  studentId: number;
+  fullName: string;
+  studyYear: string | null;
+  semester: string | null;
+  programName: string | null;
+  recentExams: { score: number | null; submittedAt: string | null }[];
+  recentPractices: { accuracy: number | null; completedAt: string | null }[];
+  topicPerformance: {
+    topicId: number;
+    topicName: string | null;
+    accuracyRate: number;
+    attemptsCount: number;
+    weaknessLevel: string;
+  }[];
+}> {
+  const [enr] = await db
+    .select({ id: enrollmentsTable.id })
+    .from(enrollmentsTable)
+    .where(
+      and(
+        eq(enrollmentsTable.userId, studentId),
+        eq(enrollmentsTable.courseId, courseId),
+        eq(enrollmentsTable.enrollmentStatus, "active"),
+      ),
+    );
+  if (!enr) return null;
+
+  const [student] = await db
+    .select({
+      id: usersTable.id,
+      fullName: usersTable.fullName,
+      role: usersTable.role,
+      studyYear: usersTable.currentStudyYear,
+      semester: usersTable.currentSemester,
+      programName: programsTable.name,
+    })
+    .from(usersTable)
+    .leftJoin(programsTable, eq(programsTable.id, usersTable.programId))
+    .where(eq(usersTable.id, studentId));
+  if (!student || student.role !== "student") return null;
+
+  const exams = await db
+    .select({
+      score: mockExamsTable.score,
+      submittedAt: mockExamsTable.submittedAt,
+    })
+    .from(mockExamsTable)
+    .where(
+      and(
+        eq(mockExamsTable.userId, studentId),
+        eq(mockExamsTable.courseId, courseId),
+        eq(mockExamsTable.status, "submitted"),
+      ),
+    )
+    .orderBy(desc(mockExamsTable.submittedAt))
+    .limit(3);
+
+  const practices = await db
+    .select({
+      earnedScore: practiceSessionsTable.earnedScore,
+      totalMaxScore: practiceSessionsTable.totalMaxScore,
+      completedAt: practiceSessionsTable.completedAt,
+    })
+    .from(practiceSessionsTable)
+    .where(
+      and(
+        eq(practiceSessionsTable.userId, studentId),
+        eq(practiceSessionsTable.courseId, courseId),
+        eq(practiceSessionsTable.status, "completed"),
+      ),
+    )
+    .orderBy(desc(practiceSessionsTable.completedAt))
+    .limit(3);
+
+  const perf = await db
+    .select({
+      topicId: performanceSummaryTable.topicId,
+      accuracyRate: performanceSummaryTable.accuracyRate,
+      attemptsCount: performanceSummaryTable.attemptsCount,
+      weaknessLevel: performanceSummaryTable.weaknessLevel,
+    })
+    .from(performanceSummaryTable)
+    .where(
+      and(
+        eq(performanceSummaryTable.userId, studentId),
+        eq(performanceSummaryTable.courseId, courseId),
+      ),
+    );
+  const topicIds = [...new Set(perf.map((p) => p.topicId))];
+  const topicNames = new Map<number, string>();
+  if (topicIds.length) {
+    const trows = await db
+      .select({ id: topicsTable.id, topicName: topicsTable.topicName })
+      .from(topicsTable)
+      .where(inArray(topicsTable.id, topicIds));
+    for (const t of trows) topicNames.set(t.id, t.topicName);
+  }
+
+  return {
+    studentId,
+    fullName: student.fullName,
+    studyYear: student.studyYear,
+    semester: student.semester,
+    programName: student.programName,
+    recentExams: exams.map((e) => ({
+      score: e.score,
+      submittedAt: e.submittedAt ? e.submittedAt.toISOString() : null,
+    })),
+    recentPractices: practices.map((p) => ({
+      accuracy:
+        p.totalMaxScore > 0
+          ? round2((p.earnedScore / p.totalMaxScore) * 100)
+          : null,
+      completedAt: p.completedAt ? p.completedAt.toISOString() : null,
+    })),
+    topicPerformance: perf
+      .map((p) => ({
+        topicId: p.topicId,
+        topicName: topicNames.get(p.topicId) ?? null,
+        accuracyRate: p.accuracyRate,
+        attemptsCount: p.attemptsCount,
+        weaknessLevel: p.weaknessLevel,
+      }))
+      .sort((a, b) => a.accuracyRate - b.accuracyRate),
   };
 }
 
